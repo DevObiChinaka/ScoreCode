@@ -48,6 +48,8 @@ public static class Constants
         public const string ExamWindowClosed = "exam_window_closed";
         public const string SessionNotFound = "session_not_found";
         public const string UngradedSubmissionsExist = "ungraded_submissions";
+        public const string InvalidInstitution = "invalid_institution";
+        public const string NoInstitutionContext = "no_institution_context";
     }
 
     /// <summary>Lifecycle states stored in <c>Exam.Status</c>.</summary>

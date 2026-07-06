@@ -4,12 +4,13 @@ using ScoreCode.Api.Services;
 using ScoreCode.Shared;
 using ScoreCode.Shared.DTOs;
 using ScoreCode.Shared.DTOs.Users;
+using System.Security.Claims;
 
 namespace ScoreCode.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/users")]
-[Authorize(Roles = Constants.Roles.Admin)]
+[Authorize(Roles = Constants.Roles.AnyAdmin)]
 public class UsersController : ControllerBase
 {
     private readonly IUserService _users;
@@ -19,7 +20,10 @@ public class UsersController : ControllerBase
         _users = users;
     }
 
-    // POST /api/v1/users  — create a lecturer account
+    private Guid? GetInstitutionId() =>
+        Guid.TryParse(User.FindFirstValue("institutionId"), out var id) ? id : null;
+
+    // POST /api/v1/users  — an institution admin creates a lecturer for their school
     [HttpPost]
     public async Task<IActionResult> CreateLecturer([FromBody] CreateLecturerRequest request)
     {
@@ -28,9 +32,17 @@ public class UsersController : ControllerBase
             string.IsNullOrWhiteSpace(request.Password))
             return BadRequest(ApiResponse<object>.Fail("validation_failed", "Name, StaffId, and Password are required."));
 
+        // Lecturers are created within an institution. The platform admin has no
+        // institution context, so they can't create lecturers directly.
+        var institutionId = GetInstitutionId();
+        if (institutionId is null)
+            return BadRequest(ApiResponse<object>.Fail(
+                Constants.ErrorCodes.NoInstitutionContext,
+                "Only an institution admin can create lecturers."));
+
         try
         {
-            var result = await _users.CreateLecturerAsync(request);
+            var result = await _users.CreateLecturerAsync(request, institutionId.Value);
             return StatusCode(201, ApiResponse<UserDto>.Ok(result));
         }
         catch (InvalidOperationException ex) when (ex.Message == Constants.ErrorCodes.EmailTaken)

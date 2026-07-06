@@ -15,9 +15,11 @@ public class UserService : IUserService
         _db = db;
     }
 
-    public async Task<UserDto> CreateLecturerAsync(CreateLecturerRequest request)
+    public async Task<UserDto> CreateLecturerAsync(CreateLecturerRequest request, Guid institutionId)
     {
-        var exists = await _db.Users.AnyAsync(u => u.IdNumber == request.StaffId);
+        // Staff IDs are globally unique — check across all tenants.
+        var exists = await _db.Users.IgnoreQueryFilters()
+            .AnyAsync(u => u.IdNumber == request.StaffId);
         if (exists)
             throw new InvalidOperationException(Constants.ErrorCodes.EmailTaken);
 
@@ -28,6 +30,7 @@ public class UserService : IUserService
             IdNumber = request.StaffId,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             Role = Constants.Roles.Lecturer,
+            InstitutionId = institutionId,
             Department = request.Department,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
@@ -55,7 +58,9 @@ public class UserService : IUserService
 
     public async Task DeactivateUserAsync(Guid id)
     {
-        var user = await _db.Users.FindAsync(id)
+        // FirstOrDefault (not Find) so the tenant query filter applies — an
+        // institution admin can only deactivate users within their institution.
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id)
             ?? throw new KeyNotFoundException(Constants.ErrorCodes.UserNotFound);
 
         user.IsActive = false;
@@ -64,12 +69,13 @@ public class UserService : IUserService
 
     public async Task UpdateStudentProfileAsync(Guid id, UpdateStudentProfileRequest request)
     {
-        var user = await _db.Users.FindAsync(id)
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id)
             ?? throw new KeyNotFoundException(Constants.ErrorCodes.UserNotFound);
 
         if (request.MatricNumber is not null)
         {
-            var taken = await _db.Users.AnyAsync(u => u.IdNumber == request.MatricNumber && u.Id != id);
+            var taken = await _db.Users.IgnoreQueryFilters()
+                .AnyAsync(u => u.IdNumber == request.MatricNumber && u.Id != id);
             if (taken)
                 throw new InvalidOperationException(Constants.ErrorCodes.EmailTaken);
             user.IdNumber = request.MatricNumber;

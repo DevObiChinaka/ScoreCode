@@ -30,8 +30,17 @@ public class AuthService : IAuthService
 
     public async Task<LoginResponse> RegisterStudentAsync(RegisterRequest request)
     {
-        // Uniqueness is also enforced by the DB index, but we give a friendly error here
-        var exists = await _db.Users.AnyAsync(u => u.IdNumber == request.MatricNumber);
+        // The chosen institution must exist and be approved.
+        var institution = await _db.Institutions
+            .FirstOrDefaultAsync(i => i.Id == request.InstitutionId
+                                   && i.Status == Constants.InstitutionStatuses.Approved);
+        if (institution is null)
+            throw new InvalidOperationException(Constants.ErrorCodes.InvalidInstitution);
+
+        // Matric numbers are globally unique (institution-prefixed). Check across
+        // all tenants (IgnoreQueryFilters) so the friendly error fires reliably.
+        var exists = await _db.Users.IgnoreQueryFilters()
+            .AnyAsync(u => u.IdNumber == request.MatricNumber);
         if (exists)
             throw new InvalidOperationException(Constants.ErrorCodes.EmailTaken); // reusing error code
 
@@ -42,6 +51,7 @@ public class AuthService : IAuthService
             IdNumber = request.MatricNumber,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             Role = Constants.Roles.Student,
+            InstitutionId = institution.Id,
             ProgrammeOfStudy = request.ProgrammeOfStudy,
             Level = request.Level.ToString(),
             IsActive = true,

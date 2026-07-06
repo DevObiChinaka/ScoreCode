@@ -26,10 +26,11 @@ public class AuthController : ControllerBase
         if (request.Password != request.ConfirmPassword)
             return BadRequest(ApiResponse<object>.Fail("validation_failed", "Passwords do not match."));
 
-        if (string.IsNullOrWhiteSpace(request.MatricNumber) ||
+        if (request.InstitutionId == Guid.Empty ||
+            string.IsNullOrWhiteSpace(request.MatricNumber) ||
             string.IsNullOrWhiteSpace(request.ProgrammeOfStudy) ||
             request.Level <= 0)
-            return BadRequest(ApiResponse<object>.Fail("validation_failed", "All fields are required."));
+            return BadRequest(ApiResponse<object>.Fail("validation_failed", "All fields, including an institution, are required."));
 
         try
         {
@@ -41,6 +42,12 @@ public class AuthController : ControllerBase
             return Conflict(ApiResponse<object>.Fail(
                 Constants.ErrorCodes.EmailTaken,
                 "A student with that matric number already exists."));
+        }
+        catch (InvalidOperationException ex) when (ex.Message == Constants.ErrorCodes.InvalidInstitution)
+        {
+            return BadRequest(ApiResponse<object>.Fail(
+                Constants.ErrorCodes.InvalidInstitution,
+                "The selected institution was not found or is not approved."));
         }
     }
 
