@@ -60,6 +60,7 @@ function Stop-Tree([int]$processId) {
 
 $startedDb = $false
 $apiProc = $null
+$webProc = $null
 
 try {
     # ---- 1. PostgreSQL ----------------------------------------------------
@@ -120,6 +121,30 @@ try {
         Write-Host "API is up." -ForegroundColor Green
     }
 
+    # ---- 3b. Web portal (platform / institution admin) --------------------
+    Write-Step "Web portal (http://localhost:5080)"
+    if (Test-Port 5080) {
+        Write-Host "Port 5080 already in use - reusing the running portal." -ForegroundColor Yellow
+    } else {
+        $env:ASPNETCORE_ENVIRONMENT = 'Development'
+        $webArgs = @(
+            'run', '--project', 'ScoreCode.Web\ScoreCode.Web.csproj',
+            '--no-launch-profile', '--urls', 'http://localhost:5080'
+        )
+        $webProc = Start-Process -FilePath 'dotnet' -ArgumentList $webArgs -PassThru `
+            -WindowStyle Hidden `
+            -RedirectStandardOutput "$root\logs\web.out.log" `
+            -RedirectStandardError  "$root\logs\web.err.log"
+
+        Write-Host "Web portal starting (PID $($webProc.Id)). Waiting for it to listen..."
+        if (Wait-Port 5080 120) {
+            Write-Host "Web portal is up - opening http://localhost:5080" -ForegroundColor Green
+            Start-Process "http://localhost:5080"
+        } else {
+            Write-Host "Web portal did not start on 5080. See .\logs\web.err.log" -ForegroundColor Yellow
+        }
+    }
+
     # ---- 4. Client (foreground) -------------------------------------------
     Write-Step "Launching the ScoreCode client - close the app window to shut everything down"
     $env:ASPNETCORE_ENVIRONMENT = 'Development'
@@ -127,6 +152,11 @@ try {
 }
 finally {
     Write-Step "Shutting down"
+
+    if ($webProc -and -not $webProc.HasExited) {
+        Write-Host "Stopping web portal (PID $($webProc.Id))..."
+        Stop-Tree $webProc.Id
+    }
 
     if ($apiProc -and -not $apiProc.HasExited) {
         Write-Host "Stopping API (PID $($apiProc.Id))..."

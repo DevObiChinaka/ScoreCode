@@ -1,0 +1,96 @@
+@page "/platform"
+@inject ApiClient Api
+@inject WebAuthState Auth
+@inject NavigationManager Nav
+
+<div class="pagehead"><h1>Institution approvals</h1></div>
+
+<div class="tabs">
+    <button class="@(_status == "Pending" ? "active" : "")" @onclick='() => SetStatus("Pending")'>Pending</button>
+    <button class="@(_status == null ? "active" : "")" @onclick="() => SetStatus(null)">All</button>
+</div>
+
+@if (_loading)
+{
+    <p class="muted">Loading…</p>
+}
+else if (_items.Count == 0)
+{
+    <p class="muted">No institutions here.</p>
+}
+else
+{
+    <table>
+        <thead>
+            <tr><th>Name</th><th>Type</th><th>Prefix</th><th>Contact</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody>
+            @foreach (var i in _items)
+            {
+                <tr>
+                    <td>@i.Name</td>
+                    <td>@i.Type</td>
+                    <td>@i.Prefix</td>
+                    <td>@i.ContactPerson<br /><span class="muted small">@i.ContactEmail</span></td>
+                    <td><span class="badge @i.Status.ToLowerInvariant()">@i.Status</span></td>
+                    <td class="row-actions">
+                        @if (i.Status == "Pending")
+                        {
+                            <button class="btn btn-sm" @onclick="() => Approve(i)">Approve</button>
+                            <button class="btn btn-sm btn-danger" @onclick="() => Reject(i)">Reject</button>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@if (_cred is not null)
+{
+    <div class="modal-backdrop">
+        <div class="modal">
+            <h1>Institution approved</h1>
+            <p class="muted small">Share these with @_cred.InstitutionName. The password is shown only once.</p>
+            <label>Admin ID</label>
+            <div class="cred">@_cred.AdminIdNumber</div>
+            <label>Temporary password</label>
+            <div class="cred">@_cred.TemporaryPassword</div>
+            <button class="btn" @onclick="() => _cred = null">Done</button>
+        </div>
+    </div>
+}
+
+@code {
+    private List<InstitutionDto> _items = new();
+    private string? _status = "Pending";
+    private bool _loading = true;
+    private ApproveInstitutionResponse? _cred;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Auth.IsPlatformAdmin) { Nav.NavigateTo("/login"); return; }
+        await Load();
+    }
+
+    private async Task SetStatus(string? s) { _status = s; await Load(); }
+
+    private async Task Load()
+    {
+        _loading = true;
+        _items = await Api.GetInstitutionsAsync(_status);
+        _loading = false;
+    }
+
+    private async Task Approve(InstitutionDto i)
+    {
+        var r = await Api.ApproveInstitutionAsync(i.Id);
+        if (r is not null) { _cred = r; await Load(); }
+    }
+
+    private async Task Reject(InstitutionDto i)
+    {
+        await Api.RejectInstitutionAsync(i.Id, "Rejected by platform admin.");
+        await Load();
+    }
+}

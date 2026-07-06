@@ -3,4 +3,5 @@
   <Project Path="ScoreCode.Client/ScoreCode.Client.csproj" />
   <Project Path="ScoreCode.Database/ScoreCode.Database.csproj" />
   <Project Path="ScoreCode.Shared/ScoreCode.Shared.csproj" />
+  <Project Path="ScoreCode.Web/ScoreCode.Web.csproj" />
 </Solution>

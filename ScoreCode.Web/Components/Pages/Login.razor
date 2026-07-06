@@ -1,0 +1,56 @@
+@page "/"
+@page "/login"
+@inject ApiClient Api
+@inject WebAuthState Auth
+@inject NavigationManager Nav
+
+<div class="card auth">
+    <h1>Sign in</h1>
+    <p class="muted small">Platform &amp; institution administrators</p>
+
+    <label>ID Number</label>
+    <input @bind="_id" @bind:event="oninput" @onkeydown="OnKey" placeholder="e.g. ADMIN001 or RWP-ADMIN" />
+
+    <label>Password</label>
+    <input type="password" @bind="_pw" @bind:event="oninput" @onkeydown="OnKey" />
+
+    @if (_error is not null) { <div class="error">@_error</div> }
+
+    <button class="btn" @onclick="DoLogin" disabled="@_busy">@(_busy ? "Signing in…" : "Sign in")</button>
+
+    <p class="muted small" style="margin-top:16px">
+        Registering a school? <a href="/apply">Apply here</a>
+    </p>
+</div>
+
+@code {
+    private string _id = "";
+    private string _pw = "";
+    private string? _error;
+    private bool _busy;
+
+    private async Task DoLogin()
+    {
+        _error = null;
+        _busy = true;
+        var (ok, error, data) = await Api.LoginAsync(_id.Trim(), _pw);
+        _busy = false;
+
+        if (!ok || data is null) { _error = error; return; }
+
+        Auth.Set(data.AccessToken, data.User.Role, data.User.IdNumber);
+        Nav.NavigateTo(Landing(data.User.Role));
+    }
+
+    private void OnKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") _ = DoLogin();
+    }
+
+    private static string Landing(string role) => role switch
+    {
+        "PlatformAdmin" or "Admin" => "/platform",
+        "InstitutionAdmin" => "/institution",
+        _ => "/login"
+    };
+}

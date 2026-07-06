@@ -1,0 +1,50 @@
+@inherits LayoutComponentBase
+@inject WebAuthState Auth
+@inject NavigationManager Nav
+
+<div class="app">
+    <header class="topbar">
+        <div class="brand" @onclick="GoHome">
+            <span class="logo"></span> ScoreCode <span class="sub">Portal</span>
+        </div>
+        <nav class="topnav">
+            @if (Auth.IsAuthenticated)
+            {
+                @if (Auth.IsPlatformAdmin)
+                {
+                    <a href="/platform">Approvals</a>
+                }
+                @if (Auth.IsInstitutionAdmin)
+                {
+                    <a href="/institution">Lecturers</a>
+                }
+                <span class="who">@Auth.Name<em>@Auth.Role</em></span>
+                <button class="linkbtn" @onclick="Logout">Sign out</button>
+            }
+            else
+            {
+                <a href="/apply">Register institution</a>
+                <a href="/login">Sign in</a>
+            }
+        </nav>
+    </header>
+
+    <main class="content">
+        @Body
+    </main>
+</div>
+
+@code {
+    private void GoHome()
+    {
+        if (Auth.IsPlatformAdmin) Nav.NavigateTo("/platform");
+        else if (Auth.IsInstitutionAdmin) Nav.NavigateTo("/institution");
+        else Nav.NavigateTo("/login");
+    }
+
+    private void Logout()
+    {
+        Auth.Clear();
+        Nav.NavigateTo("/login");
+    }
+}

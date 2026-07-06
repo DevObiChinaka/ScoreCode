@@ -1,0 +1,64 @@
+@page "/apply"
+@inject ApiClient Api
+
+<div class="card">
+    <h1>Register your institution</h1>
+    <p class="muted small">
+        Submit your school for approval. Once a platform admin approves it, the initial
+        administrator credentials are issued to your contact email.
+    </p>
+
+    @if (_done)
+    {
+        <div class="success">Application submitted. You'll be contacted once it has been reviewed.</div>
+    }
+    else
+    {
+        <label>Institution name</label>
+        <input @bind="_req.Name" />
+
+        <label>Type</label>
+        <select @bind="_req.Type">
+            <option>University</option>
+            <option>Polytechnic</option>
+            <option>College</option>
+            <option>Learning Centre</option>
+        </select>
+
+        <label>Matric / Staff-ID prefix (e.g. ADU)</label>
+        <input @bind="_req.Prefix" />
+
+        <label>Contact person</label>
+        <input @bind="_req.ContactPerson" />
+
+        <label>Contact email</label>
+        <input @bind="_req.ContactEmail" />
+
+        @if (_error is not null) { <div class="error">@_error</div> }
+
+        <button class="btn" @onclick="Submit" disabled="@_busy">@(_busy ? "Submitting…" : "Submit application")</button>
+    }
+</div>
+
+@code {
+    private InstitutionApplicationRequest _req = new() { Type = "University" };
+    private bool _done;
+    private bool _busy;
+    private string? _error;
+
+    private async Task Submit()
+    {
+        _error = null;
+        if (string.IsNullOrWhiteSpace(_req.Name) || string.IsNullOrWhiteSpace(_req.ContactEmail))
+        {
+            _error = "Institution name and contact email are required.";
+            return;
+        }
+
+        _busy = true;
+        var (ok, error) = await Api.ApplyInstitutionAsync(_req);
+        _busy = false;
+
+        if (ok) _done = true; else _error = error;
+    }
+}
