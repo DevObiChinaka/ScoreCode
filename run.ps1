@@ -63,6 +63,9 @@ $apiProc = $null
 $webProc = $null
 
 try {
+    # ---- 0. Clear orphans from a previous run (frees locks + ports) -------
+    if (Test-Path "$root\stop.ps1") { & "$root\stop.ps1" -Quiet }
+
     # ---- 1. PostgreSQL ----------------------------------------------------
     Write-Step "PostgreSQL (localhost:5432)"
     if (Test-Port 5432) {
