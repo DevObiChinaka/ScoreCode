@@ -5,6 +5,7 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using ScoreCode.Client.Helpers;
 using ScoreCode.Client.Services;
+using ScoreCode.Shared.DTOs.Users;
 
 namespace ScoreCode.Client.Views.Settings;
 
@@ -124,15 +125,68 @@ public partial class SettingsView : UserControl
     private void BuildProfileSection()
     {
         var content = new StackPanel();
+        content.Children.Add(MakeValue("Loading…"));
+        ProfileSection.Children.Add(MakeCard("Profile", content));
 
-        content.Children.Add(MakeLabel("ID Number"));
-        content.Children.Add(MakeValue(_userId));
+        _ = LoadProfileAsync(content);
+    }
+
+    /// <summary>Fetch the signed-in user's details and render a role-specific profile.</summary>
+    private async Task LoadProfileAsync(StackPanel content)
+    {
+        UserDto? p = null;
+        try { p = (await _api.GetAsync<UserDto>("auth/me"))?.Data; }
+        catch { /* fall back to session basics below */ }
+
+        content.Children.Clear();
+
+        if (p is null)
+        {
+            content.Children.Add(MakeLabel("ID Number"));
+            content.Children.Add(MakeValue(_userId));
+            content.Children.Add(MakeLabel("Role"));
+            content.Children.Add(MakeValue(_role));
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(p.InstitutionName))
+        {
+            content.Children.Add(MakeLabel("Institution"));
+            content.Children.Add(MakeValue(p.InstitutionName));
+        }
+
+        if (_role == "Student")
+        {
+            // Anonymous student — no name; identified by matric.
+            content.Children.Add(MakeLabel("Matric Number"));
+            content.Children.Add(MakeValue(p.IdNumber));
+            content.Children.Add(MakeLabel("Programme of Study"));
+            content.Children.Add(MakeValue(Dash(p.ProgrammeOfStudy)));
+            content.Children.Add(MakeLabel("Level"));
+            content.Children.Add(MakeValue(Dash(p.Level)));
+        }
+        else if (_role == "Lecturer")
+        {
+            content.Children.Add(MakeLabel("Name"));
+            content.Children.Add(MakeValue(Dash(p.Name)));
+            content.Children.Add(MakeLabel("Staff ID"));
+            content.Children.Add(MakeValue(p.IdNumber));
+            content.Children.Add(MakeLabel("Department"));
+            content.Children.Add(MakeValue(Dash(p.Department)));
+        }
+        else
+        {
+            content.Children.Add(MakeLabel("Name"));
+            content.Children.Add(MakeValue(Dash(p.Name)));
+            content.Children.Add(MakeLabel("ID Number"));
+            content.Children.Add(MakeValue(p.IdNumber));
+        }
 
         content.Children.Add(MakeLabel("Role"));
         content.Children.Add(MakeValue(_role));
-
-        ProfileSection.Children.Add(MakeCard("Profile", content));
     }
+
+    private static string Dash(string? value) => string.IsNullOrWhiteSpace(value) ? "—" : value;
 
     // ── Appearance Section ───────────────────────────────────────────────
     private void BuildAppearanceSection()

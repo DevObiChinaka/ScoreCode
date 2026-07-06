@@ -55,8 +55,34 @@ else
     </table>
 }
 
+<div class="pagehead" style="margin-top:32px"><h1>Students</h1><span class="muted small">@_students.Count registered</span></div>
+@if (!_loading && _students.Count == 0)
+{
+    <p class="muted">No students have registered under your institution yet.</p>
+}
+else if (!_loading)
+{
+    <table>
+        <thead>
+            <tr><th>Matric Number</th><th>Programme</th><th>Level</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var s in _students)
+            {
+                <tr>
+                    <td>@s.IdNumber</td>
+                    <td>@s.ProgrammeOfStudy</td>
+                    <td>@s.Level</td>
+                    <td>@(s.IsActive ? "Active" : "Inactive")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
 @code {
     private List<UserDto> _lecturers = new();
+    private List<UserDto> _students = new();
     private bool _loading = true;
     private bool _showForm;
     private bool _busy;
@@ -74,6 +100,7 @@ else
     {
         _loading = true;
         _lecturers = await Api.GetUsersAsync("Lecturer");
+        _students = await Api.GetUsersAsync("Student");
         _loading = false;
     }
 

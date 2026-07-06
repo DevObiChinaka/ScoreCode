@@ -4,6 +4,7 @@ using ScoreCode.Api.Services;
 using ScoreCode.Shared;
 using ScoreCode.Shared.DTOs;
 using ScoreCode.Shared.DTOs.Auth;
+using ScoreCode.Shared.DTOs.Users;
 
 namespace ScoreCode.Api.Controllers;
 
@@ -77,6 +78,22 @@ public class AuthController : ControllerBase
                 "Refresh token is invalid or expired."));
 
         return Ok(ApiResponse<LoginResponse>.Ok(result));
+    }
+
+    // GET /api/v1/auth/me  — the authenticated user's own profile
+    [HttpGet("me")]
+    [Authorize]
+    public async Task<IActionResult> Me()
+    {
+        var userId = Guid.Parse(
+            User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value
+            ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+            ?? throw new UnauthorizedAccessException());
+
+        var profile = await _auth.GetProfileAsync(userId);
+        return profile is null
+            ? NotFound(ApiResponse<object>.Fail("not_found", "User not found."))
+            : Ok(ApiResponse<UserDto>.Ok(profile));
     }
 
     // POST /api/v1/auth/logout  — requires valid JWT

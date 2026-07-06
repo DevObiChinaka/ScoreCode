@@ -3,6 +3,7 @@ using ScoreCode.Database;
 using ScoreCode.Database.Entities;
 using ScoreCode.Shared;
 using ScoreCode.Shared.DTOs.Auth;
+using ScoreCode.Shared.DTOs.Users;
 
 namespace ScoreCode.Api.Services;
 
@@ -90,6 +91,26 @@ public class AuthService : IAuthService
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
         await _db.SaveChangesAsync();
         return true;
+    }
+
+    public async Task<UserDto?> GetProfileAsync(Guid userId)
+    {
+        return await _db.Users
+            .Where(u => u.Id == userId)
+            .Select(u => new UserDto
+            {
+                Id = u.Id,
+                Name = u.Name,
+                IdNumber = u.IdNumber,
+                Role = u.Role,
+                Department = u.Department,
+                ProgrammeOfStudy = u.ProgrammeOfStudy,
+                Level = u.Level,
+                InstitutionName = u.Institution != null ? u.Institution.Name : string.Empty,
+                IsActive = u.IsActive,
+                CreatedAt = u.CreatedAt
+            })
+            .FirstOrDefaultAsync();
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────

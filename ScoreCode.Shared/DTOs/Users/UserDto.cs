@@ -9,6 +9,7 @@ public class UserDto
     public string Department { get; set; } = string.Empty;
     public string ProgrammeOfStudy { get; set; } = string.Empty;
     public string Level { get; set; } = string.Empty;
+    public string InstitutionName { get; set; } = string.Empty;
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
 }
