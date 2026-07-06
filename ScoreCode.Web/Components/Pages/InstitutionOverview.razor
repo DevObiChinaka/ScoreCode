@@ -1,0 +1,38 @@
+@page "/institution"
+@layout DashboardLayout
+@inject ApiClient Api
+@inject WebAuthState Auth
+@inject NavigationManager Nav
+
+<div class="pagehead">
+    <div><h1>Overview</h1><div class="sub">Institution administration</div></div>
+</div>
+
+<div class="stats">
+    <div class="stat"><div class="n teal">@_lecturers</div><div class="l">Lecturers</div></div>
+    <div class="stat"><div class="n">@_students</div><div class="l">Students</div></div>
+</div>
+
+<div class="section-title">Quick actions</div>
+<div class="quick">
+    <a href="/institution/lecturers">
+        <div class="t">Manage lecturers</div>
+        <div class="d">Add lecturers for your school and control their access.</div>
+    </a>
+    <a href="/institution/students">
+        <div class="t">View students</div>
+        <div class="d">See who has registered under your institution.</div>
+    </a>
+</div>
+
+@code {
+    private int _lecturers;
+    private int _students;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Auth.IsInstitutionAdmin) { Nav.NavigateTo("/login"); return; }
+        _lecturers = (await Api.GetUsersAsync("Lecturer")).Count;
+        _students = (await Api.GetUsersAsync("Student")).Count;
+    }
+}

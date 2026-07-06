@@ -1,11 +1,12 @@
 <Router AppAssembly="@typeof(Routes).Assembly">
     <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(AuthLayout)" />
         <FocusOnNavigate RouteData="@routeData" Selector="h1" />
     </Found>
     <NotFound>
-        <LayoutView Layout="@typeof(MainLayout)">
-            <div class="card"><h1>Not found</h1><p class="muted">That page doesn't exist.</p></div>
+        <LayoutView Layout="@typeof(AuthLayout)">
+            <h1>Not found</h1>
+            <p class="muted small" style="margin-top:6px">That page doesn't exist. <a href="/login">Go to sign in</a>.</p>
         </LayoutView>
     </NotFound>
 </Router>

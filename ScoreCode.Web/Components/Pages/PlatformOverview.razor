@@ -1,0 +1,68 @@
+@page "/platform"
+@layout DashboardLayout
+@inject ApiClient Api
+@inject WebAuthState Auth
+@inject NavigationManager Nav
+
+<div class="pagehead">
+    <div><h1>Overview</h1><div class="sub">Platform administration</div></div>
+</div>
+
+<div class="stats">
+    <div class="stat"><div class="n teal">@_all.Count</div><div class="l">Institutions</div></div>
+    <div class="stat"><div class="n warn">@Count("Pending")</div><div class="l">Pending review</div></div>
+    <div class="stat"><div class="n ok">@Count("Approved")</div><div class="l">Approved</div></div>
+    <div class="stat"><div class="n">@Count("Suspended")</div><div class="l">Suspended</div></div>
+</div>
+
+<div class="section-title">Awaiting approval</div>
+@if (_loading)
+{
+    <p class="muted">Loading…</p>
+}
+else if (!Pending.Any())
+{
+    <div class="empty"><div class="big">All caught up</div>No institutions are awaiting review.</div>
+}
+else
+{
+    <div class="tablewrap">
+        <table>
+            <thead><tr><th>Name</th><th>Type</th><th>Contact</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var i in Pending)
+                {
+                    <tr>
+                        <td>@i.Name</td>
+                        <td>@i.Type</td>
+                        <td>@i.ContactEmail</td>
+                        <td class="row-actions"><a class="btn btn-sm btn-ghost" href="/platform/institutions">Review</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<div class="section-title">Quick actions</div>
+<div class="quick">
+    <a href="/platform/institutions">
+        <div class="t">Manage institutions</div>
+        <div class="d">Approve, reject, suspend or reactivate registered schools.</div>
+    </a>
+</div>
+
+@code {
+    private List<InstitutionDto> _all = new();
+    private bool _loading = true;
+
+    private IEnumerable<InstitutionDto> Pending => _all.Where(i => i.Status == "Pending");
+    private int Count(string s) => _all.Count(i => i.Status == s);
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Auth.IsPlatformAdmin) { Nav.NavigateTo("/login"); return; }
+        _all = await Api.GetInstitutionsAsync(null);
+        _loading = false;
+    }
+}

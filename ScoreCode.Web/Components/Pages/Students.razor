@@ -1,0 +1,73 @@
+@page "/institution/students"
+@layout DashboardLayout
+@inject ApiClient Api
+@inject WebAuthState Auth
+@inject NavigationManager Nav
+
+<div class="pagehead">
+    <div><h1>Students</h1><div class="sub">@_students.Count student(s) registered under your institution</div></div>
+</div>
+
+@if (_loading)
+{
+    <p class="muted">Loading…</p>
+}
+else if (_students.Count == 0)
+{
+    <div class="empty"><div class="big">No students yet</div>Students who register under your institution will appear here.</div>
+}
+else
+{
+    <div class="tablewrap">
+        <table>
+            <thead>
+                <tr><th>Matric Number</th><th>Programme</th><th>Level</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var s in _students)
+                {
+                    <tr>
+                        <td>@s.IdNumber</td>
+                        <td>@s.ProgrammeOfStudy</td>
+                        <td>@s.Level</td>
+                        <td><span class="badge @(s.IsActive ? "active" : "inactive")">@(s.IsActive ? "Active" : "Inactive")</span></td>
+                        <td class="row-actions">
+                            @if (s.IsActive)
+                            {
+                                <button class="btn btn-sm btn-danger" @onclick="() => SetActive(s, false)">Deactivate</button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-sm" @onclick="() => SetActive(s, true)">Activate</button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private List<UserDto> _students = new();
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Auth.IsInstitutionAdmin) { Nav.NavigateTo("/login"); return; }
+        await Load();
+    }
+
+    private async Task Load()
+    {
+        _loading = true;
+        _students = await Api.GetUsersAsync("Student");
+        _loading = false;
+    }
+
+    private async Task SetActive(UserDto u, bool active)
+    {
+        await Api.SetUserActiveAsync(u.Id, active);
+        await Load();
+    }
+}

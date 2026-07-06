@@ -1,0 +1,129 @@
+@page "/institution/lecturers"
+@layout DashboardLayout
+@inject ApiClient Api
+@inject WebAuthState Auth
+@inject NavigationManager Nav
+
+<div class="pagehead">
+    <div><h1>Lecturers</h1><div class="sub">@_lecturers.Count lecturer(s) in your institution</div></div>
+    <button class="btn" @onclick="() => _showForm = !_showForm">@(_showForm ? "Close" : "+ New lecturer")</button>
+</div>
+
+@if (_showForm)
+{
+    <div class="card" style="margin-bottom:22px">
+        <label>Full name</label>
+        <input @bind="_req.Name" />
+        <label>Staff ID</label>
+        <input @bind="_req.StaffId" />
+        <label>Department</label>
+        <input @bind="_req.Department" />
+        <label>Temporary password</label>
+        <input type="password" @bind="_req.Password" />
+
+        @if (_error is not null) { <div class="error">@_error</div> }
+        @if (_created is not null) { <div class="success">Created lecturer @_created.</div> }
+
+        <button class="btn" style="margin-top:20px" @onclick="Create" disabled="@_busy">
+            @(_busy ? "Creating…" : "Create lecturer")
+        </button>
+    </div>
+}
+
+@if (_loading)
+{
+    <p class="muted">Loading…</p>
+}
+else if (_lecturers.Count == 0)
+{
+    <div class="empty"><div class="big">No lecturers yet</div>Add your first lecturer above.</div>
+}
+else
+{
+    <div class="tablewrap">
+        <table>
+            <thead>
+                <tr><th>Name</th><th>Staff ID</th><th>Department</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var l in _lecturers)
+                {
+                    <tr>
+                        <td>@l.Name</td>
+                        <td>@l.IdNumber</td>
+                        <td>@l.Department</td>
+                        <td><span class="badge @(l.IsActive ? "active" : "inactive")">@(l.IsActive ? "Active" : "Inactive")</span></td>
+                        <td class="row-actions">
+                            @if (l.IsActive)
+                            {
+                                <button class="btn btn-sm btn-danger" @onclick="() => SetActive(l, false)">Deactivate</button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-sm" @onclick="() => SetActive(l, true)">Activate</button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private List<UserDto> _lecturers = new();
+    private bool _loading = true;
+    private bool _showForm;
+    private bool _busy;
+    private CreateLecturerRequest _req = new();
+    private string? _error;
+    private string? _created;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Auth.IsInstitutionAdmin) { Nav.NavigateTo("/login"); return; }
+        await Load();
+    }
+
+    private async Task Load()
+    {
+        _loading = true;
+        _lecturers = await Api.GetUsersAsync("Lecturer");
+        _loading = false;
+    }
+
+    private async Task SetActive(UserDto u, bool active)
+    {
+        await Api.SetUserActiveAsync(u.Id, active);
+        await Load();
+    }
+
+    private async Task Create()
+    {
+        _error = null;
+        _created = null;
+        if (string.IsNullOrWhiteSpace(_req.Name) ||
+            string.IsNullOrWhiteSpace(_req.StaffId) ||
+            string.IsNullOrWhiteSpace(_req.Password))
+        {
+            _error = "Name, staff ID and password are required.";
+            return;
+        }
+
+        _busy = true;
+        var (ok, error) = await Api.CreateLecturerAsync(_req);
+        _busy = false;
+
+        if (ok)
+        {
+            _created = _req.StaffId;
+            _req = new();
+            _showForm = false;
+            await Load();
+        }
+        else
+        {
+            _error = error;
+        }
+    }
+}

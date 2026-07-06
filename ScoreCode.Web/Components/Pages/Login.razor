@@ -1,27 +1,28 @@
 @page "/"
 @page "/login"
+@layout AuthLayout
 @inject ApiClient Api
 @inject WebAuthState Auth
 @inject NavigationManager Nav
 
-<div class="card auth">
-    <h1>Sign in</h1>
-    <p class="muted small">Platform &amp; institution administrators</p>
+<h1>Sign in</h1>
+<p class="muted small" style="margin-top:5px">Platform &amp; institution administrators</p>
 
-    <label>ID Number</label>
-    <input @bind="_id" @bind:event="oninput" @onkeydown="OnKey" placeholder="e.g. ADMIN001 or RWP-ADMIN" />
+<label>ID Number</label>
+<input @bind="_id" @bind:event="oninput" @onkeydown="OnKey" placeholder="e.g. ADMIN001 or RWP-ADMIN" />
 
-    <label>Password</label>
-    <input type="password" @bind="_pw" @bind:event="oninput" @onkeydown="OnKey" />
+<label>Password</label>
+<input type="password" @bind="_pw" @bind:event="oninput" @onkeydown="OnKey" />
 
-    @if (_error is not null) { <div class="error">@_error</div> }
+@if (_error is not null) { <div class="error">@_error</div> }
 
-    <button class="btn" @onclick="DoLogin" disabled="@_busy">@(_busy ? "Signing in…" : "Sign in")</button>
+<button class="btn block" style="margin-top:22px" @onclick="DoLogin" disabled="@_busy">
+    @(_busy ? "Signing in…" : "Sign in")
+</button>
 
-    <p class="muted small" style="margin-top:16px">
-        Registering a school? <a href="/apply">Apply here</a>
-    </p>
-</div>
+<p class="muted small" style="margin-top:20px">
+    Registering a school? <a href="/apply">Apply here</a>
+</p>
 
 @code {
     private string _id = "";

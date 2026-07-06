@@ -1,0 +1,61 @@
+@inherits LayoutComponentBase
+@inject WebAuthState Auth
+@inject NavigationManager Nav
+
+<div class="shell">
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="logo-badge"><span></span><span></span><span></span><span></span></div>
+            <span>ScoreCode</span>
+        </div>
+        <nav>
+            @if (Auth.IsPlatformAdmin)
+            {
+                <NavLink class="navitem" href="/platform" Match="NavLinkMatch.All"><span class="dot"></span>Overview</NavLink>
+                <NavLink class="navitem" href="/platform/institutions"><span class="dot"></span>Institutions</NavLink>
+            }
+            @if (Auth.IsInstitutionAdmin)
+            {
+                <NavLink class="navitem" href="/institution" Match="NavLinkMatch.All"><span class="dot"></span>Overview</NavLink>
+                <NavLink class="navitem" href="/institution/lecturers"><span class="dot"></span>Lecturers</NavLink>
+                <NavLink class="navitem" href="/institution/students"><span class="dot"></span>Students</NavLink>
+            }
+        </nav>
+        <div class="sidebar-user">
+            <div class="avatar">@Initials</div>
+            <div>
+                <div class="name">@Auth.Name</div>
+                <div class="role">@RoleLabel</div>
+            </div>
+        </div>
+    </aside>
+    <div class="main">
+        <header class="topbar">
+            <button class="linkbtn" @onclick="Logout">Sign out</button>
+        </header>
+        <main class="content">
+            @Body
+        </main>
+    </div>
+</div>
+
+@code {
+    private string Initials =>
+        string.IsNullOrWhiteSpace(Auth.Name)
+            ? "?"
+            : string.Concat(Auth.Name
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .Take(2)
+                .Select(w => char.ToUpperInvariant(w[0])));
+
+    private string RoleLabel =>
+        Auth.IsPlatformAdmin ? "Platform Admin"
+        : Auth.IsInstitutionAdmin ? "Institution Admin"
+        : Auth.Role;
+
+    private void Logout()
+    {
+        Auth.Clear();
+        Nav.NavigateTo("/login");
+    }
+}

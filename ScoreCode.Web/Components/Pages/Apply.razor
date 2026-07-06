@@ -1,44 +1,49 @@
 @page "/apply"
+@layout AuthLayout
 @inject ApiClient Api
 
-<div class="card">
-    <h1>Register your institution</h1>
-    <p class="muted small">
-        Submit your school for approval. Once a platform admin approves it, the initial
-        administrator credentials are issued to your contact email.
-    </p>
+<h1>Register your institution</h1>
+<p class="muted small" style="margin-top:5px">
+    Once a platform admin approves it, the initial administrator credentials are issued.
+</p>
 
-    @if (_done)
-    {
-        <div class="success">Application submitted. You'll be contacted once it has been reviewed.</div>
-    }
-    else
-    {
-        <label>Institution name</label>
-        <input @bind="_req.Name" />
+@if (_done)
+{
+    <div class="success" style="margin-top:18px">
+        Application submitted. You'll be contacted once it has been reviewed.
+    </div>
+    <p class="muted small" style="margin-top:18px"><a href="/login">Back to sign in</a></p>
+}
+else
+{
+    <label>Institution name</label>
+    <input @bind="_req.Name" />
 
-        <label>Type</label>
-        <select @bind="_req.Type">
-            <option>University</option>
-            <option>Polytechnic</option>
-            <option>College</option>
-            <option>Learning Centre</option>
-        </select>
+    <label>Type</label>
+    <select @bind="_req.Type">
+        <option>University</option>
+        <option>Polytechnic</option>
+        <option>College</option>
+        <option>Learning Centre</option>
+    </select>
 
-        <label>Matric / Staff-ID prefix (e.g. ADU)</label>
-        <input @bind="_req.Prefix" />
+    <label>Matric / Staff-ID prefix (e.g. ADU)</label>
+    <input @bind="_req.Prefix" />
 
-        <label>Contact person</label>
-        <input @bind="_req.ContactPerson" />
+    <label>Contact person</label>
+    <input @bind="_req.ContactPerson" />
 
-        <label>Contact email</label>
-        <input @bind="_req.ContactEmail" />
+    <label>Contact email</label>
+    <input @bind="_req.ContactEmail" />
 
-        @if (_error is not null) { <div class="error">@_error</div> }
+    @if (_error is not null) { <div class="error">@_error</div> }
 
-        <button class="btn" @onclick="Submit" disabled="@_busy">@(_busy ? "Submitting…" : "Submit application")</button>
-    }
-</div>
+    <button class="btn block" style="margin-top:22px" @onclick="Submit" disabled="@_busy">
+        @(_busy ? "Submitting…" : "Submit application")
+    </button>
+
+    <p class="muted small" style="margin-top:20px">Already have an account? <a href="/login">Sign in</a></p>
+}
 
 @code {
     private InstitutionApplicationRequest _req = new() { Type = "University" };

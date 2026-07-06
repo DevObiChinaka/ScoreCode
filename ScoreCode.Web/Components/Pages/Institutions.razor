@@ -1,0 +1,111 @@
+@page "/platform/institutions"
+@layout DashboardLayout
+@inject ApiClient Api
+@inject WebAuthState Auth
+@inject NavigationManager Nav
+
+<div class="pagehead">
+    <div><h1>Institutions</h1><div class="sub">Approve, reject, suspend or reactivate schools</div></div>
+</div>
+
+<div class="tabs">
+    <button class="@Cls("Pending")" @onclick='() => _status = "Pending"'>Pending</button>
+    <button class="@Cls("Approved")" @onclick='() => _status = "Approved"'>Approved</button>
+    <button class="@Cls("Suspended")" @onclick='() => _status = "Suspended"'>Suspended</button>
+    <button class="@Cls("Rejected")" @onclick='() => _status = "Rejected"'>Rejected</button>
+    <button class="@(_status == null ? "active" : "")" @onclick="() => _status = null">All</button>
+</div>
+
+@if (_loading)
+{
+    <p class="muted">Loading…</p>
+}
+else if (!Filtered.Any())
+{
+    <div class="empty">No institutions in this view.</div>
+}
+else
+{
+    <div class="tablewrap">
+        <table>
+            <thead>
+                <tr><th>Name</th><th>Type</th><th>Prefix</th><th>Contact</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var i in Filtered)
+                {
+                    <tr>
+                        <td>@i.Name</td>
+                        <td>@i.Type</td>
+                        <td>@i.Prefix</td>
+                        <td>@i.ContactPerson<br /><span class="muted small">@i.ContactEmail</span></td>
+                        <td><span class="badge @i.Status.ToLowerInvariant()">@i.Status</span></td>
+                        <td class="row-actions">
+                            @if (i.Status == "Pending")
+                            {
+                                <button class="btn btn-sm" @onclick="() => Approve(i)">Approve</button>
+                                <button class="btn btn-sm btn-danger" @onclick="() => Reject(i)">Reject</button>
+                            }
+                            else if (i.Status == "Approved")
+                            {
+                                <button class="btn btn-sm btn-ghost" @onclick="() => Suspend(i)">Suspend</button>
+                            }
+                            else if (i.Status == "Suspended")
+                            {
+                                <button class="btn btn-sm" @onclick="() => Reactivate(i)">Reactivate</button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@if (_cred is not null)
+{
+    <div class="modal-backdrop">
+        <div class="modal">
+            <h1>Institution approved</h1>
+            <p class="muted small" style="margin:6px 0 10px">Share these with @_cred.InstitutionName. The password is shown only once.</p>
+            <label>Admin ID</label>
+            <div class="cred">@_cred.AdminIdNumber</div>
+            <label>Temporary password</label>
+            <div class="cred">@_cred.TemporaryPassword</div>
+            <button class="btn block" style="margin-top:18px" @onclick="() => _cred = null">Done</button>
+        </div>
+    </div>
+}
+
+@code {
+    private List<InstitutionDto> _all = new();
+    private string? _status = "Pending";
+    private bool _loading = true;
+    private ApproveInstitutionResponse? _cred;
+
+    private IEnumerable<InstitutionDto> Filtered => _status is null ? _all : _all.Where(i => i.Status == _status);
+    private string Cls(string s) => _status == s ? "active" : "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Auth.IsPlatformAdmin) { Nav.NavigateTo("/login"); return; }
+        await Load();
+    }
+
+    private async Task Load()
+    {
+        _loading = true;
+        _all = await Api.GetInstitutionsAsync(null);
+        _loading = false;
+    }
+
+    private async Task Approve(InstitutionDto i)
+    {
+        var r = await Api.ApproveInstitutionAsync(i.Id);
+        if (r is not null) { _cred = r; await Load(); }
+    }
+
+    private async Task Reject(InstitutionDto i) { await Api.RejectInstitutionAsync(i.Id, "Rejected by platform admin."); await Load(); }
+    private async Task Suspend(InstitutionDto i) { await Api.SuspendInstitutionAsync(i.Id); await Load(); }
+    private async Task Reactivate(InstitutionDto i) { await Api.ReactivateInstitutionAsync(i.Id); await Load(); }
+}
