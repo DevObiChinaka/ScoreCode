@@ -57,6 +57,8 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IExamService, ExamService>();
 builder.Services.AddScoped<ILecturerExamService, LecturerExamService>();
+builder.Services.AddScoped<IInstitutionService, InstitutionService>();
+builder.Services.AddSingleton<IEmailService, LoggingEmailService>();
 builder.Services.AddHttpClient<IAiGradingService, GeminiGradingService>();
 builder.Services.AddSingleton<ExamAutoPublishService>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<ExamAutoPublishService>());

@@ -9,6 +9,11 @@ public static class Constants
         public const string InstitutionAdmin = "InstitutionAdmin"; // admin of one institution
         public const string Lecturer = "Lecturer";
         public const string Student = "Student";
+
+        // For [Authorize(Roles = ...)] — either platform role may manage institutions.
+        public const string PlatformOrAdmin = PlatformAdmin + "," + Admin;
+        // Either platform-level admin or an institution admin (tenant-scoped management).
+        public const string AnyAdmin = PlatformAdmin + "," + Admin + "," + InstitutionAdmin;
     }
 
     /// <summary>Lifecycle states stored in <c>Institution.Status</c>.</summary>
