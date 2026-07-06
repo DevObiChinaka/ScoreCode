@@ -78,6 +78,22 @@ public class UsersController : ControllerBase
         }
     }
 
+    // PATCH /api/v1/users/{id}/activate  — reactivate a deactivated user
+    [HttpPatch("{id:guid}/activate")]
+    public async Task<IActionResult> Activate(Guid id)
+    {
+        try
+        {
+            await _users.ReactivateUserAsync(id);
+            return Ok(ApiResponse<object>.Ok(new { }));
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound(ApiResponse<object>.Fail(
+                Constants.ErrorCodes.UserNotFound, "User not found."));
+        }
+    }
+
     // PATCH /api/v1/users/{id}/profile  — update student immutable fields (admin only)
     [HttpPatch("{id:guid}/profile")]
     public async Task<IActionResult> UpdateProfile(Guid id, [FromBody] UpdateStudentProfileRequest request)

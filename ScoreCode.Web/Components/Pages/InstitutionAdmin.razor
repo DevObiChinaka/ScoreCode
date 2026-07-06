@@ -8,6 +8,11 @@
     <button class="btn btn-sm" @onclick="() => _showForm = !_showForm">@(_showForm ? "Close" : "+ New lecturer")</button>
 </div>
 
+<div class="stats">
+    <div class="stat"><span class="n teal">@_lecturers.Count</span><span class="l">Lecturers</span></div>
+    <div class="stat"><span class="n">@_students.Count</span><span class="l">Students</span></div>
+</div>
+
 @if (_showForm)
 {
     <div class="card" style="margin-bottom:20px;max-width:none">
@@ -39,7 +44,7 @@ else
 {
     <table>
         <thead>
-            <tr><th>Name</th><th>Staff ID</th><th>Department</th><th>Status</th></tr>
+            <tr><th>Name</th><th>Staff ID</th><th>Department</th><th>Status</th><th></th></tr>
         </thead>
         <tbody>
             @foreach (var l in _lecturers)
@@ -49,6 +54,16 @@ else
                     <td>@l.IdNumber</td>
                     <td>@l.Department</td>
                     <td>@(l.IsActive ? "Active" : "Inactive")</td>
+                    <td class="row-actions">
+                        @if (l.IsActive)
+                        {
+                            <button class="btn btn-sm btn-danger" @onclick="() => SetActive(l, false)">Deactivate</button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-sm" @onclick="() => SetActive(l, true)">Activate</button>
+                        }
+                    </td>
                 </tr>
             }
         </tbody>
@@ -64,7 +79,7 @@ else if (!_loading)
 {
     <table>
         <thead>
-            <tr><th>Matric Number</th><th>Programme</th><th>Level</th><th>Status</th></tr>
+            <tr><th>Matric Number</th><th>Programme</th><th>Level</th><th>Status</th><th></th></tr>
         </thead>
         <tbody>
             @foreach (var s in _students)
@@ -74,6 +89,16 @@ else if (!_loading)
                     <td>@s.ProgrammeOfStudy</td>
                     <td>@s.Level</td>
                     <td>@(s.IsActive ? "Active" : "Inactive")</td>
+                    <td class="row-actions">
+                        @if (s.IsActive)
+                        {
+                            <button class="btn btn-sm btn-danger" @onclick="() => SetActive(s, false)">Deactivate</button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-sm" @onclick="() => SetActive(s, true)">Activate</button>
+                        }
+                    </td>
                 </tr>
             }
         </tbody>
@@ -102,6 +127,12 @@ else if (!_loading)
         _lecturers = await Api.GetUsersAsync("Lecturer");
         _students = await Api.GetUsersAsync("Student");
         _loading = false;
+    }
+
+    private async Task SetActive(UserDto u, bool active)
+    {
+        await Api.SetUserActiveAsync(u.Id, active);
+        await Load();
     }
 
     private async Task Create()

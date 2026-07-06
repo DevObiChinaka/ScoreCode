@@ -67,6 +67,15 @@ public class UserService : IUserService
         await _db.SaveChangesAsync();
     }
 
+    public async Task ReactivateUserAsync(Guid id)
+    {
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id)
+            ?? throw new KeyNotFoundException(Constants.ErrorCodes.UserNotFound);
+
+        user.IsActive = true;
+        await _db.SaveChangesAsync();
+    }
+
     public async Task UpdateStudentProfileAsync(Guid id, UpdateStudentProfileRequest request)
     {
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id)

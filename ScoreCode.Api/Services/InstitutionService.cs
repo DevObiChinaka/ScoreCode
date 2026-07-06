@@ -113,6 +113,24 @@ public class InstitutionService : IInstitutionService
         return true;
     }
 
+    public async Task<bool> SuspendAsync(Guid institutionId)
+    {
+        var inst = await _db.Institutions.FirstOrDefaultAsync(i => i.Id == institutionId);
+        if (inst is null || inst.Status != Constants.InstitutionStatuses.Approved) return false;
+        inst.Status = Constants.InstitutionStatuses.Suspended;
+        await _db.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> ReactivateAsync(Guid institutionId)
+    {
+        var inst = await _db.Institutions.FirstOrDefaultAsync(i => i.Id == institutionId);
+        if (inst is null || inst.Status != Constants.InstitutionStatuses.Suspended) return false;
+        inst.Status = Constants.InstitutionStatuses.Approved;
+        await _db.SaveChangesAsync();
+        return true;
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────
     private async Task<string> GenerateAdminIdNumberAsync(Institution inst)
     {

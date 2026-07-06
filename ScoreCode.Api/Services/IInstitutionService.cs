@@ -22,4 +22,10 @@ public interface IInstitutionService
 
     /// <summary>Platform admin: reject a pending institution with a reason.</summary>
     Task<bool> RejectAsync(Guid institutionId, string reason);
+
+    /// <summary>Platform admin: suspend an approved institution (removes it from the register dropdown).</summary>
+    Task<bool> SuspendAsync(Guid institutionId);
+
+    /// <summary>Platform admin: reactivate a suspended institution.</summary>
+    Task<bool> ReactivateAsync(Guid institutionId);
 }

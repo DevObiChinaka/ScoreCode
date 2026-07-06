@@ -69,4 +69,28 @@ public class InstitutionsController : ControllerBase
             : BadRequest(ApiResponse<object>.Fail("not_pending",
                 "Institution not found or not awaiting approval."));
     }
+
+    // POST /api/v1/institutions/{id}/suspend — platform admin
+    [HttpPost("{id:guid}/suspend")]
+    [Authorize(Roles = Constants.Roles.PlatformOrAdmin)]
+    public async Task<IActionResult> Suspend(Guid id)
+    {
+        var ok = await _svc.SuspendAsync(id);
+        return ok
+            ? Ok(ApiResponse<object>.Ok(new { }))
+            : BadRequest(ApiResponse<object>.Fail("invalid_state",
+                "Institution not found or not currently approved."));
+    }
+
+    // POST /api/v1/institutions/{id}/reactivate — platform admin
+    [HttpPost("{id:guid}/reactivate")]
+    [Authorize(Roles = Constants.Roles.PlatformOrAdmin)]
+    public async Task<IActionResult> Reactivate(Guid id)
+    {
+        var ok = await _svc.ReactivateAsync(id);
+        return ok
+            ? Ok(ApiResponse<object>.Ok(new { }))
+            : BadRequest(ApiResponse<object>.Fail("invalid_state",
+                "Institution not found or not currently suspended."));
+    }
 }

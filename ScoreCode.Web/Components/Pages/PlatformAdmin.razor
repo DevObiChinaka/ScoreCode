@@ -3,20 +3,30 @@
 @inject WebAuthState Auth
 @inject NavigationManager Nav
 
-<div class="pagehead"><h1>Institution approvals</h1></div>
+<div class="pagehead"><h1>Institutions</h1></div>
+
+<div class="stats">
+    <div class="stat"><span class="n teal">@_all.Count</span><span class="l">Total</span></div>
+    <div class="stat"><span class="n warn">@Count("Pending")</span><span class="l">Pending</span></div>
+    <div class="stat"><span class="n ok">@Count("Approved")</span><span class="l">Approved</span></div>
+    <div class="stat"><span class="n">@Count("Suspended")</span><span class="l">Suspended</span></div>
+    <div class="stat"><span class="n err">@Count("Rejected")</span><span class="l">Rejected</span></div>
+</div>
 
 <div class="tabs">
-    <button class="@(_status == "Pending" ? "active" : "")" @onclick='() => SetStatus("Pending")'>Pending</button>
-    <button class="@(_status == null ? "active" : "")" @onclick="() => SetStatus(null)">All</button>
+    <button class="@Cls("Pending")" @onclick='() => _status = "Pending"'>Pending</button>
+    <button class="@Cls("Approved")" @onclick='() => _status = "Approved"'>Approved</button>
+    <button class="@Cls("Suspended")" @onclick='() => _status = "Suspended"'>Suspended</button>
+    <button class="@(_status == null ? "active" : "")" @onclick="() => _status = null">All</button>
 </div>
 
 @if (_loading)
 {
     <p class="muted">Loading…</p>
 }
-else if (_items.Count == 0)
+else if (!Filtered.Any())
 {
-    <p class="muted">No institutions here.</p>
+    <p class="muted">Nothing here.</p>
 }
 else
 {
@@ -25,7 +35,7 @@ else
             <tr><th>Name</th><th>Type</th><th>Prefix</th><th>Contact</th><th>Status</th><th></th></tr>
         </thead>
         <tbody>
-            @foreach (var i in _items)
+            @foreach (var i in Filtered)
             {
                 <tr>
                     <td>@i.Name</td>
@@ -38,6 +48,14 @@ else
                         {
                             <button class="btn btn-sm" @onclick="() => Approve(i)">Approve</button>
                             <button class="btn btn-sm btn-danger" @onclick="() => Reject(i)">Reject</button>
+                        }
+                        else if (i.Status == "Approved")
+                        {
+                            <button class="btn btn-sm btn-ghost" @onclick="() => Suspend(i)">Suspend</button>
+                        }
+                        else if (i.Status == "Suspended")
+                        {
+                            <button class="btn btn-sm" @onclick="() => Reactivate(i)">Reactivate</button>
                         }
                     </td>
                 </tr>
@@ -62,10 +80,14 @@ else
 }
 
 @code {
-    private List<InstitutionDto> _items = new();
+    private List<InstitutionDto> _all = new();
     private string? _status = "Pending";
     private bool _loading = true;
     private ApproveInstitutionResponse? _cred;
+
+    private IEnumerable<InstitutionDto> Filtered => _status is null ? _all : _all.Where(i => i.Status == _status);
+    private int Count(string s) => _all.Count(i => i.Status == s);
+    private string Cls(string s) => _status == s ? "active" : "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -73,12 +95,10 @@ else
         await Load();
     }
 
-    private async Task SetStatus(string? s) { _status = s; await Load(); }
-
     private async Task Load()
     {
         _loading = true;
-        _items = await Api.GetInstitutionsAsync(_status);
+        _all = await Api.GetInstitutionsAsync(null);
         _loading = false;
     }
 
@@ -88,9 +108,7 @@ else
         if (r is not null) { _cred = r; await Load(); }
     }
 
-    private async Task Reject(InstitutionDto i)
-    {
-        await Api.RejectInstitutionAsync(i.Id, "Rejected by platform admin.");
-        await Load();
-    }
+    private async Task Reject(InstitutionDto i) { await Api.RejectInstitutionAsync(i.Id, "Rejected by platform admin."); await Load(); }
+    private async Task Suspend(InstitutionDto i) { await Api.SuspendInstitutionAsync(i.Id); await Load(); }
+    private async Task Reactivate(InstitutionDto i) { await Api.ReactivateInstitutionAsync(i.Id); await Load(); }
 }

@@ -65,6 +65,29 @@ public class ApiClient
         return resp.IsSuccessStatusCode;
     }
 
+    public async Task<bool> SuspendInstitutionAsync(Guid id)
+    {
+        Authorize();
+        var resp = await _http.PostAsync($"/api/v1/institutions/{id}/suspend", null);
+        return resp.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> ReactivateInstitutionAsync(Guid id)
+    {
+        Authorize();
+        var resp = await _http.PostAsync($"/api/v1/institutions/{id}/reactivate", null);
+        return resp.IsSuccessStatusCode;
+    }
+
+    /// <summary>Activate or deactivate a user (institution admin, tenant-scoped).</summary>
+    public async Task<bool> SetUserActiveAsync(Guid id, bool active)
+    {
+        Authorize();
+        var verb = active ? "activate" : "deactivate";
+        var resp = await _http.SendAsync(new HttpRequestMessage(HttpMethod.Patch, $"/api/v1/users/{id}/{verb}"));
+        return resp.IsSuccessStatusCode;
+    }
+
     // ── Users (institution admin) ─────────────────────────────────────────────
     public async Task<List<UserDto>> GetUsersAsync(string? role)
     {
