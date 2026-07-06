@@ -8,22 +8,15 @@ namespace ScoreCode.Client;
 
 public partial class App : Application
 {
-    // Held for the lifetime of the application; Dispose() kills the API process.
-    private readonly ApiHostService _apiHost = new();
-
     private async void Application_Startup(object sender, StartupEventArgs e)
     {
         // ── 0. Initialize theme system ──────────────────────────────────
         ThemeManager.Initialize();
 
-        // ── 1. Start the API in the background ──────────────────────────
-        _apiHost.EnsureStarted();
-
-        // Give the API a moment to build and start listening.
-        // First run takes ~4s (build+migrate+seed), subsequent runs ~2s.
-        await Task.Delay(5000);
-
-        // ── 2. Attempt session restore ──────────────────────────────────
+        // ── 1. Connect to the central API ───────────────────────────────
+        // Thin client: the API and database are hosted separately (see ServerUrl
+        // in appsettings.json). The desktop app no longer starts its own API —
+        // that would put shared-DB credentials on every student machine.
         var api  = new ApiService();
         var auth = new AuthClientService(api);
 
@@ -109,11 +102,5 @@ public partial class App : Application
             MessageBox.Show($"Could not recover pending submission: {ex.Message}",
                 "Recovery Error", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
-    }
-
-    protected override void OnExit(ExitEventArgs e)
-    {
-        _apiHost.Dispose();   // kills the API child process
-        base.OnExit(e);
     }
 }
