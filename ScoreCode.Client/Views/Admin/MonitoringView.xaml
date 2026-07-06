@@ -1,0 +1,105 @@
+<UserControl x:Class="ScoreCode.Client.Views.Admin.MonitoringView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{DynamicResource ThBrBgBase}">
+
+    <UserControl.Resources>
+        <Style x:Key="RefreshBtn" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource ThBrBgSurface}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThBrTextPrimary}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontFamily" Value="/Assets/Fonts/#Geist"/>
+            <Setter Property="Padding" Value="16,9"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="32,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- ══════════ HEADER ══════════ -->
+        <DockPanel Grid.Row="0" Margin="0,0,0,20">
+            <StackPanel DockPanel.Dock="Left">
+                <TextBlock Text="Monitoring"
+                           FontSize="22" FontWeight="Bold"
+                           Foreground="{DynamicResource ThBrTextPrimary}"
+                           FontFamily="/Assets/Fonts/#Geist"/>
+                <TextBlock Text="Live exam sessions and anti-cheat activity"
+                           FontSize="13" Foreground="{DynamicResource ThBrTextSecondary}"
+                           FontFamily="/Assets/Fonts/#Geist" Margin="0,4,0,0"/>
+            </StackPanel>
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
+                <TextBlock x:Name="TxtStatus" VerticalAlignment="Center" Margin="0,0,12,0"
+                           FontSize="12" Foreground="{DynamicResource ThBrTextMuted}"
+                           FontFamily="/Assets/Fonts/#Geist"/>
+                <Button x:Name="BtnRefresh" Style="{StaticResource RefreshBtn}" Content="↻  Refresh"/>
+            </StackPanel>
+        </DockPanel>
+
+        <!-- ══════════ STAT CARDS ══════════ -->
+        <StackPanel x:Name="StatsRow" Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,20"/>
+
+        <!-- ══════════ TWO PANELS ══════════ -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="1.2*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Active sessions -->
+            <Border Grid.Column="0" Background="{DynamicResource ThBrBgPanel}" CornerRadius="8"
+                    BorderBrush="{DynamicResource ThBrBorder}" BorderThickness="1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Border Grid.Row="0" Background="{DynamicResource ThBrBgSurface}"
+                            CornerRadius="8,8,0,0" Padding="16,12">
+                        <TextBlock Text="ACTIVE SESSIONS" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource ThBrTextMuted}" FontFamily="/Assets/Fonts/#Geist"/>
+                    </Border>
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <StackPanel x:Name="SessionRows" Margin="0,0,0,8"/>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+
+            <!-- Recent violations -->
+            <Border Grid.Column="2" Background="{DynamicResource ThBrBgPanel}" CornerRadius="8"
+                    BorderBrush="{DynamicResource ThBrBorder}" BorderThickness="1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Border Grid.Row="0" Background="{DynamicResource ThBrBgSurface}"
+                            CornerRadius="8,8,0,0" Padding="16,12">
+                        <TextBlock Text="RECENT ANTI-CHEAT EVENTS" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource ThBrTextMuted}" FontFamily="/Assets/Fonts/#Geist"/>
+                    </Border>
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <StackPanel x:Name="ViolationRows" Margin="0,0,0,8"/>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

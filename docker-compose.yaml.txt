@@ -1,0 +1,23 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: scorecode_db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: scorecode
+      POSTGRES_USER: sc
+      POSTGRES_PASSWORD: sc_password
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
+```
+
+---
+
+Now start the database. Open a terminal in that solution root folder and run:
+```
+docker compose up -d

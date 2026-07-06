@@ -1,0 +1,87 @@
+<UserControl x:Class="ScoreCode.Client.Views.Student.ExamListView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{DynamicResource ThBrBgBase}"
+             FontFamily="/Assets/Fonts/#Geist">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Assets/Icons.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <SolidColorBrush x:Key="BorderLine"    Color="{DynamicResource ThBorder}"/>
+            <SolidColorBrush x:Key="Green"         Color="{DynamicResource ThSuccess}"/>
+            <SolidColorBrush x:Key="Amber"         Color="{DynamicResource ThWarning}"/>
+            <SolidColorBrush x:Key="GreenDark"     Color="#276749"/>
+            <SolidColorBrush x:Key="AmberDark"     Color="#744210"/>
+
+            <!-- Card button style -->
+            <Style x:Key="CardButton" TargetType="Button">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                    CornerRadius="8" BorderThickness="0" Padding="0">
+                                <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ThBrBgHover}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid Margin="32,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0" Text="My Exams" FontSize="22" FontWeight="SemiBold"
+                   Foreground="{DynamicResource ThBrTextPrimary}" Margin="0,0,0,4"/>
+        <TextBlock Grid.Row="1" x:Name="TxtSubtitle" Text="Your assigned exams"
+                   FontSize="13" Foreground="{DynamicResource ThBrTextSecondary}" Margin="0,0,0,20"/>
+
+        <!-- Loading indicator -->
+        <TextBlock Grid.Row="2" x:Name="TxtLoading" Text="Loading exams..."
+                   FontSize="14" Foreground="{DynamicResource ThBrTextMuted}"
+                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+        <!-- Empty state -->
+        <StackPanel Grid.Row="2" x:Name="EmptyState" HorizontalAlignment="Center"
+                    VerticalAlignment="Center" Visibility="Collapsed">
+            <Path Data="{StaticResource Icon.FileText}" Stroke="{DynamicResource ThBrTextMuted}"
+                  StrokeThickness="1.5" Width="48" Height="48" Stretch="Uniform"
+                  HorizontalAlignment="Center" Margin="0,0,0,12"/>
+            <TextBlock Text="No exams assigned yet" FontSize="16" FontWeight="Medium"
+                       Foreground="{DynamicResource ThBrTextSecondary}" HorizontalAlignment="Center"/>
+            <TextBlock Text="Check back when your lecturer publishes an exam"
+                       FontSize="13" Foreground="{DynamicResource ThBrTextMuted}" HorizontalAlignment="Center"
+                       Margin="0,4,0,0"/>
+        </StackPanel>
+
+        <!-- Card grid -->
+        <ScrollViewer Grid.Row="2" x:Name="CardScroller" VerticalScrollBarVisibility="Auto"
+                      Visibility="Collapsed">
+            <ItemsControl x:Name="ExamCards">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

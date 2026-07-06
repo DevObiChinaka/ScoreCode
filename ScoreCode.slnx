@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="ScoreCode.Api/ScoreCode.Api.csproj" />
+  <Project Path="ScoreCode.Client/ScoreCode.Client.csproj" />
+  <Project Path="ScoreCode.Database/ScoreCode.Database.csproj" />
+  <Project Path="ScoreCode.Shared/ScoreCode.Shared.csproj" />
+</Solution>

@@ -1,0 +1,495 @@
+SCORECODE
+Project Specification & Architecture Document
+Version 4.0 — Agent Ready  |  March 2026  |  Desktop Exam Management System
+
+Scope
+ScoreCode is a secure desktop exam management system for CS students. Lecturers create and publish exams. Students take exams in a controlled environment. Submissions are graded via AI-assisted or manual review. The system is built on WPF (.NET 8), ASP.NET Core, PostgreSQL, and Monaco Editor — with a one-week intensive build target for v1.
+This document is the definitive reference for architecture, feature scope, data models, user flows, API contracts, UI layouts, and build phases. It is written to be handed directly to an AI coding agent. Every decision is already made — the agent should build, not design.
+
+
+SECTION 0 — READ THIS FIRST
+Agent Quick-Start
+To the AI agent: This document contains everything you need to build ScoreCode. All architecture decisions are final. Do not redesign, suggest alternatives, or ask clarifying questions about technology choices. Read this section first, then follow the build phases in Section 10 in strict order.
+0.1  What You Are Building
+ScoreCode is a Windows desktop application (WPF + C# + .NET 8) with a server backend (ASP.NET Core + PostgreSQL). It is an exam management system for CS students. Lecturers create exams, students take them and write code, submissions are graded by AI. The installer bundles all language runtimes — no dependencies on the exam machine.
+0.2  Visual Studio Solution Structure
+Create one Visual Studio Solution named ScoreCode.sln containing exactly these five projects:
+Project NameTypePurposeScoreCode.ClientWPF App (.NET 8)The desktop application. All three role UIs live here (Student, Lecturer, Admin). Entry point.ScoreCode.ApiASP.NET Core Web API (.NET 8)The backend server. All REST endpoints and SignalR hub.ScoreCode.SharedClass Library (.NET 8)DTOs, enums, and constants shared between Client and Api. No business logic.ScoreCode.Api.TestsxUnit Test Project (.NET 8)Server-side unit and integration tests. Build last.ScoreCode.Client.TestsxUnit Test Project (.NET 8)Client-side unit tests. Build last.Project references: ScoreCode.Client references ScoreCode.Shared. ScoreCode.Api references ScoreCode.Shared. Test projects reference their respective main project. ScoreCode.Shared has no project references.
+0.3  Key Namespaces
+NamespaceLives InContainsScoreCode.Shared.DTOsScoreCode.SharedAll request/response objects used by the API. Named with Request/Response suffix.ScoreCode.Shared.EnumsScoreCode.SharedRole, ExamStatus, SubmissionStatus, GradingMode, EventType enums.ScoreCode.Api.ControllersScoreCode.ApiOne controller per domain: AuthController, ExamsController, QuestionsController, SessionsController, SubmissionsController, GradesController, UsersController.ScoreCode.Api.HubsScoreCode.ApiExamHub — the SignalR hub.ScoreCode.Api.ServicesScoreCode.ApiBusiness logic services: ExamService, GradingService, AiGradingService, SubmissionService.ScoreCode.Client.ViewModelsScoreCode.ClientOne ViewModel per View. Follows MVVM. Inherits from BaseViewModel.ScoreCode.Client.ViewsScoreCode.ClientXAML Views. One per screen.ScoreCode.Client.ServicesScoreCode.ClientApiService (HTTP calls), SignalRService, LocalStorageService (SQLite), ExecutionService (runs code), AuthService.ScoreCode.Client.ConstantsScoreCode.ClientRuntimePaths (bundled runtime exe paths), AppPaths (local SQLite location).0.4  NuGet Packages — Install These First
+ScoreCode.Api
+• Microsoft.AspNetCore.SignalR.Core
+• Microsoft.AspNetCore.Authentication.JwtBearer
+• Microsoft.AspNetCore.Identity.EntityFrameworkCore
+• Npgsql.EntityFrameworkCore.PostgreSQL
+• Microsoft.EntityFrameworkCore.Tools
+• Anthropic.SDK  (or use HttpClient directly to call the Anthropic API)
+• BCrypt.Net-Next  (password hashing)
+ScoreCode.Client
+• MahApps.Metro
+• MaterialDesignThemes
+• MaterialDesignThemes.MahApps
+• Microsoft.Data.Sqlite
+• Microsoft.AspNetCore.SignalR.Client
+• Microsoft.Web.WebView2
+• CommunityToolkit.Mvvm  (BaseViewModel, ObservableProperty, RelayCommand)
+• Microsoft.Extensions.Http  (typed HttpClient)
+• System.IdentityModel.Tokens.Jwt
+ScoreCode.Shared
+• No NuGet packages. Pure C# DTOs and enums only.
+0.5  Where to Start — Build Order
+Critical rule: Always build in this exact order. Never jump ahead. Each phase depends on the previous being working and committed.
+1. ScoreCode.Shared — create all DTOs and enums first. Both other projects depend on this.
+2. ScoreCode.Api — scaffold, then database, then auth, then exam endpoints. Get the server running before touching the client.
+3. ScoreCode.Client — login screen first, then connect to the live API, then build each screen in phase order.
+4. Test each phase end-to-end (Postman or Swagger for API, manual run for client) before starting the next phase.
+0.6  Environment & Config
+Server (ScoreCode.Api/appsettings.Development.json)
+{   "ConnectionStrings": {     "Default": "Host=localhost;Port=5432;Database=scorecode_dev;Username=sc;Password=devpassword"   },   "Jwt": {     "Key": "scorecode-dev-secret-key-min-32-chars!!",     "Issuer": "scorecode-api",     "Audience": "scorecode-client",     "AccessTokenExpiryMinutes": 15,     "RefreshTokenExpiryDays": 7   },   "Anthropic": {     "ApiKey": "sk-ant-YOUR-KEY-HERE",     "Model": "claude-sonnet-4-20250514"   } }
+Client (ScoreCode.Client/appsettings.json)
+{   "ServerUrl": "http://localhost:5000",   "ApiVersion": "v1",   "SignalRHub": "/hubs/exam" }
+0.7  Standard Error Envelope
+Every API error response uses this shape. The client checks success first, then reads error if false. Never return plain 500 text.
+// Success { "success": true, "data": { ... } }  // Failure { "success": false, "error": "exam_not_found", "message": "No exam with that ID exists." }  // Validation failure { "success": false, "error": "validation_failed", "fields": { "title": "Title is required." } }
+0.8  Database — Run Once to Bootstrap
+# In Package Manager Console (ScoreCode.Api as startup project) Add-Migration InitialCreate Update-Database  # Seed one Admin user manually or via a DbSeeder class in Program.cs # Admin: admin@scorecode.edu / Admin123!
+
+
+SECTION 1
+Roles & Permissions
+Three roles exist. Each has a distinct client surface and permission boundary.
+
+RoleCore PermissionsCannot DoAdminCreate/deactivate user accounts; assign lecturers to courses; view system health; export audit logs; manage server configCreate or modify exams; access student code directlyLecturerCreate exams; write questions and marking guides; select eligible students; publish/unpublish exams; view all submissions; run AI or manual grading; release results; extend time for studentsEdit student profiles (Admin only); access another lecturer's examsStudentView published exams assigned to them; take exams; write and run code; submit before timer endsView other students' submissions; access the system outside an active exam session; modify their own profile (Admin only)
+Key Rules
+• Only a Lecturer can create, modify, publish, or unpublish an exam.
+• An exam must be published before any student can see or access it.
+• Students can only see exams they are explicitly assigned to.
+• Student programme information is immutable. Level can be updated annually by Admin.
+• One active session per student at any time (enforced server-side).
+• Admins cannot take exams or grade submissions.
+
+
+SECTION 2
+Lecturer Workflows
+Why this comes first: Students cannot take an exam that does not exist. The entire student workflow depends on lecturers completing these steps first. Every feature in this section is a prerequisite for Section 3.
+2.1  Creating an Exam
+The exam builder is the core of the lecturer interface. It is a multi-step form that produces an exam record on the server.
+Step 1 — Exam Metadata
+• Exam title (e.g. 'CSC 301 Mid-Semester Practical')
+• Course code
+• Scheduled date and start time
+• Duration in minutes (e.g. 90)
+• Programming language(s) allowed — multiselect from: Python, Java, C++, JavaScript, HTML/CSS
+• IntelliSense enabled/disabled toggle
+• Grading mode: AI-assisted | Manual | Both (lecturer decides per exam)
+Step 2 — Assign Students
+• Lecturer searches by name, matric number, department, or level.
+• Select individual students or an entire class group.
+• Assigned students list is saved and editable until the exam is published.
+• Only assigned students will see this exam in their client.
+Step 3 — Add Questions
+Each question is a self-contained record with these fields:
+• Question number (auto-incremented, reorderable)
+• Question text (rich text — supports code blocks, images)
+• Total marks for this question
+• Expected language (can differ per question if multi-language exam)
+• Marking guide — free text field the lecturer fills out, e.g:
+"Expect a for-loop or while-loop iterating n times. Award 2 marks for correct loop structure. Award 2 marks if variable names are meaningful. Deduct 1 mark for each syntax error. Award 1 mark for correct output format. Award 1 bonus mark if student handles negative input edge case."
+• This marking guide is sent verbatim to the AI grader and shown to the manual grader.
+• Multiple questions per exam. No hard limit — reasonable limit is 10 for a 90-minute exam.
+Step 4 — Review & Publish
+• Lecturer sees a preview of the full exam as students will see it.
+• Exam status: Draft | Published | Active | Closed.
+• Draft — only visible to the lecturer. Editable.
+• Published — visible to assigned students. No longer editable (except adding time extension).
+• Active — exam is currently running. Timer is live.
+• Closed — no new submissions accepted. Grading phase.
+Important: Publishing is irreversible unless the exam has zero submissions. Once a student has started, the exam cannot be edited or unpublished — only extended or closed.
+
+2.2  Starting an Exam
+Publishing an exam does not start it. The exam window opens automatically at the scheduled start time, or the lecturer can manually trigger it early.
+5. Exam reaches scheduled start time (or lecturer clicks 'Start Now').
+6. Server broadcasts exam-start signal to all assigned students' clients via SignalR.
+7. Student client receives signal, locks into exam mode (fullscreen, anti-cheat active).
+8. Server delivers encrypted exam payload to each student client.
+9. Student timers begin. They are server-authoritative — not client clocks.
+
+2.3  Monitoring During an Exam
+The lecturer's live dashboard shows, in real time:
+• Each student: status (waiting, active, submitted, timed-out, flagged).
+• Cheating events: focus loss, process switch attempt, window minimize attempt — each timestamped.
+• Submission count vs total students.
+• Timer countdown (same server clock as students).
+Actions available during the exam:
+• Add time for a specific student (e.g. +10 minutes for a genuine technical issue).
+• Force-submit a student's current autosave (emergency).
+• Flag a student for review (adds to audit log).
+• End the exam early (closes all active sessions, triggers auto-submit for anyone still in progress).
+
+2.4  Grading Submissions
+After the exam closes, the lecturer accesses the grading dashboard.
+AI-Assisted Grading Mode
+For each submission, the system sends to the configured AI model (Claude or GPT-4o):
+• The exam question text
+• The marking guide written by the lecturer
+• The student's submitted code
+• The total marks available
+The AI returns a structured JSON response:
+{ "score": 14, "max_score": 20, "feedback": ["Loop structure is correct (+4)", "Variable names are not descriptive (-2)", "Output format matches expected (+3)", "Syntax error on line 7 (-1)"], "criteria_results": [{"criterion": "Loop structure", "awarded": 4, "max": 4}, ...] }
+Lecturer sees: the student's code, the AI score, and the AI's line-by-line reasoning. Lecturer can:
+• Accept — AI score stands as final grade.
+• Override — change any criterion score with a written reason (logged).
+• Flag for manual — escalate to full manual review.
+Manual Grading Mode
+Lecturer reads the student's code directly alongside the marking guide. The same score breakdown form is shown — same fields, same criteria — but filled by the lecturer instead of AI. Useful for complex questions, dispute resolution, or when the lecturer prefers not to use AI.
+Result Release
+• Lecturer chooses when to release results — not automatic.
+• Per-exam toggle: release to all students simultaneously.
+• Students see: total score, per-question breakdown, feedback text.
+• Students do not see: the marking guide, AI prompts, or other students' scores.
+
+
+SECTION 3
+Student Workflows
+Prerequisite: None of the following is possible until a Lecturer has created an exam, assigned the student, and published it. The student dashboard will be empty until that has happened.
+3.1  Pre-Exam (Waiting State)
+• Student logs into ScoreCode client. Sees their upcoming exams list.
+• Each exam shows: title, course, scheduled time, duration, status.
+• Exam status shown as: Upcoming | Starting Soon (15 min warning) | Active | Completed.
+• Client polls server every 60 seconds to check exam state. If SignalR connection is live, receives push notification instead.
+• Student cannot enter exam mode until the exam is in Active state.
+3.2  Exam Start
+10. Student clicks 'Enter Exam' when exam becomes active.
+11. Client receives full exam payload from server (questions, config, exam token, timer baseline).
+12. Anti-cheat mode activates: fullscreen, keyboard hooks, process monitoring.
+13. Monaco editor loads with the configured language and IntelliSense setting.
+14. Timer starts (synchronized with server clock).
+15. From this point, client operates autonomously — network not required for the exam itself.
+3.3  During the Exam
+• Questions are displayed in a tabbed or scrollable panel alongside the code editor.
+• Student writes code in the Monaco editor.
+• Run button executes code locally in a sandboxed process (Job Objects enforced — 5s CPU, 256MB RAM).
+• Output (stdout, stderr, exit code) shown in a panel below the editor.
+• Autosave runs every 5 seconds to local encrypted SQLite. No network required.
+• Timer always visible in status bar. Color: green ? amber (10 min) ? red (5 min).
+• Focus-loss events (window switch attempts, etc.) are logged and sent to server.
+3.4  Submission
+• Student clicks 'Submit Exam'. Two-stage confirmation modal appears.
+• Modal shows: question count, files included, time remaining. Student confirms.
+• Submission record is finalized locally: code + session nonce + student ID + timestamp ? SHA256 hash.
+• Submission is encrypted and queued for upload.
+• If online: uploads immediately. Server verifies hash and nonce. Returns confirmation ID.
+• If offline: queued in SQLite. Uploads automatically when network is restored.
+• After submission: editor becomes read-only. Student sees 'Submitted' state with confirmation ID.
+3.5  Exam End (Timer Expired)
+• 60-second countdown modal appears at 1 minute remaining.
+• At 0:00: auto-submit triggers with last autosaved state.
+• Anti-cheat mode deactivates. Client returns to normal state.
+3.6  Viewing Results
+• Results tab shows 'Pending release' until lecturer publishes grades.
+• On release: student sees total score, per-question breakdown, and feedback.
+
+
+SECTION 4
+Anti-Cheat System
+Design philosophy: No software-only anti-cheat is foolproof. The goal is deterrence, detection, and evidence — not absolute prevention. Design for auditability.
+4.1  Mechanisms
+MechanismImplementationNotesFullscreen lockWindowStyle=None, WindowState=Maximized, Topmost=True, ResizeMode=NoResizeBase layer. Not sufficient alone.Keyboard hooksSetWindowsHookEx(WH_KEYBOARD_LL) at system level — blocks Win, ALT+TAB, CTRL+ESC, Win+D, Win+L, Win+TabRequires admin rights on exam machine.Process monitoringOn exam start: terminate blocklisted apps (browsers, IDEs, etc). During exam: detect and log new process launches.Configurable blocklist. Flag, log, and notify lecturer.Copy/Paste disableMonaco editor API disables paste. Keyboard hook blocks Ctrl+C/V.Deterrence only. Not a hard security boundary.Focus-loss loggingLostFocus event + keyboard hook captures. Every event timestamped and sent to server via SignalR.This is the evidence trail for disputes.One active sessionServer enforces: if session token is already active for a student, new login is rejected.Prevents two-machine submissions.Network restriction (v2)Windows Firewall API: allow only exam server IP during exam. Block all other traffic.Phase 2 feature. Too complex for week 1.VM detection (v2)Check CPUID hypervisor bit, VMware/VirtualBox drivers, BIOS strings. Flag (not block).Phase 2 feature.4.2  Deployment Requirement
+For hook to work: The exam PC user account must have administrator rights, or ScoreCode must be launched as administrator. IT setup is required before exam day. Document this in the deployment guide.
+For maximum effectiveness, configure exam machines with Windows Assigned Access (single-app kiosk) for a dedicated exam user account. This is an OS-level configuration done once at deployment, not per-exam.
+
+
+SECTION 5
+Code Execution
+5.1  During Exam (Student Machine)
+When the student presses 'Run', code executes locally. This is safe — students can only harm their own machine.
+• Process is spawned via ProcessStartInfo with restricted working directory.
+• Windows Job Object applied: 5 second CPU time limit, 256 MB memory limit.
+• Process killed automatically if limits exceeded. Student sees 'Timed out' or 'Memory exceeded'.
+• Stdout and stderr captured and displayed below the editor within 500ms of completion.
+LanguageExecution CommandNotesPythonpython.exe <tempfile.py>Python 3.x must be installed on exam machine.Javajavac <File.java> && java <ClassName>JDK required on exam machine.C++g++ -o temp.exe <file.cpp> && temp.exeMinGW/GCC required on exam machine.JavaScriptnode.exe <file.js>Node.js required on exam machine.HTML/CSSLaunch in embedded WebView2 controlNo external dependency. Rendered in-app.Deployment note: All required runtimes (Python, JDK, Node.js, GCC) must be installed on exam machines before exam day. Include a pre-exam machine check tool in the admin panel.
+5.2  During Grading (Lecturer Machine / Server)
+Lecturers do not run code locally for grading. Code is sent to the AI grader as text, and the AI evaluates structure, syntax, logic, and adherence to the marking guide — without execution. This is by design: grading is based on code quality, not output.
+If a lecturer wants to test-run a specific submission manually, they can use a separate 'Run in Sandbox' button which sends the code to a server-side execution endpoint (Phase 2: Judge0 integration).
+
+
+SECTION 6
+AI Grading System
+Core insight: Grading is not based on whether the code runs or produces correct output. It is based on code quality: structure, syntax awareness, logic, variable naming, error count, and adherence to the marking guide. AI is well-suited to this.
+6.1  How It Works
+When a lecturer triggers AI grading for a submission, the server constructs and sends the following prompt to the configured AI model:
+System: You are a CS examiner grading a student's code submission. Be fair, consistent, and specific.  Question: [question_text]  Marking Guide: [lecturer_marking_guide]  Total Marks: [max_marks]  Student's Code: [submitted_code]  Return ONLY valid JSON in this format: { "score": <int>, "max_score": <int>, "feedback": [<string>], "criteria_results": [{"criterion": <str>, "awarded": <int>, "max": <int>, "comment": <str>}] }
+6.2  What the AI Evaluates
+• Correctness of overall approach and algorithm logic
+• Syntax — number and type of errors present
+• Code structure: use of appropriate constructs (loops, functions, classes as required)
+• Variable and function naming conventions
+• Adherence to specific criteria in the marking guide
+• Edge case handling if mentioned in the marking guide
+• Code readability and organization
+The AI does not execute the code. It reads and evaluates it as a human examiner would.
+6.3  AI Model Configuration
+ProviderModelNotesAnthropic (recommended)claude-sonnet-4-20250514Excellent at structured code analysis. Returns consistent JSON.OpenAI (alternative)gpt-4oStrong alternative. Same prompt format works.• API key stored in server environment config (never in client).
+• Grading calls happen server-side only. Client never contacts the AI API directly.
+• Each grading call is logged: model used, prompt sent (anonymised), response received, timestamp.
+6.4  Lecturer Override
+• Lecturer sees the AI's score and justification for every criterion.
+• Any criterion score can be overridden. A reason field is required for overrides.
+• Override is logged with: original AI score, new score, reason, lecturer ID, timestamp.
+• Final grade = combination of AI scores (accepted) + lecturer overrides.
+
+
+SECTION 7
+Data Architecture
+7.1  Server Database — PostgreSQL
+TableKey FieldsNotesusersid, role, name, email, password_hash, department, level, is_activeAll roles in one table. role = Admin | Lecturer | Student.examsid, lecturer_id, title, course_code, scheduled_at, duration_mins, languages[], intellisense_enabled, grading_mode, status, published_at, closed_atstatus = Draft|Published|Active|Closedexam_studentsexam_id, student_id, extra_time_mins, time_extended_byMany-to-many. Tracks per-student time extensions.questionsid, exam_id, order_index, text, marks, language, marking_guideOne exam has many questions.sessionsid, student_id, exam_id, device_fingerprint, nonce, started_at, ended_at, status, last_heartbeat_atOne session per student per exam.submissionsid, session_id, student_id, exam_id, question_id, code, submitted_at, finalized_at, hash, upload_statusOne per question per student.gradesid, submission_id, graded_by (AI|manual), score, max_score, feedback_json, ai_model, ai_prompt_hash, overridden_by, override_reason, graded_atFull audit trail.activity_logsid, session_id, event_type, detail, occurred_atFocus loss, process launch, etc.7.2  Client Local Cache — SQLite (Encrypted)
+TablePurposelocal_sessionStores exam token, nonce, device fingerprint, timer state, exam payload.autosavesRolling autosave records per question. Keeps last 10. Cleared on confirmed submission.pending_submissionsSubmissions awaiting upload. Queue. Cleared on server confirmation.app_settingsUI preferences: font size, theme, last login.7.3  Submission Integrity
+Each submission is hashed before local storage and verified by the server before acceptance:
+hash = SHA256(code_content + session_nonce + student_id + device_fingerprint + finalized_at_timestamp)
+• session_nonce is issued by the server at exam start. Single-use. Invalidated after submission.
+• device_fingerprint = SHA256(CPU_id + MAC_address + volume_serial). Generated at app install.
+• Server rejects any submission whose hash does not match the session record.
+
+
+SECTION 8
+Technology Stack
+LayerTechnologyRationaleDesktop ClientC# + WPF (.NET 8)Native Windows. Full kiosk capability. Strong academic defensibility. MVVM architecture. Self-contained single-file publish.UI ThemeMahApps.Metro + MaterialDesignInXAMLOfficial NuGet integration exists between both libs. Modern VS Code-like feel.Code EditorMonaco Editor via WebView2VS Code's own engine. Native syntax highlight for all 6 languages. IntelliSense built-in. Copy/paste disableable via Monaco API.Client CacheSQLite via Microsoft.Data.SqliteEmbedded, zero-config, perfect for offline-first. Application-layer AES-256 encryption.Backend APIASP.NET Core (.NET 8) — REST + SignalRREST for CRUD. SignalR hub for real-time: exam start/stop, alerts, timer sync, live submission status.Server DatabasePostgreSQL via Npgsql + EF CoreFree. No RAM cap (unlike SQL Express 1 GB limit). Better concurrency. Runs in Docker.AuthJWT + ASP.NET Core Identity15-min access tokens. Refresh tokens in encrypted SQLite. Exam-scoped tokens per session.AI GradingAnthropic Claude API (primary) / OpenAI GPT-4o (fallback)Server-side calls only. API key lives in server environment. Structured JSON response.Code ExecutionBundled portable runtimes + Windows Job ObjectsAll runtimes ship inside the installer. No machine dependencies. Job Objects: 5s CPU / 256MB RAM per run.InstallerInno Setup — single ScoreCodeSetup.exeBundles WPF app + all portable runtimes + config. Runs on any Windows 10/11 machine, zero prerequisites.Server DeployDocker Compose (ASP.NET Core + PostgreSQL)Single docker-compose.yml. API key as environment variable. postgres data volume persists across restarts.SecurityAES-256 (local), SHA256 (submissions), HTTPS+HSTSLayered. Nonce-binding added in v2 before real exam deployment.
+
+SECTION 9
+Installer & Bundled Runtimes
+Core principle: ScoreCodeSetup.exe is completely self-sufficient. After running it, ScoreCode works on any Windows 10/11 machine with zero additional setup — no internet, no IT pre-configuration, no runtime installs.
+9.1  Why Bundle Runtimes
+ScoreCode supports code execution in Python, Java, C++, JavaScript, and HTML/CSS. Rather than requiring exam machines to have these installed separately — risking version conflicts, missing runtimes, wrong PATH entries — ScoreCode bundles portable/embeddable versions of every runtime inside the installer. The app calls its own private copies using absolute paths. The machine's system PATH is entirely irrelevant.
+This also removes the need for any pre-exam machine check for runtimes. Everything is guaranteed to be present because the installer put it there.
+9.2  Installer Contents
+ComponentSourceSizeInstalled ToScoreCode.exe.NET 8 self-contained single-file publish~150 MB{app}\ScoreCode.exeappsettings.jsonConfig file — server URL, API version<1 KB{app}\appsettings.jsonPython 3.12 embeddablepython.org embeddable package (zip)~15 MB{app}\runtimes\python\Node.js 20 LTS portablenodejs.org standalone zip (no installer version)~30 MB{app}\runtimes\node\Eclipse Temurin 21 JREadoptium.net portable zip~60 MB{app}\runtimes\jdk\WinLibs GCC 13 (MinGW-w64)winlibs.com standalone zip~50 MB{app}\runtimes\mingw\WebView2 bootstrapperMicrosoft redistributable, runs silently if WebView2 absent~2 MBRuns during install, deleted afterTotal installed footprint: ~310 MB. Compressed installer: ~200 MB. Appropriate for USB distribution.
+HTML/CSS: Handled by the embedded WebView2 control inside WPF. Pre-installed on all Windows 10 (1803+) and Windows 11. The bootstrapper handles the rare case where it is absent.
+9.3  How the App Calls Runtimes
+The app never calls python, java, or node by name. It always uses absolute paths to bundled executables via a static constants class:
+public static class RuntimePaths {     private static readonly string Base =         Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "runtimes");      public static string Python => Path.Combine(Base, "python", "python.exe");     public static string Node   => Path.Combine(Base, "node",   "node.exe");     public static string Java   => Path.Combine(Base, "jdk",    "bin", "java.exe");     public static string Javac  => Path.Combine(Base, "jdk",    "bin", "javac.exe");     public static string Gpp    => Path.Combine(Base, "mingw",  "bin", "g++.exe"); }
+If a runtime folder is missing or corrupt, the app shows a specific error: 'Python runtime not found. Please reinstall ScoreCode.' — not a generic crash.
+9.4  Inno Setup Script
+[Setup] AppName=ScoreCode AppVersion=1.0 DefaultDirName={autopf}\ScoreCode OutputBaseFilename=ScoreCodeSetup Compression=lzma2 SolidCompression=yes  [Files] Source: "publish\ScoreCode.exe";      DestDir: "{app}" Source: "publish\appsettings.json";  DestDir: "{app}" Source: "runtimes\python\*"; DestDir: "{app}\runtimes\python"; Flags: recursesubdirs Source: "runtimes\node\*";   DestDir: "{app}\runtimes\node";   Flags: recursesubdirs Source: "runtimes\jdk\*";    DestDir: "{app}\runtimes\jdk";    Flags: recursesubdirs Source: "runtimes\mingw\*";  DestDir: "{app}\runtimes\mingw";  Flags: recursesubdirs Source: "redist\MicrosoftEdgeWebview2Setup.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall  [Icons] Name: "{commondesktop}\ScoreCode"; Filename: "{app}\ScoreCode.exe" Name: "{group}\ScoreCode";         Filename: "{app}\ScoreCode.exe"  [Run] Filename: "{tmp}\MicrosoftEdgeWebview2Setup.exe"; Parameters: "/silent /install"; StatusMsg: "Installing WebView2..." Filename: "{app}\ScoreCode.exe"; Description: "Launch ScoreCode"; Flags: postinstall nowait
+9.5  Build & Distribution Workflow
+16. dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true  ?  produces publish\ScoreCode.exe
+17. Ensure runtimes\ folder contains all four portable runtime folders. These are downloaded once and kept in the repo or on the build machine. They do not change with each code build.
+18. Open ScoreCode.iss in Inno Setup Compiler ? Build  ?  produces ScoreCodeSetup.exe in Output\.
+19. Copy ScoreCodeSetup.exe to USB drive or network share.
+20. On each exam machine: run ScoreCodeSetup.exe ? Next, Next, Install. Takes 2–3 minutes.
+21. Edit {app}\appsettings.json if server URL needs updating — no reinstall required.
+One-time runtime download: The four portable runtimes are downloaded once from python.org, nodejs.org, adoptium.net, and winlibs.com. Commit them to a runtimes\ folder in the project or store on the build machine. They only need updating when you want a newer language version.
+9.6  Server Deployment
+# docker-compose.yml (run on your Linux/Windows server) services:   api:     build: ./ScoreCode.Api     ports: ["443:8080"]     environment:       - ConnectionStrings__Default=Host=db;Database=scorecode;Username=sc;Password=secret       - Anthropic__ApiKey=sk-ant-...     depends_on: [db]    db:     image: postgres:16-alpine     volumes: ["pgdata:/var/lib/postgresql/data"]     environment:       - POSTGRES_DB=scorecode       - POSTGRES_USER=sc       - POSTGRES_PASSWORD=secret  volumes:   pgdata:
+Run 'docker compose up -d' on the server. The entire backend is live. The Anthropic API key lives in the server environment only — it is never sent to or stored on any client machine.
+
+
+SECTION 10
+Build Phases — One Week Intensive
+Context: Target: 20 hrs/day for one week. Phases are ordered by dependency — each phase produces a working, testable system. Lecturer features always precede the student features that depend on them.
+Phase 1 — Foundation: Auth + Lecturer Exam Creation (Days 1–2)
+Goal: Lecturer can log in, create an exam with questions and marking guides, assign students, and publish it. Admin can create user accounts. Student logs in and sees the published exam in their list.
+Why this is first: Every student feature in every subsequent phase depends on an exam existing and being published. Nothing else can be tested or built without this foundation.
+Server
+• ASP.NET Core project scaffolding. PostgreSQL + EF Core setup. Docker Compose config.
+• POST /auth/login ? JWT access token (15 min) + refresh token.
+• Admin endpoints: POST /users, GET /users, PATCH /users/{id}/deactivate.
+• Lecturer endpoints: POST /exams, PUT /exams/{id}, POST /exams/{id}/publish.
+• Question endpoints: POST /exams/{id}/questions, PUT /questions/{id}, DELETE /questions/{id}.
+• Student assignment: POST /exams/{id}/students, GET /exams/{id}/students.
+• Student exam list: GET /students/me/exams ? exams assigned to the authenticated student.
+Client — Admin
+• Login screen.
+• User management: create user (name, email, password, role, department, level), deactivate user.
+Client — Lecturer
+• Login screen ? JWT stored in encrypted SQLite.
+• Dashboard: list of my exams with status badges (Draft / Published / Active / Closed).
+• Exam Builder wizard — 4 steps:
+? Step 1 Metadata: title, course code, scheduled date/time, duration (minutes), allowed language(s), IntelliSense on/off, grading mode (AI / Manual / Both).
+? Step 2 Assign Students: search by name or matric number, select individuals or whole class groups.
+? Step 3 Questions: for each question — question text, marking guide (free text), marks, language. Add multiple. Reorder by drag.
+? Step 4 Review & Publish: preview as students will see it. Publish button. Published = locked from editing.
+Client — Student
+• Login screen.
+• Dashboard: list of exams assigned to me. Shows title, course, scheduled time, duration, status badge.
+• No exam entry yet — this phase just confirms the student can see what the lecturer published.
+
+Phase 2 — Core Exam Loop: Taking + Submission (Days 2–4)
+Goal: Student enters a published+active exam, writes code in Monaco, runs it using bundled runtimes, autosaves locally every 5 seconds, and submits. Submission arrives at the server. Lecturer can view it.
+Dependency: Phase 1 complete. Exam must exist, be published, and student must be assigned.
+Server
+• POST /sessions/start ? validate student + exam, issue exam-scoped token + session nonce, return full exam payload.
+• POST /sessions/heartbeat ? update last_heartbeat_at. Server flags (not terminates) sessions missing 3 heartbeats.
+• GET /exams/{id}/payload ? encrypted exam content: questions, config, nonce, server timestamp.
+• POST /submissions ? accept per-question submission, verify SHA256 hash, store. Return confirmation ID.
+• GET /exams/{id}/submissions ? lecturer view: student list with per-question submission status.
+• GET /submissions/{id} ? full code, question text, marking guide, metadata.
+Client — Student
+• 'Enter Exam' button active when exam status = Active. Click ? POST /sessions/start ? receive payload.
+• Fullscreen mode activates (WindowStyle=None, Maximized, Topmost). Monaco editor loads.
+• Question panel alongside editor: question text and marks shown. Tabbed if multiple questions.
+• Autosave: every 5 seconds to local SQLite. AES encrypted. Zero network involvement.
+• Run button: spawn bundled runtime via RuntimePaths constant. Windows Job Objects: 5s CPU, 256MB RAM. stdout/stderr/exit code shown in output pane below editor.
+• Timer in status bar: always visible. Color: green ? amber at 10 min remaining ? red at 5 min.
+• Submit: 'Submit Exam' ? confirmation modal (question count, time remaining) ? Confirm ? finalize locally ? SHA256 hash ? queue ? upload. Offline queue retries with backoff.
+• Post-submit: editor becomes read-only. 'Submitted' state shown with server confirmation ID.
+Client — Lecturer
+• Submissions dashboard on exam detail page: table of assigned students, per-question status columns.
+• Click any student/question cell ? view their code alongside question text and marking guide.
+
+Phase 3 — AI Grading (Days 4–5)
+Goal: Lecturer triggers AI grading per submission. AI evaluates code structure, syntax, logic, and marking guide adherence — not output. Structured score returned. Lecturer accepts or overrides. Results releasable to students.
+Dependency: Phase 2 complete. Submissions must exist.
+Server
+• POST /grades/ai/{submission_id} ? build prompt (question + marking guide + code + max marks) ? call Claude API ? parse JSON ? store in grades table with full audit fields.
+• PUT /grades/{id}/override ? change criterion score. reason field required. Logged with lecturer ID + timestamp.
+• GET /exams/{id}/grades ? summary: each student, each question, total score, grading status.
+• POST /exams/{id}/release-results ? mark all grades released. Students can now see scores.
+Client — Lecturer
+• Submission view: 'Grade with AI' button. Loading state shown during API call (3–10 seconds typical).
+• Grade display: per-criterion table (criterion, max marks, AI marks, AI comment). Total score. Accept button.
+• Override: click any criterion row ? editable score field + reason text ? Save. Override logged.
+• Manual grading mode: same per-criterion table, all fields blank, filled by lecturer. No AI call.
+• Exam overview: 'Release Results' button. Confirmation required. Irreversible.
+Client — Student
+• Results tab on exam card: 'Pending release' until lecturer releases.
+• After release: total score, per-question score, per-criterion feedback text.
+
+Phase 4 — Real-Time + Anti-Cheat Hardening (Days 5–6)
+Goal: SignalR replaces all polling. Exam start/stop broadcasts simultaneously to all assigned students. Cheating events reach lecturer live. Keyboard hooks suppress OS-level window switching.
+Dependency: Phases 1–3 stable. SignalR is purely additive.
+Server
+• SignalR ExamHub: clients join group by exam_id on connect.
+• Server broadcasts: ExamStarted(examId), ExamEnded(examId), TimerSync(examId, remainingSeconds), CheatEvent(examId, studentId, eventType, timestamp), SubmissionReceived(examId, studentId).
+• Lecturer sends to hub: StartExam(examId), EndExam(examId), ExtendTime(examId, studentId, extraMinutes).
+Client — Student
+• Replace 60-second status polling with SignalR listener. Exam activation is instant push.
+• Receive TimerSync every 60 seconds to correct local clock drift.
+• Low-level keyboard hook (SetWindowsHookEx WH_KEYBOARD_LL, requires admin): suppress Win, ALT+TAB, Win+Tab, Win+Ctrl+D, Win+D, Win+L, CTRL+ESC.
+• Process monitor: terminate blocklisted apps (browsers, IDEs) on exam start. Log any new process launch attempts. Each event sent to server via SignalR immediately.
+Client — Lecturer
+• Live monitoring dashboard: real-time student status. No manual refresh needed.
+• Cheating event feed: timestamped log. Flagged students highlighted in red.
+• 'Start Exam Now' / 'End Exam Early' buttons send SignalR broadcast to all students.
+• 'Add Time' per student: input extra minutes ? SignalR ExtendTime ? student timer updates live.
+
+Phase 5 — Installer + Polish + Edge Cases (Day 7)
+Goal: Fully installable, end-to-end working system hardened against common failure scenarios.
+Installer Build
+• Download the four portable runtimes: Python 3.12 embeddable (python.org), Node.js 20 LTS zip (nodejs.org), Eclipse Temurin 21 JRE zip (adoptium.net), WinLibs GCC 13 zip (winlibs.com). Place in runtimes\ folder.
+• Run dotnet publish with self-contained + single-file flags.
+• Write ScoreCode.iss (see Section 9.4). Build in Inno Setup Compiler ? ScoreCodeSetup.exe.
+• Test on a clean Windows VM with nothing pre-installed. Verify all 5 languages execute correctly.
+Edge Cases & Polish
+• Crash recovery: on restart mid-exam, restore last autosave and remaining timer from local SQLite.
+• Auto-submit at timer end: 60s countdown modal, then graceful auto-submit of last autosave.
+• Accessibility: font size slider, high-contrast toggle in student preferences. Persisted in SQLite.
+• Error handling: every failure state has a specific user-facing message. No generic crashes. No silent failures.
+• appsettings.json: server URL externally configurable. Test changing it without rebuild.
+• Load test: 30 concurrent simulated student sessions submitting simultaneously. Fix regressions.
+
+
+SECTION 11
+Deferred to Version 2
+Scope discipline: These are valid, planned features — not cuts. Do not let any of them creep into the week-1 build.
+FeatureWhy DeferredWindows Assigned Access kiosk configOS-level setup, not application code. Done by IT at deployment. Will be documented in a deployment guide.Network firewall rules during examWindows Firewall API needs careful testing. Risk of accidentally blocking the exam server itself. Phase 2.VM detection heuristicsDetect and log — don't block. Not urgent for v1. Add to activity_logs in v2.SHA256 nonce on submissionsSecurity hardening. Basic hash works for v1 development. Add nonce binding before any real exam deployment.Certificate pinning in HttpClientSecurity hardening. Phase 2.Judge0 server-side code executionGrading is AI-based (no execution needed for grading). Lecturer sandbox-run is a convenience feature. Phase 2.Admin system health dashboardNot needed to run an exam. Phase 2.Exam result export (CSV/PDF)Lecturer convenience. Phase 2.Student code history across attemptsNice UX. Phase 2.Auto-update mechanismv1 updates via USB reinstall. Auto-update complexity not justified for week-one target.
+
+SECTION 13
+API Contracts
+For the agent: Every endpoint the client calls is defined here with exact request and response shapes. All bodies are JSON. All authenticated routes require Authorization: Bearer {access_token} header. Base URL from appsettings.json ServerUrl.
+13.1  Auth
+POST /api/v1/auth/login
+Request:
+{ "email": "string", "password": "string" }
+Response 200:
+{ "success": true, "data": { "accessToken": "jwt...", "refreshToken": "uuid...", "user": { "id": "uuid", "name": "string", "email": "string", "role": "Admin|Lecturer|Student" } } }
+POST /api/v1/auth/refresh
+Request: { "refreshToken": "uuid..." } Response 200: { "success": true, "data": { "accessToken": "jwt...", "refreshToken": "uuid..." } }
+POST /api/v1/auth/logout  [Auth required]
+Request: { "refreshToken": "uuid..." } Response 200: { "success": true }
+
+13.2  Users (Admin only)
+POST /api/v1/users
+Request: { "name": "string", "email": "string", "password": "string", "role": "Admin|Lecturer|Student", "department": "string", "level": "int" } Response 201: { "success": true, "data": { "id": "uuid", "name": "string", "email": "string", "role": "string" } }
+GET /api/v1/users  |  PATCH /api/v1/users/{id}/deactivate
+GET Response: { "success": true, "data": [ { "id", "name", "email", "role", "department", "level", "isActive" } ] } PATCH Response: { "success": true }
+
+13.3  Exams (Lecturer)
+POST /api/v1/exams
+Request: { "title": "str", "courseCode": "str", "scheduledAt": "ISO8601", "durationMinutes": int, "languages": ["Python","Java","Cpp","JavaScript","Html"], "intellisenseEnabled": bool, "gradingMode": "AI|Manual|Both" } Response 201: { "success": true, "data": { "id": "uuid", "status": "Draft", ...exam fields } }
+PUT /api/v1/exams/{id}  |  POST /api/v1/exams/{id}/publish  |  POST /api/v1/exams/{id}/close
+PUT Request: same fields as POST (partial update allowed) All three return: { "success": true, "data": { ...full exam object } }
+POST /api/v1/exams/{id}/students  |  GET /api/v1/exams/{id}/students
+POST Request: { "studentIds": ["uuid", ...] } POST Response: { "success": true, "data": { "assigned": int } } GET Response: { "success": true, "data": [ { "id", "name", "email", "extraTimeMinutes" } ] }
+GET /api/v1/students/me/exams  (Student — their assigned exams)
+Response: { "success": true, "data": [ { "id", "title", "courseCode", "scheduledAt", "durationMinutes", "status", "languages" } ] }
+
+13.4  Questions (Lecturer)
+POST /api/v1/exams/{examId}/questions
+Request: { "text": "string", "marks": int, "language": "Python|Java|Cpp|JavaScript|Html", "markingGuide": "string", "orderIndex": int } Response 201: { "success": true, "data": { "id": "uuid", ...question fields } }
+PUT /api/v1/questions/{id}  |  DELETE /api/v1/questions/{id}
+PUT Request: same fields as POST (partial) PUT Response: { "success": true, "data": { ...question } } DELETE Response: { "success": true }
+
+13.5  Sessions & Exam Payload (Student)
+POST /api/v1/sessions/start
+Request: { "examId": "uuid", "deviceFingerprint": "sha256-string" } Response 200: {   "success": true,   "data": {     "sessionId": "uuid",     "examToken": "jwt...",     "nonce": "uuid",     "serverTimeUtc": "ISO8601",     "exam": {       "id", "title", "durationMinutes", "intellisenseEnabled",       "languages": [],       "questions": [ { "id", "orderIndex", "text", "marks", "language" } ]     }   } }
+Note: Questions in the exam payload do NOT include markingGuide. That stays server-side only.
+POST /api/v1/sessions/heartbeat  [Exam token]
+Request: { "sessionId": "uuid" } Response 200: { "success": true, "data": { "serverTimeUtc": "ISO8601" } }
+
+13.6  Submissions (Student)
+POST /api/v1/submissions
+Request: {   "sessionId": "uuid",   "questionId": "uuid",   "code": "string",   "finalizedAt": "ISO8601",   "hash": "sha256-hex-string" } Response 201: { "success": true, "data": { "submissionId": "uuid", "confirmationCode": "string" } } Response 409: { "success": false, "error": "already_submitted" }
+GET /api/v1/exams/{id}/submissions  (Lecturer)
+Response: { "success": true, "data": [ { "studentId", "studentName", "questionId", "questionOrderIndex", "submissionId", "submittedAt", "uploadStatus", "gradingStatus" } ] }
+GET /api/v1/submissions/{id}  (Lecturer)
+Response: { "success": true, "data": { "id", "studentName", "code", "submittedAt", "question": { "text", "marks", "markingGuide", "language" }, "grade": null | { ...grade object } } }
+
+13.7  Grading (Lecturer)
+POST /api/v1/grades/ai/{submissionId}
+Request: {} (no body — server builds prompt from submission + question + marking guide) Response 200: {   "success": true,   "data": {     "gradeId": "uuid",     "score": int,     "maxScore": int,     "gradedBy": "AI",     "aiModel": "claude-sonnet-4-20250514",     "criteriaResults": [       { "criterion": "str", "awarded": int, "max": int, "comment": "str" }     ],     "feedback": ["str"]   } }
+PUT /api/v1/grades/{id}/override
+Request: { "criteriaResults": [ { "criterion": "str", "awarded": int, "max": int, "comment": "str" } ], "overrideReason": "string" } Response 200: { "success": true, "data": { ...updated grade } }
+POST /api/v1/grades/manual/{submissionId}
+Request: { "score": int, "maxScore": int, "criteriaResults": [...], "feedback": ["str"] } Response 201: { "success": true, "data": { ...grade object, "gradedBy": "Manual" } }
+POST /api/v1/exams/{id}/release-results  |  GET /api/v1/exams/{id}/grades
+POST Response: { "success": true } GET Response: { "success": true, "data": [ { "studentId", "studentName", "questionId", "score", "maxScore", "gradingStatus", "gradedBy" } ] }
+
+13.8  SignalR Hub — ExamHub
+Hub URL: {ServerUrl}/hubs/exam — clients connect on app start and join their exam group when entering an exam.
+DirectionMethod NameArgumentsWho Sends / ReceivesServer ? ClientExamStartedexamId: stringServer broadcasts to exam group. All assigned students receive.Server ? ClientExamEndedexamId: stringTriggers auto-submit on student clients.Server ? ClientTimerSyncexamId: string, remainingSeconds: intBroadcast every 60s. Client corrects local timer.Server ? ClientCheatEventexamId: string, studentId: string, eventType: string, timestamp: stringSent to lecturer in exam group when student triggers an event.Server ? ClientSubmissionReceivedexamId: string, studentId: stringBroadcast to lecturer when any student submits.Server ? ClientTimeExtendedstudentId: string, newRemainingSeconds: intSent to specific student when lecturer adds time.Client ? ServerStartExamexamId: stringLecturer only. Server broadcasts ExamStarted to group.Client ? ServerEndExamexamId: stringLecturer only. Server broadcasts ExamEnded to group.Client ? ServerExtendTimeexamId: string, studentId: string, extraMinutes: intLecturer only. Server sends TimeExtended to that student.Client ? ServerSendCheatEventexamId: string, eventType: stringStudent client sends when anti-cheat fires. Server stores + forwards to lecturer.
+
+SECTION 14
+UI Layouts
+For the agent: These layouts describe screen regions and what goes in each. Use MahApps.Metro window chrome and MaterialDesign controls throughout. All windows use MetroWindow as base class.
+14.1  Login Screen  (all roles)
+RegionContentFull window centerCard (MaterialDesign) — centered vertically and horizontally. Width 400px.Card topScoreCode logo/wordmark. Subtitle: 'Exam Management System'.Card bodyEmail text field. Password field (masked). Login button (full width, primary color). Error message label (hidden until error).Card bottomVersion number. Small muted text.Window backgroundDark navy (#1A1A2E). No decorations.14.2  Student — Dashboard
+RegionContentTop barScoreCode wordmark left. Student name + avatar right. Logout button.Main contentHeader: 'My Exams'. List of ExamCards below.ExamCardTitle, course code, scheduled date/time, duration, status badge (color-coded). 'Enter Exam' button — disabled unless status = Active.Status badge colorsUpcoming = gray. Starting Soon = amber. Active = green (pulsing). Completed = blue.14.3  Student — Exam Window  (most important screen)
+RegionContentTop bar (full width)Exam title left. Timer center (large, color-coded). Submit button right (accent color). Question tabs or dropdown if multiple questions.Left panel (35% width)Question text (scrollable). Marks badge. Read-only during exam. Switches per question tab.Right panel (65% width)Monaco Editor — fills this region completely. Language set by question config. IntelliSense on/off per exam setting.Bottom panel (fixed 180px)Run button left. Output area — stdout, stderr, exit code, execution time. Monospaced font. Scrollable. 'Running...' state shown.Status bar (very bottom)Left: autosave status ('Saved 2s ago'). Center: question X of Y. Right: session ID.Fullscreen behavior: This window has no title bar, no window chrome, no resize handles. WindowStyle=None, ResizeMode=NoResize, WindowState=Maximized, Topmost=True. The only way out is Submit or timer expiry.
+14.4  Lecturer — Dashboard
+RegionContentLeft sidebar (220px)Navigation: My Exams, Create Exam, Students. Profile at bottom.Main content — My ExamsTable: Title, Course, Scheduled, Status, Students, Actions. Actions: View, Edit (Draft only), Monitor (Active), Grade (Closed).Floating button'+ Create Exam' button bottom-right. Opens Exam Builder wizard.14.5  Lecturer — Exam Builder  (wizard)
+StepContentStep 1 — DetailsTitle, course code, date picker, time picker, duration (number input), language multiselect checkboxes, IntelliSense toggle, grading mode radio buttons (AI / Manual / Both).Step 2 — StudentsSearch bar (name or matric). Results list with checkboxes. Selected students panel on right. 'Select All in Class' shortcut.Step 3 — QuestionsLeft: question list (reorderable, add/delete). Right: question editor — text area (question), number input (marks), language dropdown, large text area (marking guide with placeholder hint text). 'Add Another Question' button.Step 4 — ReviewFull read-only preview as students will see it. Summary: N questions, N students, N minutes. Publish button. Back button.Wizard chromeStep indicators at top (1 2 3 4 with labels). Previous / Next buttons bottom. Cancel exits with confirm dialog.14.6  Lecturer — Live Monitor
+RegionContentTop barExam title. Timer (same server clock). 'End Exam Early' button (danger color). Student count: X submitted / Y total.Student gridCard per student: name, status badge, last-seen time. Red border if flagged. Click to expand activity log for that student.Right panelLive cheating event feed. Scrolling log: timestamp, student name, event type. Color-coded by severity.Bottom toolbarStart Exam (if not started). End Exam. Export Log.14.7  Lecturer — Grading View
+RegionContentLeft panel (30%)Student list. Each row: name, total score (or 'Ungraded'), grading status badge. Click to load submission.Right panel top (50%)Student's submitted code in a read-only Monaco editor. Language syntax highlighted. Question text and marks shown above.Right panel bottom (50%)Grade breakdown table: Criterion | Max | Awarded | Comment. Editable if in override mode. Total score prominent. 'Grade with AI' button. 'Manual Grade' button. 'Accept' button. 'Override' toggle.Top barExam title. 'Release Results' button (disabled until all questions graded). Progress: X/Y graded.14.8  Admin — User Management
+RegionContentTop barTitle: 'User Management'. '+ Add User' button right.Filter rowRole filter dropdown. Search by name/email. Active/inactive toggle.User tableName, Email, Role badge, Department, Level, Status, Actions (Edit, Deactivate).Add User modalName, Email, Password, Role dropdown, Department, Level (number). Save / Cancel.
+
+SECTION 15
+Summary
+ScoreCode is a one-week intensive build for a deployable, defensible CS exam system. The architecture is solid. All decisions are made. The key principles to hold onto throughout the build:
+
+• Lecturer first. Always. An exam must be created and published before any student feature can function.
+• The installer is self-sufficient. One ScoreCodeSetup.exe — all language runtimes bundled, no prerequisites on exam machines.
+• The app calls its own runtimes. System PATH is irrelevant. RuntimePaths constants are the only way code execution is invoked.
+• The exam payload is self-contained. Once delivered at exam start, the client runs autonomously — network not required for the exam itself.
+• Grading is qualitative, not output-based. AI reads and evaluates code against the marking guide the way a human examiner would.
+• Autosave is local only. Sync is event-driven (submit trigger or restore trigger). Never autosave over the network.
+• Anti-cheat is deterrence and evidence. Build the audit trail well. Accept that it cannot be a hard barrier.
+• SignalR is the nervous system. Exam control, live alerts, timer sync, and submission status all flow through it.
+• The Anthropic API key lives on the server only. It never touches a client machine.
+• Defer aggressively. A complete, working v1 is worth more than a half-built v2.
+
+
+ScoreCode v4.0 — Agent Ready Specification — End of Document
+ScoreCode  Project Specification v4.0 — Agent Ready
+
+Confidential — Development Reference  |  Page 
+

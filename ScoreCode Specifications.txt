@@ -1,0 +1,135 @@
+## ScoreCode Project Specification
+
+### 1. Project Overview
+
+ScoreCode is a **secure desktop-based exam management and code evaluation system** designed for CS students. The application allows lecturers to create exams, students to take exams on their PCs, and ensures **exam integrity** through anti-cheating mechanisms. It supports multiple programming languages and provides role-based access for **Admin, Lecturer, and Student**.
+
+**Primary Goals:**
+
+* Safe exam-taking environment
+* Multi-language code editor
+* Centralized submission with offline-safe mechanism
+* Anti-cheating enforcement
+* Easy-to-use UI resembling modern IDEs
+
+**Supported Languages:** Python, Java, C++, JavaScript, HTML, CSS.
+
+### 2. Roles & Permissions
+
+| Role     | Permissions                                                                    |
+| -------- | ------------------------------------------------------------------------------ |
+| Admin    | Edit student profiles, system monitoring                                       |
+| Lecturer | Create exams, select eligible students, view submissions, run code for grading |
+| Student  | Take exams, write code, submit exams                                           |
+
+**Key Rules:**
+
+* Only Lecturer can create or modify exams.
+* Students’ program information is immutable; level can be updated annually.
+* One active session per student enforced.
+
+### 3. Exam Management & Anti-Cheating
+
+**Mechanisms:**
+
+1. **Fullscreen / Kiosk Mode:** Locks student interface; disables minimize, resize, ALT+TAB.
+2. **Auto-submit triggers:** Window switch, app close, system restart, and exam timer end.
+3. **Copy/Paste Disabled:** Keyboard shortcuts and context menu blocked.
+4. **Exam Timer Enforcement:** Automatic submission at end of time.
+5. **One Active Session:** Prevent multiple logins.
+6. **Local Encrypted Autosave:** Code encrypted and stored locally, auto-synced to central server.
+7. **Submission Hash Verification:** SHA256 hash to ensure file integrity.
+8. **Device & Session Binding:** Prevents moving submissions between devices.
+9. **Activity Logging:** Event logs for security audits.
+
+### 4. Code Editor Design
+
+* **Editor Control:** AvalonEdit or ScintillaNET embedded in WPF
+* **Features:**
+
+  * Syntax highlighting per language
+  * Tabbed interface for multiple files
+  * Optional IntelliSense (enabled by lecturer)
+  * Run/Submit buttons
+  * Status bar with timer and submission info
+* **Multi-Language Execution:**
+
+  * Each language executed in **sandboxed process**
+  * Python → `python.exe`
+  * C++ → `g++` + execution
+  * Java → `javac` + `java`
+  * JS → Node.js
+  * HTML/CSS → Embedded WebView
+
+### 5. Submission & Offline Handling
+
+* **Local Storage:** SQLite database, encrypted and hashed
+* **Submission States:** draft → submitted_local → uploading → uploaded
+* **Background Sync:** Upload pending submissions automatically when network is available
+* **Offline-First Architecture:** Students can continue even without network; submission is queued and verified upon upload
+* **Restart Recovery:** Last autosaved code restored after system restart
+
+### 6. Runtime & Sandboxing
+
+* Each code execution runs in **isolated process**
+* Restricted access to system files and folders
+* Runtime errors captured and returned for grading
+* Temporary files stored in encrypted local folder, deleted after submission
+
+### 7. Security
+
+* **Encryption:** AES for local storage
+* **Integrity:** SHA256 for submissions
+* **Role-Based Access Control (RBAC):** Enforced at client and server
+* **Server Communication:** HTTPS REST API
+* **Local Storage Protection:** Hidden folders, SQLite database, encrypted contents
+
+### 8. Client-Server Architecture
+
+**Central Server:**
+
+* Stores users, exams, submissions
+* Verifies submission integrity
+* Handles concurrent connections
+
+**Client Applications:**
+
+* Students → Take exams, write code, auto-save, submit
+* Lecturers → Create exams, select students, view submissions, run code
+* Admins → Edit profiles, monitor system
+
+**Flow:**
+
+1. Student logs in → authenticates with server
+2. Exam starts → exam key delivered
+3. Student writes code → autosave locally (encrypted)
+4. Submission → uploaded when network available, server verifies hash
+5. Lecturer views code → can run in selected language runtime
+
+### 9. Tech Stack
+
+| Layer                    | Technology                                            | Rationale                                                                  |
+| ------------------------ | ----------------------------------------------------- | -------------------------------------------------------------------------- |
+| Desktop App              | C# with WPF                                           | Native Windows, easy fullscreen, professional GUI, defendable academically |
+| UI Framework             | MahApps.Metro / MaterialDesignInXAML                  | Modern look similar to VS Code                                             |
+| Code Editor              | AvalonEdit / ScintillaNET                             | Syntax highlighting, IntelliSense support, tabbed interface                |
+| Multi-Language Execution | Local interpreters / compilers in sandboxed processes | Secure execution, language flexibility                                     |
+| Central Server           | ASP.NET Core Web API                                  | Native integration with WPF, secure, easy to defend                        |
+| Server DB                | SQL Server Express                                    | Handles concurrency, secure storage, easy to backup                        |
+| Client Local Cache       | SQLite                                                | Offline-first, temporary storage of submissions                            |
+| Security                 | AES Encryption, SHA256 hash, HTTPS                    | Protects integrity and confidentiality                                     |
+| Communication            | HTTPS REST API                                        | Secure client-server interaction                                           |
+
+### 10. Additional Features
+
+* Submission autosave every 5 seconds
+* Offline-safe architecture
+* Clear separation of modules per role (Student, Lecturer, Admin)
+* Submission queue to prevent UI freeze
+* Logs for anti-cheating events
+
+### 11. Conclusion
+
+ScoreCode is designed to be a **professional, secure, and defendable exam system** for CS students. It balances **anti-cheating, offline safety, multi-language coding, and centralized server architecture**. Using C# and WPF ensures **native Windows performance**, while AvalonEdit/ScintillaNET gives a **VS Code-like feel**. Anti-cheating and security measures make it realistic for school exams.
+
+This document consolidates all discussions, decisions, and architectural choices made so far for the ScoreCode project.

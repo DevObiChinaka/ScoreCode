@@ -1,0 +1,34 @@
+# ── Build outputs ──
+bin/
+obj/
+*.user
+*.suo
+
+# ── IDE ──
+.vs/
+*.csproj.user
+
+# ── WPF build temp projects ──
+*_wpftmp.csproj
+
+# ── Local .NET SDK / tooling (machine-specific) ──
+.dotnet/
+.dotnet-home/
+
+# ── Bundled runtimes (downloaded by build/download-runtimes.ps1) ──
+ScoreCode.Client/runtimes/
+
+# ── Runtime logs (from run.ps1) ──
+logs/
+
+# ── Secrets & local config (NEVER commit real keys) ──
+# Real JWT key, DB password, Gemini API key live here — see the .example template.
+appsettings.Development.json
+appsettings.*.Local.json
+appsettings.Local.json
+
+# ── OS / Editor ──
+Thumbs.db
+.DS_Store
+*.swp
+*~

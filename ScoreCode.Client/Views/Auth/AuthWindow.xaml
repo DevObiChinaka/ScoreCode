@@ -1,0 +1,13 @@
+<Window x:Class="ScoreCode.Client.Views.Auth.AuthWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="ScoreCode · Sign In"
+        Width="1080" Height="660"
+        MinWidth="840" MinHeight="520"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource ThBrBgBase}"
+        FontFamily="/Assets/Fonts/#Geist">
+
+    <!-- The single auth shell — LoginView / RegisterView swap inside -->
+    <ContentControl x:Name="ContentHost"/>
+</Window>

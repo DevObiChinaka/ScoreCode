@@ -1,0 +1,185 @@
+<UserControl x:Class="ScoreCode.Client.Views.Lecturer.SubmissionsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{DynamicResource ThBrBgBase}">
+
+    <UserControl.Resources>
+        <Style x:Key="SmallBtn" TargetType="Button">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontFamily" Value="/Assets/Fonts/#Geist"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="32,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>   <!-- Header -->
+            <RowDefinition Height="Auto"/>   <!-- Exam picker strip -->
+            <RowDefinition Height="Auto"/>   <!-- Release bar -->
+            <RowDefinition Height="*"/>      <!-- Table -->
+            <RowDefinition Height="Auto"/>   <!-- Status -->
+        </Grid.RowDefinitions>
+
+        <!-- HEADER -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock Text="Submissions &amp; Grading"
+                       FontSize="22" FontWeight="Bold"
+                       Foreground="{DynamicResource ThBrTextPrimary}"
+                       FontFamily="/Assets/Fonts/#Geist"/>
+            <TextBlock Text="Review student submissions and assign grades"
+                       FontSize="13" Foreground="{DynamicResource ThBrTextSecondary}"
+                       FontFamily="/Assets/Fonts/#Geist" Margin="0,4,0,0"/>
+        </StackPanel>
+
+        <!-- EXAM PICKER (horizontal card strip) -->
+        <Border Grid.Row="1" Margin="0,0,0,12">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="SELECT EXAM" FontSize="10" FontWeight="Bold"
+                           Foreground="{DynamicResource ThBrTextMuted}"
+                           FontFamily="/Assets/Fonts/#Geist" Margin="0,0,0,8"/>
+
+                <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Disabled" 
+                              Padding="0,0,0,4">
+                    <StackPanel x:Name="ExamStrip" Orientation="Horizontal"/>
+                </ScrollViewer>
+
+                <!-- Empty state for no exams -->
+                <TextBlock x:Name="TxtNoExams" Grid.Row="1" Visibility="Collapsed"
+                           Text="No exams available" FontSize="13"
+                           Foreground="{DynamicResource ThBrTextMuted}"
+                           FontFamily="/Assets/Fonts/#Geist"/>
+            </Grid>
+        </Border>
+
+        <!-- RELEASE RESULTS BAR (per-exam) -->
+        <Border x:Name="ReleaseBar" Grid.Row="2" Visibility="Collapsed"
+                Background="{DynamicResource ThBrBgPanel}" CornerRadius="6"
+                BorderBrush="{DynamicResource ThBrBorder}" BorderThickness="1"
+                Padding="14,8" Margin="0,0,0,10"
+                VerticalAlignment="Top">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock x:Name="TxtReleaseInfo" FontSize="12"
+                               Foreground="{DynamicResource ThBrTextSecondary}"
+                               FontFamily="/Assets/Fonts/#Geist"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Release button -->
+                <Button x:Name="BtnRelease" Grid.Column="1"
+                        Content="📢  Release Results to Students"
+                        Click="BtnRelease_Click"
+                        FontSize="12" FontWeight="SemiBold"
+                        FontFamily="/Assets/Fonts/#Geist"
+                        Cursor="Hand"
+                        Padding="16,7">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="RelBd" Background="{DynamicResource ThBrAccent}"
+                                    CornerRadius="5"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="RelBd" Property="Background" Value="{DynamicResource ThBrAccentDark}"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="RelBd" Property="Opacity" Value="0.5"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                    <Button.Foreground>
+                        <DynamicResource ResourceKey="ThBrTextOnAccent"/>
+                    </Button.Foreground>
+                </Button>
+
+                <!-- Already released badge -->
+                <Border x:Name="ReleasedBadge" Grid.Column="1" Visibility="Collapsed"
+                        Background="{DynamicResource ThBrBgSurface}" CornerRadius="5"
+                        Padding="14,7" VerticalAlignment="Center">
+                    <TextBlock Text="✓ Results Released" FontSize="12" FontWeight="SemiBold"
+                               Foreground="{DynamicResource ThBrAccent}" FontFamily="/Assets/Fonts/#Geist"/>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- LOADING -->
+        <TextBlock x:Name="TxtLoading" Grid.Row="3"
+                   Text="Select an exam to view submissions"
+                   FontSize="14" Foreground="{DynamicResource ThBrTextSecondary}"
+                   FontFamily="/Assets/Fonts/#Geist"
+                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+        <!-- TABLE -->
+        <Border Grid.Row="3" x:Name="TablePanel" Visibility="Collapsed"
+                Background="{DynamicResource ThBrBgPanel}" CornerRadius="8"
+                BorderBrush="{DynamicResource ThBrBorder}" BorderThickness="1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0" Background="{DynamicResource ThBrBgSurface}"
+                        CornerRadius="8,8,0,0" Padding="16,12">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="0.3*"/>
+                            <ColumnDefinition Width="1.5*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="1" Text="STUDENT" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource ThBrTextMuted}" FontFamily="/Assets/Fonts/#Geist"/>
+                        <TextBlock Grid.Column="2" Text="QUESTIONS" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource ThBrTextMuted}" FontFamily="/Assets/Fonts/#Geist"/>
+                        <TextBlock Grid.Column="3" Text="SCORE" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource ThBrTextMuted}" FontFamily="/Assets/Fonts/#Geist"/>
+                        <TextBlock Grid.Column="4" Text="STATUS" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource ThBrTextMuted}" FontFamily="/Assets/Fonts/#Geist"/>
+                        <TextBlock Grid.Column="5" Text="ACTIONS" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource ThBrTextMuted}" FontFamily="/Assets/Fonts/#Geist"
+                                   HorizontalAlignment="Right"/>
+                    </Grid>
+                </Border>
+
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="SubRows" Margin="0,0,0,8"/>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+
+        <!-- STATUS BAR -->
+        <TextBlock x:Name="TxtStatus" Grid.Row="4" Margin="0,12,0,0"
+                   FontSize="12" Foreground="{DynamicResource ThBrTextMuted}"
+                   FontFamily="/Assets/Fonts/#Geist"/>
+    </Grid>
+</UserControl>

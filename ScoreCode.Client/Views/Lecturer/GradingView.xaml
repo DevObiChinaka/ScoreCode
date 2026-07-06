@@ -1,0 +1,328 @@
+<UserControl x:Class="ScoreCode.Client.Views.Lecturer.GradingView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+             Background="{DynamicResource ThBrBgBase}">
+
+    <UserControl.Resources>
+        <!-- Save / action button template -->
+        <ControlTemplate x:Key="AccentBtnTemplate" TargetType="Button">
+            <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                    CornerRadius="6" Padding="{TemplateBinding Padding}">
+                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ThBrAccentDark}"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter TargetName="Bd" Property="Opacity" Value="0.45"/>
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+
+        <!-- Ghost button template -->
+        <ControlTemplate x:Key="GhostBtnTemplate" TargetType="Button">
+            <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                    CornerRadius="6" Padding="{TemplateBinding Padding}">
+                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ThBrBgSurface}"/>
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="64"/>  <!-- Top bar -->
+            <RowDefinition Height="*"/>   <!-- Content -->
+        </Grid.RowDefinitions>
+
+        <!-- ── TOP BAR ──────────────────────────────────────────────────────── -->
+        <Border Grid.Row="0"
+                Background="{DynamicResource ThBrBgPanel}"
+                BorderBrush="{DynamicResource ThBrBorder}"
+                BorderThickness="0,0,0,1">
+            <Grid Margin="20,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Back button -->
+                <Button x:Name="BtnBack" Grid.Column="0"
+                        Content="← Submissions"
+                        Background="Transparent"
+                        Foreground="{DynamicResource ThBrTextSecondary}"
+                        FontFamily="/Assets/Fonts/#Geist"
+                        FontSize="13" Cursor="Hand"
+                        BorderThickness="0"
+                        Template="{StaticResource GhostBtnTemplate}"
+                        Padding="10,8"
+                        VerticalAlignment="Center"/>
+
+                <!-- Centre: student name + exam title -->
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <TextBlock x:Name="TxtStudent"
+                               FontSize="15" FontWeight="SemiBold"
+                               Foreground="{DynamicResource ThBrTextPrimary}"
+                               FontFamily="/Assets/Fonts/#Geist"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="TxtExamTitle"
+                               FontSize="11"
+                               Foreground="{DynamicResource ThBrTextSecondary}"
+                               FontFamily="/Assets/Fonts/#Geist"
+                               HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                </StackPanel>
+
+                <!-- Right: progress + Save All -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal"
+                            VerticalAlignment="Center" HorizontalAlignment="Right">
+                    <TextBlock x:Name="TxtProgress"
+                               FontSize="13"
+                               Foreground="{DynamicResource ThBrTextSecondary}"
+                               FontFamily="/Assets/Fonts/#Geist"
+                               VerticalAlignment="Center" Margin="0,0,16,0"/>
+                    <Button x:Name="BtnSaveAll"
+                            Content="Save All Graded"
+                            Background="{DynamicResource ThBrAccent}"
+                            Foreground="{DynamicResource ThBrTextOnAccent}"
+                            FontFamily="/Assets/Fonts/#Geist"
+                            FontSize="13" FontWeight="SemiBold"
+                            Cursor="Hand" Padding="16,9" BorderThickness="0"
+                            Template="{StaticResource AccentBtnTemplate}"
+                            VerticalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ── MAIN CONTENT (Left nav + Right detail) ───────────────────────── -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="260"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- LEFT: Question navigator -->
+            <Border Grid.Column="0"
+                    Background="{DynamicResource ThBrBgPanel}"
+                    BorderBrush="{DynamicResource ThBrBorder}"
+                    BorderThickness="0,0,1,0">
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel x:Name="NavPanel" Margin="0,8,0,16"/>
+                </ScrollViewer>
+            </Border>
+
+            <!-- RIGHT: Question detail + Monaco + Grading -->
+            <Grid Grid.Column="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" MaxHeight="230"/>  <!-- Question info -->
+                    <RowDefinition Height="Auto"/>                  <!-- Code section header -->
+                    <RowDefinition Height="220"/>                   <!-- Monaco editor -->
+                    <RowDefinition Height="Auto"/>                  <!-- Run output -->
+                    <RowDefinition Height="*"/>                     <!-- Grading controls -->
+                </Grid.RowDefinitions>
+
+                <!-- Hint when nothing selected -->
+                <TextBlock x:Name="TxtSelectHint" Grid.RowSpan="5"
+                           Text="← Select a question to begin grading"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           FontSize="14" FontFamily="/Assets/Fonts/#Geist"
+                           Foreground="{DynamicResource ThBrTextMuted}"/>
+
+                <!-- Row 0: Question text + marking guide -->
+                <ScrollViewer x:Name="InfoScroll" Grid.Row="0"
+                              VerticalScrollBarVisibility="Auto"
+                              Visibility="Collapsed"
+                              Padding="32,20,32,8">
+                    <StackPanel>
+                        <TextBlock Text="QUESTION"
+                                   FontSize="10" FontWeight="Bold"
+                                   Foreground="{DynamicResource ThBrTextMuted}"
+                                   FontFamily="/Assets/Fonts/#Geist"
+                                   Margin="0,0,0,6"/>
+                        <TextBlock x:Name="TxtQuestionText"
+                                   FontSize="14" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource ThBrTextPrimary}"
+                                   FontFamily="/Assets/Fonts/#Geist"
+                                   Margin="0,0,0,14"/>
+
+                        <TextBlock x:Name="TxtGuidLabel" Text="MARKING GUIDE"
+                                   FontSize="10" FontWeight="Bold"
+                                   Foreground="{DynamicResource ThBrTextMuted}"
+                                   FontFamily="/Assets/Fonts/#Geist"
+                                   Margin="0,0,0,6" Visibility="Collapsed"/>
+                        <Border x:Name="GuideCard" CornerRadius="6"
+                                Padding="14,10" Margin="0,0,0,4"
+                                Visibility="Collapsed">
+                            <TextBlock x:Name="TxtGuide"
+                                       FontSize="13" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource ThBrTextPrimary}"
+                                       FontFamily="/Assets/Fonts/#Geist"/>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- Row 1: Code section header -->
+                <Border x:Name="CodeHeaderRow" Grid.Row="1"
+                        Visibility="Collapsed"
+                        Padding="32,0,32,6">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="STUDENT CODE"
+                                   FontSize="10" FontWeight="Bold"
+                                   Foreground="{DynamicResource ThBrTextMuted}"
+                                   FontFamily="/Assets/Fonts/#Geist"
+                                   VerticalAlignment="Center"/>
+                        <Border x:Name="LangBadge" Grid.Column="1"
+                                Margin="8,0,0,0" Padding="6,2"
+                                CornerRadius="4" VerticalAlignment="Center">
+                            <TextBlock x:Name="TxtLang"
+                                       FontSize="10" FontWeight="Bold"
+                                       FontFamily="/Assets/Fonts/#Geist"/>
+                        </Border>
+                        <Button x:Name="BtnRun" Grid.Column="3"
+                                Content="▶  Run Code"
+                                Background="Transparent"
+                                Foreground="{DynamicResource ThBrAccent}"
+                                FontFamily="/Assets/Fonts/#Geist"
+                                FontSize="12" FontWeight="SemiBold"
+                                BorderThickness="0" Cursor="Hand"
+                                Padding="0" VerticalAlignment="Center"
+                                Template="{StaticResource GhostBtnTemplate}"/>
+                    </Grid>
+                </Border>
+
+                <!-- Row 2: Monaco -->
+                <Border x:Name="MonacoBorder" Grid.Row="2"
+                        Margin="32,0,32,0"
+                        BorderBrush="{DynamicResource ThBrBorder}"
+                        BorderThickness="1" CornerRadius="6"
+                        Visibility="Collapsed">
+                    <wv2:WebView2 x:Name="MonacoView"/>
+                </Border>
+
+                <!-- Row 3: Run output / live preview -->
+                <Border x:Name="OutputBorder" Grid.Row="3"
+                        Margin="32,6,32,0"
+                        Background="{DynamicResource ThBrBgPanel}"
+                        BorderBrush="{DynamicResource ThBrBorder}"
+                        BorderThickness="1" CornerRadius="6"
+                        Visibility="Collapsed">
+                    <Grid>
+                        <ScrollViewer x:Name="OutputTextScroll" MaxHeight="130"
+                                      VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Auto">
+                            <TextBlock x:Name="TxtOutput"
+                                       FontFamily="/Assets/Fonts/#GeistMono"
+                                       FontSize="12" Padding="12,8"
+                                       Foreground="{DynamicResource ThBrTextPrimary}"
+                                       TextWrapping="NoWrap"/>
+                        </ScrollViewer>
+                        <!-- HTML/CSS live preview -->
+                        <wv2:WebView2 x:Name="PreviewWeb" Height="260" Visibility="Collapsed"
+                                      DefaultBackgroundColor="White"/>
+                    </Grid>
+                </Border>
+
+                <!-- Row 4: Grading controls -->
+                <ScrollViewer x:Name="GradingScroll" Grid.Row="4"
+                              VerticalScrollBarVisibility="Auto"
+                              Visibility="Collapsed">
+                    <StackPanel Margin="32,16,32,24">
+
+                        <!-- Score row -->
+                        <TextBlock Text="SCORE"
+                                   FontSize="10" FontWeight="Bold"
+                                   Foreground="{DynamicResource ThBrTextMuted}"
+                                   FontFamily="/Assets/Fonts/#Geist"
+                                   Margin="0,0,0,6"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                            <TextBox x:Name="ScoreBox"
+                                     Width="90" Height="40" FontSize="14"
+                                     FontFamily="/Assets/Fonts/#Geist"
+                                     Background="{DynamicResource ThBrBgInput}"
+                                     Foreground="{DynamicResource ThBrTextPrimary}"
+                                     BorderBrush="{DynamicResource ThBrBorder}"
+                                     BorderThickness="1"
+                                     Padding="12,0"
+                                     VerticalContentAlignment="Center"/>
+                            <TextBlock x:Name="TxtMaxMarks"
+                                       FontSize="14"
+                                       Foreground="{DynamicResource ThBrTextSecondary}"
+                                       FontFamily="/Assets/Fonts/#Geist"
+                                       VerticalAlignment="Center"
+                                       Margin="10,0,0,0"/>
+                        </StackPanel>
+
+                        <!-- Feedback -->
+                        <TextBlock Text="FEEDBACK (optional)"
+                                   FontSize="10" FontWeight="Bold"
+                                   Foreground="{DynamicResource ThBrTextMuted}"
+                                   FontFamily="/Assets/Fonts/#Geist"
+                                   Margin="0,0,0,6"/>
+                        <TextBox x:Name="FeedbackBox"
+                                 Height="80" AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 FontSize="13" FontFamily="/Assets/Fonts/#Geist"
+                                 Background="{DynamicResource ThBrBgInput}"
+                                 Foreground="{DynamicResource ThBrTextPrimary}"
+                                 BorderBrush="{DynamicResource ThBrBorder}"
+                                 BorderThickness="1"
+                                 Padding="12,8"
+                                 VerticalContentAlignment="Top"
+                                 Margin="0,0,0,14"/>
+
+                        <!-- Action row -->
+                        <StackPanel Orientation="Horizontal">
+                            <Button x:Name="BtnSaveQuestion"
+                                    Content="Save Grade"
+                                    Background="{DynamicResource ThBrAccent}"
+                                    Foreground="{DynamicResource ThBrTextOnAccent}"
+                                    FontFamily="/Assets/Fonts/#Geist"
+                                    FontSize="13" FontWeight="SemiBold"
+                                    Cursor="Hand" Padding="20,10"
+                                    BorderThickness="0"
+                                    Template="{StaticResource AccentBtnTemplate}"/>
+
+                            <Button x:Name="BtnClearGrade"
+                                    Content="Skip / Clear"
+                                    Background="{DynamicResource ThBrBgSurface}"
+                                    Foreground="{DynamicResource ThBrTextSecondary}"
+                                    FontFamily="/Assets/Fonts/#Geist"
+                                    FontSize="12" Cursor="Hand"
+                                    Padding="14,10" BorderThickness="0"
+                                    Margin="8,0,0,0"
+                                    Template="{StaticResource GhostBtnTemplate}"/>
+
+                            <Button x:Name="BtnAiSuggest"
+                                    Content="✨ AI Suggest"
+                                    Background="{DynamicResource ThBrBgSurface}"
+                                    Foreground="{DynamicResource ThBrAccent}"
+                                    FontFamily="/Assets/Fonts/#Geist"
+                                    FontSize="12" FontWeight="SemiBold" Cursor="Hand"
+                                    Padding="14,10" BorderThickness="0"
+                                    Margin="8,0,0,0"
+                                    Template="{StaticResource GhostBtnTemplate}"/>
+
+                            <TextBlock x:Name="TxtSaveStatus"
+                                       FontSize="12" FontFamily="/Assets/Fonts/#Geist"
+                                       VerticalAlignment="Center"
+                                       Margin="14,0,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>

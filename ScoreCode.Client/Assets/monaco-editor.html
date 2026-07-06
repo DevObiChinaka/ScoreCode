@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>ScoreCode Editor</title>
+    <style>
+        @font-face {
+            font-family: 'JetBrains Mono';
+            src: url('monaco/fonts/JetBrainsMono-Regular.woff2') format('woff2');
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'JetBrains Mono';
+            src: url('monaco/fonts/JetBrainsMono-Bold.woff2') format('woff2');
+            font-weight: bold;
+            font-style: normal;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background: #0D1117; }
+        #editor-container { width: 100%; height: 100%; }
+        /* Overflow widgets (suggest/hover) are positioned by Monaco itself via
+           the `fixedOverflowWidgets: true` editor option. Do NOT override
+           .overflow-guard / .overflowingContentWidgets here — manual overrides
+           fight Monaco's layout and mis-place the suggestion popup. */
+    </style>
+</head>
+<body>
+    <div id="editor-container"></div>
+
+    <script src="monaco/vs/loader.js"></script>
+    <script>
+        let editor = null;
+        // Master switch for IntelliSense. The lecturer's per-exam setting flows
+        // here via setIntelliSense(). Completion providers honour this flag, so
+        // when it's false suggestions are truly off — including manual Ctrl+Space.
+        let intelliSenseEnabled = true;
+
+        // ── Custom dark theme matching ScoreCode palette ──────────────────
+        function defineTheme(monaco) {
+            monaco.editor.defineTheme('scorecode-dark', {
+                base: 'vs-dark',
+                inherit: true,
+                rules: [
+                    // ── Universal tokens ──
+                    { token: 'comment',     foreground: '5C6B88', fontStyle: 'italic' },
+                    { token: 'keyword',     foreground: '00CDB7', fontStyle: 'bold' },
+                    { token: 'string',      foreground: '68D391' },
+                    { token: 'number',      foreground: 'F6AD55' },
+                    { token: 'type',        foreground: '63B3ED' },
+                    { token: 'identifier',  foreground: 'E8EEFF' },
+                    { token: 'delimiter',   foreground: '8B95A7' },
+                    { token: 'operator',    foreground: '8B95A7' },
+                    { token: 'predefined',  foreground: 'D6BCFA' },
+                    { token: 'constant',    foreground: 'F6AD55' },
+
+                    // ── Python ──
+                    { token: 'keyword.python',    foreground: '00CDB7', fontStyle: 'bold' },
+                    { token: 'string.python',     foreground: '68D391' },
+                    { token: 'number.python',     foreground: 'F6AD55' },
+                    { token: 'decorator.python',  foreground: 'F6AD55' },
+                    { token: 'predefined.python', foreground: 'D6BCFA' },
+
+                    // ── Java ──
+                    { token: 'keyword.java',          foreground: '00CDB7', fontStyle: 'bold' },
+                    { token: 'string.java',           foreground: '68D391' },
+                    { token: 'number.java',           foreground: 'F6AD55' },
+                    { token: 'annotation.java',       foreground: 'F6AD55' },
+                    { token: 'type.identifier.java',  foreground: '63B3ED' },
+
+                    // ── C++ ──
+                    { token: 'keyword.cpp',     foreground: '00CDB7', fontStyle: 'bold' },
+                    { token: 'string.cpp',      foreground: '68D391' },
+                    { token: 'number.cpp',      foreground: 'F6AD55' },
+                    { token: 'directive.cpp',   foreground: 'D6BCFA' },
+                    { token: 'identifier.cpp',  foreground: 'E8EEFF' },
+
+                    // ── JavaScript ──
+                    { token: 'keyword.js',    foreground: '00CDB7', fontStyle: 'bold' },
+                    { token: 'string.js',     foreground: '68D391' },
+                    { token: 'number.js',     foreground: 'F6AD55' },
+                    { token: 'regexp.js',     foreground: 'FC8181' },
+
+                    // ── HTML ──
+                    { token: 'tag',                     foreground: 'FC8181' },
+                    { token: 'tag.html',                foreground: 'FC8181' },
+                    { token: 'attribute.name.html',     foreground: 'F6AD55' },
+                    { token: 'attribute.value.html',    foreground: '68D391' },
+                    { token: 'metatag.html',            foreground: '5C6B88' },
+                    { token: 'metatag.content.html',    foreground: '68D391' },
+                    { token: 'delimiter.html',          foreground: '8B95A7' },
+
+                    // ── CSS ──
+                    { token: 'tag.css',              foreground: 'FC8181' },
+                    { token: 'attribute.name.css',   foreground: '63B3ED' },
+                    { token: 'attribute.value.css',  foreground: '68D391' },
+                    { token: 'number.css',           foreground: 'F6AD55' },
+                    { token: 'delimiter.css',        foreground: '8B95A7' },
+                ],
+                colors: {
+                    'editor.background':                  '#0D1117',
+                    'editor.foreground':                  '#E8EEFF',
+                    'editor.lineHighlightBackground':     '#1C233833',
+                    'editor.selectionBackground':         '#1F2A4066',
+                    'editorCursor.foreground':            '#00CDB7',
+                    'editorLineNumber.foreground':        '#364059',
+                    'editorLineNumber.activeForeground':  '#5C6B88',
+                    'editor.inactiveSelectionBackground': '#1F2A4033',
+                    'editorGutter.background':            '#0D1117',
+                    'editorWidget.background':            '#1C2338',
+                    'editorWidget.border':                '#1F2A40',
+                    'input.background':                   '#151D2E',
+                    'input.border':                       '#1F2A40',
+                    'scrollbarSlider.background':         '#1F2A4066',
+                    'scrollbarSlider.hoverBackground':    '#1F2A40AA',
+                    // Suggest widget (autocomplete popup)
+                    'editorSuggestWidget.background':          '#1C2338',
+                    'editorSuggestWidget.border':              '#1F2A40',
+                    'editorSuggestWidget.foreground':          '#E8EEFF',
+                    'editorSuggestWidget.selectedBackground':  '#1F2A40',
+                    'editorSuggestWidget.highlightForeground': '#00CDB7',
+                    // Hover widget
+                    'editorHoverWidget.background':  '#1C2338',
+                    'editorHoverWidget.border':      '#1F2A40',
+                }
+            });
+
+            // ── Light theme matching ScoreCode light palette ──
+            monaco.editor.defineTheme('scorecode-light', {
+                base: 'vs',
+                inherit: true,
+                rules: [
+                    { token: 'comment',     foreground: '6A737D', fontStyle: 'italic' },
+                    { token: 'keyword',     foreground: '0E7C6B', fontStyle: 'bold' },
+                    { token: 'string',      foreground: '22863A' },
+                    { token: 'number',      foreground: 'B76E00' },
+                    { token: 'type',        foreground: '0366D6' },
+                    { token: 'identifier',  foreground: '24292E' },
+                    { token: 'delimiter',   foreground: '586069' },
+                    { token: 'operator',    foreground: '586069' },
+                    { token: 'predefined',  foreground: '6F42C1' },
+                    { token: 'constant',    foreground: 'B76E00' },
+                ],
+                colors: {
+                    'editor.background':                  '#FFFFFF',
+                    'editor.foreground':                  '#24292E',
+                    'editor.lineHighlightBackground':     '#F6F8FA',
+                    'editor.selectionBackground':         '#0366D625',
+                    'editorCursor.foreground':            '#0E7C6B',
+                    'editorLineNumber.foreground':        '#B0B8C4',
+                    'editorLineNumber.activeForeground':  '#6A737D',
+                    'editor.inactiveSelectionBackground': '#0366D615',
+                    'editorGutter.background':            '#FFFFFF',
+                    'editorWidget.background':            '#F6F8FA',
+                    'editorWidget.border':                '#E1E4E8',
+                    'input.background':                   '#FFFFFF',
+                    'input.border':                       '#E1E4E8',
+                    'scrollbarSlider.background':         '#95A0AE44',
+                    'scrollbarSlider.hoverBackground':    '#95A0AE88',
+                    'editorSuggestWidget.background':          '#FFFFFF',
+                    'editorSuggestWidget.border':              '#E1E4E8',
+                    'editorSuggestWidget.foreground':          '#24292E',
+                    'editorSuggestWidget.selectedBackground':  '#E1E4E8',
+                    'editorSuggestWidget.highlightForeground': '#0E7C6B',
+                    'editorHoverWidget.background':  '#F6F8FA',
+                    'editorHoverWidget.border':      '#E1E4E8',
+                }
+            });
+        }
+
+        // ── Per-language completion providers ─────────────────────────────
+        const LANG_COMPLETIONS = {
+            python: [
+                { l: 'print',    k: 'Function', i: 'print(${1})',                         d: 'Print to stdout' },
+                { l: 'input',    k: 'Function', i: 'input(${1})',                         d: 'Read from stdin' },
+                { l: 'range',    k: 'Function', i: 'range(${1})',                         d: 'Generate sequence' },
+                { l: 'len',      k: 'Function', i: 'len(${1})',                           d: 'Length of object' },
+                { l: 'int',      k: 'Function', i: 'int(${1})',                           d: 'Convert to int' },
+                { l: 'str',      k: 'Function', i: 'str(${1})',                           d: 'Convert to string' },
+                { l: 'float',    k: 'Function', i: 'float(${1})',                         d: 'Convert to float' },
+                { l: 'list',     k: 'Function', i: 'list(${1})',                          d: 'Create list' },
+                { l: 'dict',     k: 'Function', i: 'dict(${1})',                          d: 'Create dict' },
+                { l: 'type',     k: 'Function', i: 'type(${1})',                          d: 'Get type' },
+                { l: 'sorted',   k: 'Function', i: 'sorted(${1})',                        d: 'Return sorted list' },
+                { l: 'enumerate',k: 'Function', i: 'enumerate(${1})',                     d: 'Enumerate iterable' },
+                { l: 'zip',      k: 'Function', i: 'zip(${1})',                           d: 'Zip iterables' },
+                { l: 'map',      k: 'Function', i: 'map(${1}, ${2})',                     d: 'Map function' },
+                { l: 'filter',   k: 'Function', i: 'filter(${1}, ${2})',                  d: 'Filter iterable' },
+                { l: 'abs',      k: 'Function', i: 'abs(${1})',                           d: 'Absolute value' },
+                { l: 'max',      k: 'Function', i: 'max(${1})',                           d: 'Maximum value' },
+                { l: 'min',      k: 'Function', i: 'min(${1})',                           d: 'Minimum value' },
+                { l: 'sum',      k: 'Function', i: 'sum(${1})',                           d: 'Sum of iterable' },
+                { l: 'def',      k: 'Snippet',  i: 'def ${1:name}(${2}):\n\t${3:pass}',   d: 'Define function' },
+                { l: 'class',    k: 'Snippet',  i: 'class ${1:Name}:\n\t${2:pass}',       d: 'Define class' },
+                { l: 'for',      k: 'Snippet',  i: 'for ${1:item} in ${2:iterable}:\n\t${3:pass}', d: 'For loop' },
+                { l: 'while',    k: 'Snippet',  i: 'while ${1:condition}:\n\t${2:pass}',   d: 'While loop' },
+                { l: 'if',       k: 'Snippet',  i: 'if ${1:condition}:\n\t${2:pass}',      d: 'If statement' },
+                { l: 'elif',     k: 'Snippet',  i: 'elif ${1:condition}:\n\t${2:pass}',    d: 'Elif clause' },
+                { l: 'try',      k: 'Snippet',  i: 'try:\n\t${1:pass}\nexcept ${2:Exception} as e:\n\t${3:pass}', d: 'Try/except' },
+                { l: 'with',     k: 'Snippet',  i: 'with ${1:expr} as ${2:var}:\n\t${3:pass}', d: 'Context manager' },
+                { l: 'import',   k: 'Keyword',  i: 'import ${1}',                         d: 'Import module' },
+                { l: 'from',     k: 'Keyword',  i: 'from ${1} import ${2}',               d: 'From import' },
+                { l: 'lambda',   k: 'Keyword',  i: 'lambda ${1}: ${2}',                   d: 'Lambda expression' },
+                { l: 'True',     k: 'Keyword',  i: 'True',                                d: 'Boolean True' },
+                { l: 'False',    k: 'Keyword',  i: 'False',                               d: 'Boolean False' },
+                { l: 'None',     k: 'Keyword',  i: 'None',                                d: 'None value' },
+            ],
+            java: [
+                { l: 'System.out.println',  k: 'Function', i: 'System.out.println(${1});',  d: 'Print line' },
+                { l: 'System.out.print',    k: 'Function', i: 'System.out.print(${1});',    d: 'Print' },
+                { l: 'Scanner',             k: 'Snippet',  i: 'Scanner ${1:sc} = new Scanner(System.in);', d: 'Create Scanner' },
+                { l: 'main',               k: 'Snippet',  i: 'public static void main(String[] args) {\n\t${1}\n}', d: 'Main method' },
+                { l: 'sout',               k: 'Snippet',  i: 'System.out.println(${1});',   d: 'Print (shortcut)' },
+                { l: 'for',                k: 'Snippet',  i: 'for (int ${1:i} = 0; ${1:i} < ${2:n}; ${1:i}++) {\n\t${3}\n}', d: 'For loop' },
+                { l: 'foreach',            k: 'Snippet',  i: 'for (${1:Type} ${2:item} : ${3:collection}) {\n\t${4}\n}', d: 'Enhanced for' },
+                { l: 'while',              k: 'Snippet',  i: 'while (${1:condition}) {\n\t${2}\n}', d: 'While loop' },
+                { l: 'if',                 k: 'Snippet',  i: 'if (${1:condition}) {\n\t${2}\n}',    d: 'If statement' },
+                { l: 'try',                k: 'Snippet',  i: 'try {\n\t${1}\n} catch (${2:Exception} e) {\n\t${3}\n}', d: 'Try/catch' },
+                { l: 'class',              k: 'Snippet',  i: 'public class ${1:Name} {\n\t${2}\n}', d: 'Class' },
+                { l: 'method',             k: 'Snippet',  i: 'public ${1:void} ${2:name}(${3}) {\n\t${4}\n}', d: 'Method' },
+                { l: 'String',             k: 'Class',    i: 'String',  d: 'String type' },
+                { l: 'ArrayList',          k: 'Class',    i: 'ArrayList<${1:Type}>', d: 'ArrayList' },
+                { l: 'HashMap',            k: 'Class',    i: 'HashMap<${1:Key}, ${2:Value}>', d: 'HashMap' },
+                { l: 'Arrays.sort',        k: 'Function', i: 'Arrays.sort(${1});',  d: 'Sort array' },
+                { l: 'Math.max',           k: 'Function', i: 'Math.max(${1}, ${2})', d: 'Maximum' },
+                { l: 'Math.min',           k: 'Function', i: 'Math.min(${1}, ${2})', d: 'Minimum' },
+                { l: 'Math.abs',           k: 'Function', i: 'Math.abs(${1})',       d: 'Absolute value' },
+                { l: 'Integer.parseInt',   k: 'Function', i: 'Integer.parseInt(${1})', d: 'Parse int' },
+                { l: 'import',             k: 'Keyword',  i: 'import ${1};',         d: 'Import' },
+            ],
+            cpp: [
+                { l: 'cout',      k: 'Snippet',  i: 'cout << ${1} << endl;',  d: 'Print to stdout' },
+                { l: 'cin',       k: 'Snippet',  i: 'cin >> ${1};',           d: 'Read from stdin' },
+                { l: 'endl',      k: 'Keyword',  i: 'endl',                   d: 'End line' },
+                { l: '#include',  k: 'Snippet',  i: '#include <${1:iostream}>', d: 'Include header' },
+                { l: 'using',     k: 'Snippet',  i: 'using namespace ${1:std};', d: 'Using namespace' },
+                { l: 'main',      k: 'Snippet',  i: 'int main() {\n\t${1}\n\treturn 0;\n}', d: 'Main function' },
+                { l: 'for',       k: 'Snippet',  i: 'for (int ${1:i} = 0; ${1:i} < ${2:n}; ${1:i}++) {\n\t${3}\n}', d: 'For loop' },
+                { l: 'while',     k: 'Snippet',  i: 'while (${1:condition}) {\n\t${2}\n}', d: 'While loop' },
+                { l: 'if',        k: 'Snippet',  i: 'if (${1:condition}) {\n\t${2}\n}',    d: 'If statement' },
+                { l: 'class',     k: 'Snippet',  i: 'class ${1:Name} {\npublic:\n\t${2}\n};', d: 'Class' },
+                { l: 'struct',    k: 'Snippet',  i: 'struct ${1:Name} {\n\t${2}\n};',  d: 'Struct' },
+                { l: 'function',  k: 'Snippet',  i: '${1:void} ${2:name}(${3}) {\n\t${4}\n}', d: 'Function' },
+                { l: 'vector',    k: 'Class',    i: 'vector<${1:int}>',    d: 'Vector container' },
+                { l: 'string',    k: 'Class',    i: 'string',              d: 'String type' },
+                { l: 'map',       k: 'Class',    i: 'map<${1:key}, ${2:value}>', d: 'Map container' },
+                { l: 'sort',      k: 'Function', i: 'sort(${1}.begin(), ${1}.end());', d: 'Sort container' },
+                { l: 'sizeof',    k: 'Function', i: 'sizeof(${1})',        d: 'Size of type' },
+                { l: 'nullptr',   k: 'Keyword',  i: 'nullptr',             d: 'Null pointer' },
+                { l: 'auto',      k: 'Keyword',  i: 'auto',               d: 'Auto type' },
+                { l: 'const',     k: 'Keyword',  i: 'const',              d: 'Constant' },
+            ],
+            javascript: [
+                { l: 'console.log',   k: 'Function', i: 'console.log(${1});',      d: 'Log to console' },
+                { l: 'console.error', k: 'Function', i: 'console.error(${1});',    d: 'Log error' },
+                { l: 'console.warn',  k: 'Function', i: 'console.warn(${1});',     d: 'Log warning' },
+                { l: 'alert',         k: 'Function', i: 'alert(${1});',            d: 'Alert dialog' },
+                { l: 'parseInt',      k: 'Function', i: 'parseInt(${1})',          d: 'Parse integer' },
+                { l: 'parseFloat',    k: 'Function', i: 'parseFloat(${1})',        d: 'Parse float' },
+                { l: 'JSON.stringify',k: 'Function', i: 'JSON.stringify(${1})',    d: 'Serialize to JSON' },
+                { l: 'JSON.parse',    k: 'Function', i: 'JSON.parse(${1})',        d: 'Parse JSON' },
+                { l: 'Math.max',      k: 'Function', i: 'Math.max(${1})',          d: 'Maximum' },
+                { l: 'Math.min',      k: 'Function', i: 'Math.min(${1})',          d: 'Minimum' },
+                { l: 'Math.floor',    k: 'Function', i: 'Math.floor(${1})',        d: 'Floor' },
+                { l: 'Math.random',   k: 'Function', i: 'Math.random()',           d: 'Random 0-1' },
+                { l: 'Array.from',    k: 'Function', i: 'Array.from(${1})',        d: 'Array from iterable' },
+                { l: 'function',      k: 'Snippet',  i: 'function ${1:name}(${2}) {\n\t${3}\n}', d: 'Function declaration' },
+                { l: 'arrow',         k: 'Snippet',  i: 'const ${1:name} = (${2}) => {\n\t${3}\n};', d: 'Arrow function' },
+                { l: 'for',           k: 'Snippet',  i: 'for (let ${1:i} = 0; ${1:i} < ${2:n}; ${1:i}++) {\n\t${3}\n}', d: 'For loop' },
+                { l: 'forof',         k: 'Snippet',  i: 'for (const ${1:item} of ${2:iterable}) {\n\t${3}\n}', d: 'For...of loop' },
+                { l: 'foreach',       k: 'Snippet',  i: '${1:array}.forEach((${2:item}) => {\n\t${3}\n});', d: 'forEach' },
+                { l: 'if',            k: 'Snippet',  i: 'if (${1:condition}) {\n\t${2}\n}',    d: 'If statement' },
+                { l: 'try',           k: 'Snippet',  i: 'try {\n\t${1}\n} catch (${2:e}) {\n\t${3}\n}', d: 'Try/catch' },
+                { l: 'async',         k: 'Snippet',  i: 'async function ${1:name}(${2}) {\n\t${3}\n}', d: 'Async function' },
+                { l: 'await',         k: 'Keyword',  i: 'await ${1}',              d: 'Await promise' },
+                { l: 'const',         k: 'Keyword',  i: 'const ${1} = ${2};',      d: 'Constant' },
+                { l: 'let',           k: 'Keyword',  i: 'let ${1} = ${2};',        d: 'Let variable' },
+                { l: 'class',         k: 'Snippet',  i: 'class ${1:Name} {\n\tconstructor(${2}) {\n\t\t${3}\n\t}\n}', d: 'Class' },
+                { l: 'fetch',         k: 'Snippet',  i: "fetch('${1:url}')\n\t.then(res => res.json())\n\t.then(${2:data} => {\n\t\t${3}\n\t});", d: 'Fetch API' },
+            ],
+            html: [
+                { l: 'html5',     k: 'Snippet',  i: '<!DOCTYPE html>\n<html lang="en">\n<head>\n\t<meta charset="UTF-8">\n\t<meta name="viewport" content="width=device-width, initial-scale=1.0">\n\t<title>${1:Document}<\/title>\n<\/head>\n<body>\n\t${2}\n<\/body>\n<\/html>', d: 'HTML5 boilerplate' },
+                { l: 'div',       k: 'Snippet',  i: '<div${1}>\n\t${2}\n<\/div>',       d: 'Div element' },
+                { l: 'span',      k: 'Snippet',  i: '<span${1}>${2}<\/span>',            d: 'Span element' },
+                { l: 'p',         k: 'Snippet',  i: '<p${1}>${2}<\/p>',                  d: 'Paragraph' },
+                { l: 'h1',        k: 'Snippet',  i: '<h1${1}>${2}<\/h1>',                d: 'Heading 1' },
+                { l: 'h2',        k: 'Snippet',  i: '<h2${1}>${2}<\/h2>',                d: 'Heading 2' },
+                { l: 'h3',        k: 'Snippet',  i: '<h3${1}>${2}<\/h3>',                d: 'Heading 3' },
+                { l: 'a',         k: 'Snippet',  i: '<a href="${1:#}">${2:Link}<\/a>',    d: 'Anchor link' },
+                { l: 'img',       k: 'Snippet',  i: '<img src="${1}" alt="${2}" />',     d: 'Image' },
+                { l: 'ul',        k: 'Snippet',  i: '<ul>\n\t<li>${1}<\/li>\n<\/ul>',     d: 'Unordered list' },
+                { l: 'ol',        k: 'Snippet',  i: '<ol>\n\t<li>${1}<\/li>\n<\/ol>',     d: 'Ordered list' },
+                { l: 'table',     k: 'Snippet',  i: '<table>\n\t<thead>\n\t\t<tr>\n\t\t\t<th>${1}<\/th>\n\t\t<\/tr>\n\t<\/thead>\n\t<tbody>\n\t\t<tr>\n\t\t\t<td>${2}<\/td>\n\t\t<\/tr>\n\t<\/tbody>\n<\/table>', d: 'Table' },
+                { l: 'form',      k: 'Snippet',  i: '<form action="${1}" method="${2:post}">\n\t${3}\n<\/form>', d: 'Form' },
+                { l: 'input',     k: 'Snippet',  i: '<input type="${1:text}" name="${2}" />',  d: 'Input' },
+                { l: 'button',    k: 'Snippet',  i: '<button type="${1:button}">${2}<\/button>', d: 'Button' },
+                { l: 'link',      k: 'Snippet',  i: '<link rel="stylesheet" href="${1}" />',   d: 'CSS link' },
+                { l: 'script',    k: 'Snippet',  i: '<scr' + 'ipt src="${1}"><\/scr' + 'ipt>',  d: 'Script tag' },
+                { l: 'style',     k: 'Snippet',  i: '<sty' + 'le>\n\t${1}\n<\/sty' + 'le>',    d: 'Style tag' },
+                { l: 'class',     k: 'Snippet',  i: 'class="${1}"',                             d: 'Class attr' },
+                { l: 'id',        k: 'Snippet',  i: 'id="${1}"',                                d: 'ID attr' },
+            ],
+            css: [
+                { l: 'display',       k: 'Property', i: 'display: ${1:flex};',              d: 'Display property' },
+                { l: 'flex',          k: 'Snippet',  i: 'display: flex;\njustify-content: ${1:center};\nalign-items: ${2:center};', d: 'Flexbox' },
+                { l: 'grid',          k: 'Snippet',  i: 'display: grid;\ngrid-template-columns: ${1:1fr 1fr};\ngap: ${2:1rem};', d: 'CSS Grid' },
+                { l: 'margin',        k: 'Property', i: 'margin: ${1:0};',                  d: 'Margin' },
+                { l: 'padding',       k: 'Property', i: 'padding: ${1:0};',                 d: 'Padding' },
+                { l: 'width',         k: 'Property', i: 'width: ${1:100%};',                d: 'Width' },
+                { l: 'height',        k: 'Property', i: 'height: ${1:auto};',               d: 'Height' },
+                { l: 'color',         k: 'Property', i: 'color: ${1:#333};',                d: 'Text color' },
+                { l: 'background',    k: 'Property', i: 'background: ${1:#fff};',           d: 'Background' },
+                { l: 'background-color', k: 'Property', i: 'background-color: ${1:#fff};',  d: 'BG color' },
+                { l: 'font-size',     k: 'Property', i: 'font-size: ${1:16px};',            d: 'Font size' },
+                { l: 'font-weight',   k: 'Property', i: 'font-weight: ${1:bold};',          d: 'Font weight' },
+                { l: 'font-family',   k: 'Property', i: "font-family: ${1:'Arial'}, sans-serif;", d: 'Font family' },
+                { l: 'border',        k: 'Property', i: 'border: ${1:1px} ${2:solid} ${3:#ccc};', d: 'Border' },
+                { l: 'border-radius', k: 'Property', i: 'border-radius: ${1:4px};',        d: 'Border radius' },
+                { l: 'box-shadow',    k: 'Property', i: 'box-shadow: ${1:0} ${2:2px} ${3:4px} ${4:rgba(0,0,0,0.1)};', d: 'Box shadow' },
+                { l: 'text-align',    k: 'Property', i: 'text-align: ${1:center};',        d: 'Text align' },
+                { l: 'position',      k: 'Property', i: 'position: ${1:relative};',        d: 'Position' },
+                { l: 'transition',    k: 'Property', i: 'transition: ${1:all} ${2:0.3s} ${3:ease};', d: 'Transition' },
+                { l: 'transform',     k: 'Property', i: 'transform: ${1:none};',           d: 'Transform' },
+                { l: 'opacity',       k: 'Property', i: 'opacity: ${1:1};',                d: 'Opacity' },
+                { l: 'overflow',      k: 'Property', i: 'overflow: ${1:hidden};',           d: 'Overflow' },
+                { l: 'media',         k: 'Snippet',  i: '@media (max-width: ${1:768px}) {\n\t${2}\n}', d: 'Media query' },
+                { l: 'keyframes',     k: 'Snippet',  i: '@keyframes ${1:name} {\n\tfrom { ${2} }\n\tto { ${3} }\n}', d: 'Keyframes' },
+            ],
+        };
+
+        function registerCompletions(monaco) {
+            for (const [langId, items] of Object.entries(LANG_COMPLETIONS)) {
+                monaco.languages.registerCompletionItemProvider(langId, {
+                    provideCompletionItems: function (model, position) {
+                        // Honour the lecturer's IntelliSense toggle even for
+                        // manually-triggered (Ctrl+Space) completions.
+                        if (!intelliSenseEnabled) return { suggestions: [] };
+                        const word = model.getWordUntilPosition(position);
+                        const range = {
+                            startLineNumber: position.lineNumber,
+                            endLineNumber:   position.lineNumber,
+                            startColumn:     word.startColumn,
+                            endColumn:       word.endColumn
+                        };
+                        return {
+                            suggestions: items.map(c => ({
+                                label:           c.l,
+                                kind:            monaco.languages.CompletionItemKind[c.k] || monaco.languages.CompletionItemKind.Text,
+                                insertText:      c.i,
+                                insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                                detail:          c.d,
+                                range:           range
+                            }))
+                        };
+                    }
+                });
+            }
+        }
+
+        // ── Initialize Monaco ─────────────────────────────────────────────
+        require.config({
+            paths: { vs: 'monaco/vs' }
+        });
+
+        require(['vs/editor/editor.main'], function () {
+            try {
+                defineTheme(monaco);
+                registerCompletions(monaco);
+
+                editor = monaco.editor.create(document.getElementById('editor-container'), {
+                    value: '',
+                    language: 'python',
+                    theme: 'scorecode-dark',
+                    fontFamily: "'JetBrains Mono', 'Consolas', monospace",
+                    fontSize: 14,
+                    lineHeight: 22,
+                    minimap: { enabled: true, scale: 2 },
+                    scrollBeyondLastLine: false,
+                    roundedSelection: true,
+                    cursorBlinking: 'smooth',
+                    cursorSmoothCaretAnimation: 'on',
+                    smoothScrolling: true,
+                    padding: { top: 12, bottom: 12 },
+                    renderLineHighlight: 'gutter',
+                    automaticLayout: true,
+                    wordWrap: 'off',
+                    tabSize: 4,
+                    insertSpaces: true,
+                    bracketPairColorization: { enabled: true },
+                    guides: { bracketPairs: true, indentation: true },
+                    suggestOnTriggerCharacters: true,
+                    quickSuggestions: true,
+                    parameterHints: { enabled: true },
+                    fixedOverflowWidgets: true,
+                });
+
+                // ── Fix caret/glyph misalignment ──────────────────────────
+                // Monaco measures glyph widths at create-time; if the JetBrains
+                // Mono web font hasn't finished loading it measures the Consolas
+                // fallback, then re-renders with a different font once it loads —
+                // so the caret drifts. Re-measure once the real font is ready.
+                function remeasure() {
+                    try { monaco.editor.remeasureFonts(); } catch (e) { }
+                }
+                if (document.fonts) {
+                    document.fonts.load("14px 'JetBrains Mono'").then(remeasure).catch(remeasure);
+                    if (document.fonts.ready) document.fonts.ready.then(remeasure);
+                }
+
+                // Notify WPF that editor is ready
+                if (window.chrome && window.chrome.webview) {
+                    window.chrome.webview.postMessage(JSON.stringify({
+                        type: 'ready'
+                    }));
+                }
+
+                // Track dirty state (WPF pulls code on demand instead of receiving it)
+                let _dirty = false;
+                editor.onDidChangeModelContent(() => { _dirty = true; });
+            } catch (err) {
+                // Report error to WPF so it surfaces in the UI
+                if (window.chrome && window.chrome.webview) {
+                    window.chrome.webview.postMessage(JSON.stringify({
+                        type: 'error',
+                        message: 'Editor init failed: ' + err.message
+                    }));
+                }
+            }
+        }, function (err) {
+            // require.js load error callback
+            if (window.chrome && window.chrome.webview) {
+                window.chrome.webview.postMessage(JSON.stringify({
+                    type: 'error',
+                    message: 'Failed to load Monaco: ' + (err.message || err)
+                }));
+            }
+        });
+
+        // ── API callable from WPF via ExecuteScriptAsync ──────────────────
+
+        function setValue(code) {
+            if (editor) {
+                editor.setValue(code);
+                editor.setPosition({ lineNumber: 1, column: 1 });
+            }
+        }
+
+        function getValue() {
+            return editor ? editor.getValue() : '';
+        }
+
+        function setLanguage(lang) {
+            if (editor) {
+                const model = editor.getModel();
+                if (model) {
+                    monaco.editor.setModelLanguage(model, lang);
+                }
+            }
+        }
+
+        function getLanguage() {
+            if (editor) {
+                const model = editor.getModel();
+                return model ? model.getLanguageId() : '';
+            }
+            return '';
+        }
+
+        // ── Full state serialization (cursor + scroll + code + language) ──
+
+        function getEditorState() {
+            if (!editor) return JSON.stringify({});
+            var pos = editor.getPosition();
+            return JSON.stringify({
+                code: editor.getValue(),
+                language: editor.getModel().getLanguageId(),
+                cursorLine: pos ? pos.lineNumber : 1,
+                cursorColumn: pos ? pos.column : 1,
+                scrollTop: editor.getScrollTop()
+            });
+        }
+
+        function setEditorState(stateJson) {
+            if (!editor) return;
+            var s = JSON.parse(stateJson);
+            if (s.language) {
+                monaco.editor.setModelLanguage(editor.getModel(), s.language);
+            }
+            editor.setValue(s.code || '');
+            if (s.cursorLine) {
+                editor.setPosition({
+                    lineNumber: s.cursorLine,
+                    column: s.cursorColumn || 1
+                });
+            }
+            if (s.scrollTop) {
+                editor.setScrollTop(s.scrollTop);
+            }
+            _dirty = false;
+            editor.focus();
+        }
+
+        // ── Dirty flag (WPF polls on autosave, pulls code on demand) ──
+
+        function isDirtyFlag() { return _dirty; }
+        function clearDirtyFlag() { _dirty = false; }
+
+        // ── Existing API ──
+
+        function setReadOnly(readOnly) {
+            if (editor) {
+                editor.updateOptions({ readOnly: readOnly });
+            }
+        }
+
+        function setIntelliSense(enabled) {
+            // Coerce: WPF passes the literal true/false via ExecuteScriptAsync.
+            enabled = (enabled === true || enabled === 'true');
+            intelliSenseEnabled = enabled;
+            if (editor) {
+                editor.updateOptions({
+                    quickSuggestions: enabled,
+                    suggestOnTriggerCharacters: enabled,
+                    parameterHints: { enabled: enabled },
+                    wordBasedSuggestions: enabled ? 'currentDocument' : 'off'
+                });
+                // Dismiss any popup that may already be showing when turning off.
+                if (!enabled) {
+                    editor.trigger('scorecode', 'hideSuggestWidget', {});
+                }
+            }
+        }
+
+        function disableCopyPaste() {
+            if (editor) {
+                editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyC, () => {});
+                editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, () => {});
+                editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyX, () => {});
+                editor.updateOptions({ contextmenu: false });
+            }
+        }
+
+        function focusEditor() {
+            if (editor) editor.focus();
+        }
+
+        function setTheme(themeName) {
+            if (editor && monaco) {
+                monaco.editor.setTheme(themeName);
+                // Update body background to match
+                var bg = themeName === 'scorecode-light' ? '#FFFFFF' : '#0D1117';
+                document.body.style.background = bg;
+                document.documentElement.style.background = bg;
+            }
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (editor) editor.layout();
+        });
+    </script>
+</body>
+</html>

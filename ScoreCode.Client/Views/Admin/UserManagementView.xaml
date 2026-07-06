@@ -1,0 +1,187 @@
+<UserControl x:Class="ScoreCode.Client.Views.Admin.UserManagementView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{DynamicResource ThBrBgBase}">
+
+    <UserControl.Resources>
+        <!-- Tab button style -->
+        <Style x:Key="RoleTab" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThBrTextSecondary}"/>
+            <Setter Property="BorderThickness" Value="0,0,0,2"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontFamily" Value="/Assets/Fonts/#Geist"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Action button style -->
+        <Style x:Key="ActionBtn" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource ThBrAccent}"/>
+            <Setter Property="Foreground" Value="#0D1117"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontFamily" Value="/Assets/Fonts/#Geist"/>
+            <Setter Property="Padding" Value="20,10"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Small button style for table rows -->
+        <Style x:Key="SmallBtn" TargetType="Button">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontFamily" Value="/Assets/Fonts/#Geist"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="32,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ══════════ HEADER ══════════ -->
+        <DockPanel Grid.Row="0" Margin="0,0,0,20">
+            <StackPanel DockPanel.Dock="Left">
+                <TextBlock Text="User Management"
+                           FontSize="22" FontWeight="Bold"
+                           Foreground="{DynamicResource ThBrTextPrimary}"
+                           FontFamily="/Assets/Fonts/#Geist"/>
+                <TextBlock Text="Create accounts, manage students and lecturers"
+                           FontSize="13" Foreground="{DynamicResource ThBrTextSecondary}"
+                           FontFamily="/Assets/Fonts/#Geist" Margin="0,4,0,0"/>
+            </StackPanel>
+            <Button DockPanel.Dock="Right" x:Name="BtnCreateLecturer"
+                    Style="{StaticResource ActionBtn}"
+                    Content="+ New Lecturer" VerticalAlignment="Top"
+                    Click="BtnCreateLecturer_Click"/>
+        </DockPanel>
+
+        <!-- ══════════ ROLE TABS ══════════ -->
+        <Border Grid.Row="1" BorderBrush="{DynamicResource ThBrBorder}"
+                BorderThickness="0,0,0,1" Margin="0,0,0,16">
+            <StackPanel x:Name="TabBar" Orientation="Horizontal"/>
+        </Border>
+
+        <!-- ══════════ SEARCH BAR ══════════ -->
+        <Border Grid.Row="2" Background="{DynamicResource ThBrBgInput}"
+                BorderBrush="{DynamicResource ThBrBorder}" BorderThickness="1"
+                CornerRadius="6" Margin="0,0,0,16" Padding="12,0">
+            <TextBox x:Name="TxtSearch" Background="Transparent"
+                     Foreground="{DynamicResource ThBrTextPrimary}"
+                     FontSize="13" FontFamily="/Assets/Fonts/#Geist"
+                     BorderThickness="0" Height="40"
+                     VerticalContentAlignment="Center"
+                     TextChanged="TxtSearch_TextChanged"/>
+        </Border>
+        <!-- Search placeholder -->
+        <TextBlock Grid.Row="2" Text="Search by ID number or name…"
+                   FontSize="13" Foreground="{DynamicResource ThBrTextMuted}"
+                   FontFamily="/Assets/Fonts/#Geist"
+                   IsHitTestVisible="False" Margin="24,0,0,16"
+                   VerticalAlignment="Center"
+                   x:Name="SearchPlaceholder"/>
+
+        <!-- ══════════ LOADING ══════════ -->
+        <TextBlock x:Name="TxtLoading" Grid.Row="3" Text="Loading users…"
+                   FontSize="14" Foreground="{DynamicResource ThBrTextSecondary}"
+                   FontFamily="/Assets/Fonts/#Geist"
+                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+        <!-- ══════════ TABLE ══════════ -->
+        <Border Grid.Row="3" x:Name="TablePanel" Visibility="Collapsed"
+                Background="{DynamicResource ThBrBgPanel}" CornerRadius="8"
+                BorderBrush="{DynamicResource ThBrBorder}" BorderThickness="1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Table header -->
+                <Border Grid.Row="0" Background="{DynamicResource ThBrBgSurface}"
+                        CornerRadius="8,8,0,0" Padding="16,12">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2*"/>
+                            <ColumnDefinition Width="2*"/>
+                            <ColumnDefinition Width="1.5*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1.5*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="ID NUMBER" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource ThBrTextMuted}" FontFamily="/Assets/Fonts/#Geist"/>
+                        <TextBlock Grid.Column="1" Text="NAME" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource ThBrTextMuted}" FontFamily="/Assets/Fonts/#Geist"/>
+                        <TextBlock Grid.Column="2" Text="ROLE" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource ThBrTextMuted}" FontFamily="/Assets/Fonts/#Geist"/>
+                        <TextBlock Grid.Column="3" Text="LEVEL" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource ThBrTextMuted}" FontFamily="/Assets/Fonts/#Geist"/>
+                        <TextBlock Grid.Column="4" Text="STATUS" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource ThBrTextMuted}" FontFamily="/Assets/Fonts/#Geist"/>
+                        <TextBlock Grid.Column="5" Text="ACTIONS" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource ThBrTextMuted}" FontFamily="/Assets/Fonts/#Geist"
+                                   HorizontalAlignment="Right"/>
+                    </Grid>
+                </Border>
+
+                <!-- Table rows -->
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="UserRows" Margin="0,0,0,8"/>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+
+        <!-- ══════════ EMPTY STATE ══════════ -->
+        <TextBlock x:Name="EmptyState" Grid.Row="3" Visibility="Collapsed"
+                   Text="No users found" FontSize="14"
+                   Foreground="{DynamicResource ThBrTextSecondary}"
+                   FontFamily="/Assets/Fonts/#Geist"
+                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+        <!-- ══════════ STATUS BAR ══════════ -->
+        <TextBlock x:Name="TxtStatus" Grid.Row="4" Margin="0,12,0,0"
+                   FontSize="12" Foreground="{DynamicResource ThBrTextMuted}"
+                   FontFamily="/Assets/Fonts/#Geist"/>
+    </Grid>
+</UserControl>

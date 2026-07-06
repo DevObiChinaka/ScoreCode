@@ -1,0 +1,71 @@
+<UserControl x:Class="ScoreCode.Client.Views.Dashboard.HomeView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{DynamicResource ThBrBgBase}" FontFamily="/Assets/Fonts/#Geist">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Assets/Icons.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <SolidColorBrush x:Key="BgCard"        Color="{DynamicResource ThBgPanel}"/>
+            <SolidColorBrush x:Key="BorderLine"    Color="{DynamicResource ThBorder}"/>
+            <SolidColorBrush x:Key="Orange"        Color="{DynamicResource ThWarning}"/>
+            <SolidColorBrush x:Key="Purple"        Color="#A78BFA"/>
+            <SolidColorBrush x:Key="Blue"          Color="{DynamicResource ThInfo}"/>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="32,28,32,32">
+
+            <!-- ── Welcome banner ── -->
+            <TextBlock x:Name="TxtWelcome" Text="Welcome back." FontSize="28" FontWeight="Bold"
+                       Foreground="{DynamicResource ThBrTextPrimary}" Margin="0,0,0,4"/>
+            <TextBlock x:Name="TxtSubtitle" FontSize="14"
+                       Foreground="{DynamicResource ThBrTextSecondary}" Margin="0,0,0,24"/>
+
+            <!-- ── Stat cards row ── -->
+            <UniformGrid x:Name="StatCardsGrid" Rows="1" Margin="0,0,0,28">
+                <!-- Cards added in code-behind per role -->
+            </UniformGrid>
+
+            <!-- ── Section: Upcoming / Active ── -->
+            <TextBlock x:Name="TxtSection1Title" Text="Upcoming Exams" FontSize="16" FontWeight="SemiBold"
+                       Foreground="{DynamicResource ThBrTextPrimary}" Margin="0,0,0,12"/>
+
+            <Border Background="{StaticResource BgCard}" CornerRadius="10"
+                    BorderBrush="{StaticResource BorderLine}" BorderThickness="1"
+                    Padding="20,16" Margin="0,0,0,24">
+                <StackPanel x:Name="Section1Content">
+                    <TextBlock Text="No exams scheduled yet."
+                               FontSize="13" Foreground="{DynamicResource ThBrTextMuted}"
+                               HorizontalAlignment="Center" Margin="0,20"/>
+                </StackPanel>
+            </Border>
+
+            <!-- ── Section: Recent Activity ── -->
+            <TextBlock Text="Recent Activity" FontSize="16" FontWeight="SemiBold"
+                       Foreground="{DynamicResource ThBrTextPrimary}" Margin="0,0,0,12"/>
+
+            <Border Background="{StaticResource BgCard}" CornerRadius="10"
+                    BorderBrush="{StaticResource BorderLine}" BorderThickness="1"
+                    Padding="20,16" Margin="0,0,0,24">
+                <StackPanel x:Name="Section2Content">
+                    <TextBlock Text="No recent activity."
+                               FontSize="13" Foreground="{DynamicResource ThBrTextMuted}"
+                               HorizontalAlignment="Center" Margin="0,20"/>
+                </StackPanel>
+            </Border>
+
+            <!-- ── Section: Quick Actions ── -->
+            <TextBlock Text="Quick Actions" FontSize="16" FontWeight="SemiBold"
+                       Foreground="{DynamicResource ThBrTextPrimary}" Margin="0,0,0,12"/>
+
+            <UniformGrid x:Name="QuickActionsGrid" Rows="1" Margin="0,0,0,8">
+                <!-- Added per role in code-behind -->
+            </UniformGrid>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

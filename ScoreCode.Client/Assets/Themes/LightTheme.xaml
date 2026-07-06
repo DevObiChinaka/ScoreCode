@@ -1,0 +1,57 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ══════ LIGHT THEME ══════ -->
+
+    <!-- Surfaces -->
+    <Color x:Key="ThBgBase">#F4F6F9</Color>
+    <Color x:Key="ThBgSidebar">#FFFFFF</Color>
+    <Color x:Key="ThBgPanel">#FFFFFF</Color>
+    <Color x:Key="ThBgSurface">#F0F2F5</Color>
+    <Color x:Key="ThBgInput">#FFFFFF</Color>
+    <Color x:Key="ThBgHover">#E8ECF0</Color>
+
+    <!-- Accent -->
+    <Color x:Key="ThAccent">#00A896</Color>
+    <Color x:Key="ThAccentDark">#008577</Color>
+
+    <!-- Text -->
+    <Color x:Key="ThTextPrimary">#1A1A2E</Color>
+    <Color x:Key="ThTextSecondary">#6B7280</Color>
+    <Color x:Key="ThTextMuted">#9CA3AF</Color>
+    <Color x:Key="ThTextOnAccent">#FFFFFF</Color>
+
+    <!-- Borders -->
+    <Color x:Key="ThBorder">#E2E5EA</Color>
+
+    <!-- Status -->
+    <Color x:Key="ThSuccess">#22C55E</Color>
+    <Color x:Key="ThError">#EF4444</Color>
+    <Color x:Key="ThWarning">#F59E0B</Color>
+    <Color x:Key="ThInfo">#3B82F6</Color>
+
+    <!-- Code / special -->
+    <Color x:Key="ThCodeBg">#F8F9FB</Color>
+    <Color x:Key="ThDeleteBg">#FEE2E2</Color>
+    <Color x:Key="ThWarningBg">#FEF3C7</Color>
+
+    <!-- Brushes (for XAML binding) -->
+    <SolidColorBrush x:Key="ThBrBgBase"       Color="{DynamicResource ThBgBase}"/>
+    <SolidColorBrush x:Key="ThBrBgSidebar"    Color="{DynamicResource ThBgSidebar}"/>
+    <SolidColorBrush x:Key="ThBrBgPanel"      Color="{DynamicResource ThBgPanel}"/>
+    <SolidColorBrush x:Key="ThBrBgSurface"    Color="{DynamicResource ThBgSurface}"/>
+    <SolidColorBrush x:Key="ThBrBgInput"      Color="{DynamicResource ThBgInput}"/>
+    <SolidColorBrush x:Key="ThBrBgHover"      Color="{DynamicResource ThBgHover}"/>
+    <SolidColorBrush x:Key="ThBrAccent"       Color="{DynamicResource ThAccent}"/>
+    <SolidColorBrush x:Key="ThBrAccentDark"   Color="{DynamicResource ThAccentDark}"/>
+    <SolidColorBrush x:Key="ThBrTextPrimary"  Color="{DynamicResource ThTextPrimary}"/>
+    <SolidColorBrush x:Key="ThBrTextSecondary" Color="{DynamicResource ThTextSecondary}"/>
+    <SolidColorBrush x:Key="ThBrTextMuted"    Color="{DynamicResource ThTextMuted}"/>
+    <SolidColorBrush x:Key="ThBrTextOnAccent" Color="{DynamicResource ThTextOnAccent}"/>
+    <SolidColorBrush x:Key="ThBrBorder"       Color="{DynamicResource ThBorder}"/>
+    <SolidColorBrush x:Key="ThBrSuccess"      Color="{DynamicResource ThSuccess}"/>
+    <SolidColorBrush x:Key="ThBrError"        Color="{DynamicResource ThError}"/>
+    <SolidColorBrush x:Key="ThBrWarning"      Color="{DynamicResource ThWarning}"/>
+    <SolidColorBrush x:Key="ThBrInfo"         Color="{DynamicResource ThInfo}"/>
+
+</ResourceDictionary>

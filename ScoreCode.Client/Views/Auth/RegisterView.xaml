@@ -1,0 +1,466 @@
+<UserControl x:Class="ScoreCode.Client.Views.Auth.RegisterView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{DynamicResource ThBrBgBase}"
+             FontFamily="/Assets/Fonts/#Geist">
+
+    <UserControl.Resources>
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        <!-- Input TextBox -->
+        <Style x:Key="Input" TargetType="TextBox">
+            <Setter Property="Background"               Value="{DynamicResource ThBrBgInput}"/>
+            <Setter Property="Foreground"               Value="{DynamicResource ThBrTextPrimary}"/>
+            <Setter Property="BorderBrush"              Value="{DynamicResource ThBrBorder}"/>
+            <Setter Property="BorderThickness"          Value="1"/>
+            <Setter Property="Padding"                  Value="14,0"/>
+            <Setter Property="Height"                   Value="46"/>
+            <Setter Property="FontSize"                 Value="14"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="CaretBrush"               Value="{DynamicResource ThBrAccent}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6">
+                            <Grid>
+                                <ScrollViewer x:Name="PART_ContentHost"
+                                              Margin="{TemplateBinding Padding}"
+                                              VerticalAlignment="Center"/>
+                                <TextBlock x:Name="ph" Text="{TemplateBinding Tag}"
+                                           Foreground="{DynamicResource ThBrTextMuted}"
+                                           FontSize="{TemplateBinding FontSize}"
+                                           Margin="{TemplateBinding Padding}"
+                                           VerticalAlignment="Center"
+                                           IsHitTestVisible="False"
+                                           Visibility="Collapsed"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Text" Value="">
+                                <Setter TargetName="ph" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="bd" Property="BorderBrush" Value="{DynamicResource ThBrAccent}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- PasswordBox -->
+        <Style x:Key="InputPw" TargetType="PasswordBox">
+            <Setter Property="Background"      Value="{DynamicResource ThBrBgInput}"/>
+            <Setter Property="Foreground"      Value="{DynamicResource ThBrTextPrimary}"/>
+            <Setter Property="BorderBrush"     Value="{DynamicResource ThBrBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding"         Value="14,0"/>
+            <Setter Property="Height"          Value="46"/>
+            <Setter Property="FontSize"        Value="14"/>
+            <Setter Property="CaretBrush"      Value="{DynamicResource ThBrAccent}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="PasswordBox">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6">
+                            <Grid>
+                                <ScrollViewer x:Name="PART_ContentHost"
+                                              Margin="{TemplateBinding Padding}"
+                                              VerticalAlignment="Center"/>
+                                <TextBlock x:Name="PasswordPlaceholder" Text="Password"
+                                           Foreground="{DynamicResource ThBrTextMuted}"
+                                           FontSize="{TemplateBinding FontSize}"
+                                           Margin="{TemplateBinding Padding}"
+                                           VerticalAlignment="Center"
+                                           IsHitTestVisible="False"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="bd" Property="BorderBrush" Value="{DynamicResource ThBrAccent}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Primary teal button -->
+        <Style x:Key="BtnPrimary" TargetType="Button">
+            <Setter Property="Background"      Value="{DynamicResource ThBrAccent}"/>
+            <Setter Property="Foreground"      Value="{DynamicResource ThBrTextOnAccent}"/>
+            <Setter Property="FontSize"        Value="14"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="Height"          Value="46"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource ThBrAccentDark}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource ThBrBgSurface}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource ThBrTextMuted}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Ghost link -->
+        <Style x:Key="BtnGhost" TargetType="Button">
+            <Setter Property="Background"      Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding"         Value="0"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button"><ContentPresenter/></ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="FieldLabel" TargetType="TextBlock">
+            <Setter Property="FontSize"   Value="12"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThBrTextSecondary}"/>
+            <Setter Property="Margin"     Value="0,0,0,6"/>
+        </Style>
+
+        <Style x:Key="LockHint" TargetType="TextBlock">
+            <Setter Property="FontSize"   Value="11"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThBrTextMuted}"/>
+            <Setter Property="Margin"     Value="2,4,0,14"/>
+        </Style>
+    </UserControl.Resources>
+
+    <!-- ═══════════ CONTENT — native Windows chrome ═══════════ -->
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="0.38*"/>
+            <ColumnDefinition Width="0.62*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- LEFT INFO PANEL -->
+        <Border Grid.Column="0" Background="{DynamicResource ThBrBgPanel}">
+            <Grid>
+                <Border>
+                    <Border.Background>
+                        <DrawingBrush TileMode="Tile" ViewportUnits="Absolute"
+                                      Viewport="0,0,30,30" Opacity="0.035">
+                            <DrawingBrush.Drawing>
+                                <GeometryDrawing Brush="White">
+                                    <GeometryDrawing.Geometry>
+                                        <EllipseGeometry RadiusX="1.4" RadiusY="1.4" Center="15,15"/>
+                                    </GeometryDrawing.Geometry>
+                                </GeometryDrawing>
+                            </DrawingBrush.Drawing>
+                        </DrawingBrush>
+                    </Border.Background>
+                </Border>
+
+                <Border HorizontalAlignment="Left" Width="3" Background="{DynamicResource ThBrAccent}" Opacity="0.7"/>
+
+                <StackPanel VerticalAlignment="Center" Margin="36,0,30,0">
+                    <!-- Logo -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,24">
+                        <Border Width="32" Height="32" CornerRadius="7"
+                                Background="{DynamicResource ThBrAccent}" Margin="0,0,12,0">
+                            <Grid>
+                                <Grid.RowDefinitions><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+                                <Border Grid.Row="0" Grid.Column="0" Background="{DynamicResource ThBrBgBase}" Width="7" Height="7" CornerRadius="2" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Border Grid.Row="0" Grid.Column="1" Background="{DynamicResource ThBrBgBase}" Width="7" Height="7" CornerRadius="2" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Border Grid.Row="1" Grid.Column="0" Background="{DynamicResource ThBrBgBase}" Width="7" Height="7" CornerRadius="2" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Border Grid.Row="1" Grid.Column="1" Background="{DynamicResource ThBrBgBase}" Width="7" Height="7" CornerRadius="2" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="ScoreCode" FontSize="18" FontWeight="Bold"
+                                       Foreground="{DynamicResource ThBrTextPrimary}"/>
+                            <TextBlock Text="Exam Portal" FontSize="11"
+                                       Foreground="{DynamicResource ThBrTextSecondary}"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <TextBlock Text="ACCOUNT FIELDS" FontSize="10" FontWeight="SemiBold"
+                               Foreground="{DynamicResource ThBrTextMuted}" Margin="0,0,0,12"/>
+
+                    <!-- Matric field card -->
+                    <Border Background="{DynamicResource ThBrBgSurface}"
+                            BorderBrush="{DynamicResource ThBrBorder}"
+                            BorderThickness="1" CornerRadius="8" Margin="0,0,0,8">
+                        <Grid Margin="14,12,14,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Matric Number" FontSize="13" FontWeight="Medium"
+                                           Foreground="{DynamicResource ThBrTextPrimary}"/>
+                                <TextBlock Text="Permanent login ID" FontSize="11"
+                                           Foreground="{DynamicResource ThBrTextSecondary}" Margin="0,3,0,0"/>
+                            </StackPanel>
+                            <TextBlock Grid.Column="1" Text="🔒 Locked" FontSize="11"
+                                       Foreground="{DynamicResource ThBrAccent}"
+                                       VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Programme card -->
+                    <Border Background="{DynamicResource ThBrBgSurface}"
+                            BorderBrush="{DynamicResource ThBrBorder}"
+                            BorderThickness="1" CornerRadius="8" Margin="0,0,0,8">
+                        <Grid Margin="14,12,14,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Programme" FontSize="13" FontWeight="Medium"
+                                           Foreground="{DynamicResource ThBrTextPrimary}"/>
+                                <TextBlock Text="Admin can update" FontSize="11"
+                                           Foreground="{DynamicResource ThBrTextSecondary}" Margin="0,3,0,0"/>
+                            </StackPanel>
+                            <TextBlock Grid.Column="1" Text="🔒 Locked" FontSize="11"
+                                       Foreground="{DynamicResource ThBrAccent}"
+                                       VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Level card -->
+                    <Border Background="{DynamicResource ThBrBgSurface}"
+                            BorderBrush="{DynamicResource ThBrBorder}"
+                            BorderThickness="1" CornerRadius="8" Margin="0,0,0,18">
+                        <Grid Margin="14,12,14,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Level" FontSize="13" FontWeight="Medium"
+                                           Foreground="{DynamicResource ThBrTextPrimary}"/>
+                                <TextBlock Text="100 · 200 · 300 · 400" FontSize="11"
+                                           Foreground="{DynamicResource ThBrTextSecondary}" Margin="0,3,0,0"/>
+                            </StackPanel>
+                            <TextBlock Grid.Column="1" Text="🔒 Locked" FontSize="11"
+                                       Foreground="{DynamicResource ThBrAccent}"
+                                       VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Admin note -->
+                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20"
+                               Foreground="{DynamicResource ThBrTextSecondary}">
+                        Locked fields cannot be changed after registration.
+                        Contact an <Run Foreground="{DynamicResource ThBrTextPrimary}"
+                                       FontWeight="Medium">Administrator</Run>
+                        to correct any errors.
+                    </TextBlock>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- RIGHT FORM PANEL -->
+        <Border Grid.Column="1" Background="{DynamicResource ThBrBgBase}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="36"/>
+                </Grid.RowDefinitions>
+
+                <ScrollViewer Grid.Row="0"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <Grid>
+                        <StackPanel VerticalAlignment="Center"
+                                    HorizontalAlignment="Center"
+                                    Width="400" Margin="0,36,0,36">
+
+                            <!-- Logo -->
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,28">
+                                <Border Width="26" Height="26" CornerRadius="6"
+                                        Background="{DynamicResource ThBrAccent}" Margin="0,0,10,0">
+                                    <Grid>
+                                        <Grid.RowDefinitions><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+                                        <Border Grid.Row="0" Grid.Column="0" Background="{DynamicResource ThBrBgBase}" Width="5" Height="5" CornerRadius="1" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        <Border Grid.Row="0" Grid.Column="1" Background="{DynamicResource ThBrBgBase}" Width="5" Height="5" CornerRadius="1" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        <Border Grid.Row="1" Grid.Column="0" Background="{DynamicResource ThBrBgBase}" Width="5" Height="5" CornerRadius="1" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        <Border Grid.Row="1" Grid.Column="1" Background="{DynamicResource ThBrBgBase}" Width="5" Height="5" CornerRadius="1" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+                                <TextBlock Text="ScoreCode" FontSize="16" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource ThBrTextPrimary}"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <TextBlock Text="Create account." FontSize="32" FontWeight="Bold"
+                                       Foreground="{DynamicResource ThBrTextPrimary}" Margin="0,0,0,6"/>
+                            <TextBlock Text="Register as a student to access the exam system."
+                                       FontSize="14" Foreground="{DynamicResource ThBrTextSecondary}"
+                                       Margin="0,0,0,26" TextWrapping="Wrap"/>
+
+                            <!-- Matric -->
+                            <TextBlock Text="Matric Number" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="TxtMatric" Style="{StaticResource Input}"
+                                     Tag="e.g. CSC/2021/001"
+                                     Text="{Binding MatricNumber, UpdateSourceTrigger=PropertyChanged}"
+                                     Margin="0,0,0,4"/>
+                            <TextBlock Text="This becomes your permanent login ID."
+                                       Style="{StaticResource LockHint}"/>
+
+                            <!-- Programme + Level -->
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="120"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Programme of Study" Style="{StaticResource FieldLabel}"/>
+                                    <ComboBox x:Name="CmbProgramme" Height="46" FontSize="14"
+                                              FontFamily="/Assets/Fonts/#Geist"
+                                              Background="{DynamicResource ThBrBgInput}"
+                                              Foreground="{DynamicResource ThBrTextPrimary}"
+                                              BorderBrush="{DynamicResource ThBrBorder}"
+                                              BorderThickness="1"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Level" Style="{StaticResource FieldLabel}"/>
+                                    <ComboBox x:Name="CmbLevel" Height="46" FontSize="14"
+                                              FontFamily="/Assets/Fonts/#Geist"
+                                              Background="{DynamicResource ThBrBgInput}"
+                                              Foreground="{DynamicResource ThBrTextPrimary}"
+                                              BorderBrush="{DynamicResource ThBrBorder}"
+                                              BorderThickness="1"/>
+                                </StackPanel>
+                            </Grid>
+                            <TextBlock Text="Locked after registration — admin can edit if incorrect."
+                                       Style="{StaticResource LockHint}"/>
+
+                            <!-- Password -->
+                            <TextBlock Text="Password" Style="{StaticResource FieldLabel}"/>
+                            <PasswordBox x:Name="PbPassword" Style="{StaticResource InputPw}"
+                                         PasswordChanged="PbPassword_PasswordChanged"
+                                         Margin="0,0,0,8"/>
+
+                            <!-- Password criteria -->
+                            <Grid Margin="0,0,0,16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/><RowDefinition/>
+                                </Grid.RowDefinitions>
+                                <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Margin="0,3">
+                                    <TextBlock x:Name="CritLengthIcon" Text="○" FontSize="11" Foreground="{DynamicResource ThBrTextMuted}" Margin="0,0,5,0"/>
+                                    <TextBlock x:Name="CritLengthLabel" Text="8+ characters" FontSize="11" Foreground="{DynamicResource ThBrTextMuted}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Margin="0,3">
+                                    <TextBlock x:Name="CritUpperIcon" Text="○" FontSize="11" Foreground="{DynamicResource ThBrTextMuted}" Margin="0,0,5,0"/>
+                                    <TextBlock x:Name="CritUpperLabel" Text="Uppercase letter" FontSize="11" Foreground="{DynamicResource ThBrTextMuted}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" Margin="0,3">
+                                    <TextBlock x:Name="CritNumberIcon" Text="○" FontSize="11" Foreground="{DynamicResource ThBrTextMuted}" Margin="0,0,5,0"/>
+                                    <TextBlock x:Name="CritNumberLabel" Text="Number" FontSize="11" Foreground="{DynamicResource ThBrTextMuted}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="0,3">
+                                    <TextBlock x:Name="CritSpecialIcon" Text="○" FontSize="11" Foreground="{DynamicResource ThBrTextMuted}" Margin="0,0,5,0"/>
+                                    <TextBlock x:Name="CritSpecialLabel" Text="Special character" FontSize="11" Foreground="{DynamicResource ThBrTextMuted}"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Confirm Password -->
+                            <TextBlock Text="Confirm Password" Style="{StaticResource FieldLabel}"/>
+                            <PasswordBox x:Name="PbConfirmPassword" Style="{StaticResource InputPw}"
+                                         PasswordChanged="PbConfirmPassword_PasswordChanged"
+                                         Margin="0,0,0,6"/>
+
+                            <!-- Confirm match indicator -->
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
+                                <TextBlock x:Name="ConfirmMatchIcon" Text="○" FontSize="11" Foreground="{DynamicResource ThBrTextMuted}" Margin="0,0,5,0"/>
+                                <TextBlock x:Name="ConfirmMatchLabel" Text="Confirm your password" FontSize="11" Foreground="{DynamicResource ThBrTextMuted}"/>
+                            </StackPanel>
+
+                            <!-- Error -->
+                            <Border Background="{DynamicResource ThBrError}"
+                                    BorderBrush="{DynamicResource ThBrError}" BorderThickness="1"
+                                    CornerRadius="6" Padding="12,8" Margin="0,0,0,12"
+                                    Visibility="{Binding HasError,
+                                        Converter={StaticResource BoolToVisibilityConverter}}">
+                                <TextBlock Text="{Binding ErrorMessage}"
+                                           Foreground="{DynamicResource ThBrError}"
+                                           FontSize="13" TextWrapping="Wrap"/>
+                            </Border>
+
+                            <!-- Success -->
+                            <TextBlock Text="{Binding SuccessMessage}"
+                                       Foreground="{DynamicResource ThBrSuccess}"
+                                       FontSize="13" Margin="0,0,0,12"
+                                       Visibility="{Binding HasSuccess,
+                                           Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                            <!-- Create account button -->
+                            <Button Style="{StaticResource BtnPrimary}"
+                                    Click="BtnRegister_Click"
+                                    IsEnabled="{Binding IsLoading,
+                                        Converter={StaticResource InverseBoolConverter}}"
+                                    Margin="0,0,0,20">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Visibility="{Binding IsLoading,
+                                        Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                                        <Run Text="Create account  "/><Run Text="→"/>
+                                    </TextBlock>
+                                    <TextBlock Text="Creating…"
+                                               Visibility="{Binding IsLoading,
+                                        Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                </StackPanel>
+                            </Button>
+
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <TextBlock Text="Already registered?  " FontSize="13"
+                                           Foreground="{DynamicResource ThBrTextSecondary}"
+                                           VerticalAlignment="Center"/>
+                                <Button Style="{StaticResource BtnGhost}" Click="BtnLogin_Click">
+                                    <TextBlock Text="Sign in" FontSize="13"
+                                               Foreground="{DynamicResource ThBrAccent}"
+                                               TextDecorations="Underline"/>
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+
+                <TextBlock Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center"
+                           Text="Admiralty University of Nigeria  ·  Secure environment"
+                           Foreground="{DynamicResource ThBrTextMuted}" FontSize="11"/>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

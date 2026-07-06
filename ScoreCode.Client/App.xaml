@@ -1,0 +1,152 @@
+<Application x:Class="ScoreCode.Client.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:helpers="clr-namespace:ScoreCode.Client.Helpers"
+             Startup="Application_Startup"
+             ShutdownMode="OnExplicitShutdown">
+    <Application.Resources>
+        <!-- Global value converters available in all views -->
+        <helpers:BoolToVisibilityConverter          x:Key="BoolToVisibilityConverter"/>
+        <helpers:InverseBoolToVisibilityConverter   x:Key="InverseBoolToVisibilityConverter"/>
+        <helpers:InverseBoolConverter               x:Key="InverseBoolConverter"/>
+
+        <!-- ComboBox aliases → theme keys -->
+        <SolidColorBrush x:Key="CbBg"       Color="{DynamicResource ThBgInput}"/>
+        <SolidColorBrush x:Key="CbBorder"   Color="{DynamicResource ThBorder}"/>
+        <SolidColorBrush x:Key="CbFg"       Color="{DynamicResource ThTextPrimary}"/>
+        <SolidColorBrush x:Key="CbHover"    Color="{DynamicResource ThBorder}"/>
+        <SolidColorBrush x:Key="CbPopup"    Color="{DynamicResource ThBgPanel}"/>
+        <SolidColorBrush x:Key="CbTeal"     Color="{DynamicResource ThAccent}"/>
+        <SolidColorBrush x:Key="CbArrow"    Color="{DynamicResource ThTextSecondary}"/>
+        <SolidColorBrush x:Key="CbMuted"    Color="{DynamicResource ThTextMuted}"/>
+        <!-- Backwards-compat alias for older XAML that referenced 'Teal' -->
+        <SolidColorBrush x:Key="Teal"       Color="{DynamicResource ThAccent}"/>
+
+        <!-- Toggle button used inside the ComboBox template -->
+        <ControlTemplate x:Key="DarkComboBoxToggle" TargetType="ToggleButton">
+            <Border x:Name="Bd" Background="{StaticResource CbBg}"
+                    BorderBrush="{StaticResource CbBorder}" BorderThickness="1"
+                    CornerRadius="6" SnapsToDevicePixels="True">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="32"/>
+                    </Grid.ColumnDefinitions>
+                    <!-- Content area (selected item drawn here) -->
+                    <Border Grid.Column="0"/>
+                    <!-- Drop-down arrow -->
+                    <Path Grid.Column="1" Data="M 0,0 L 4,4 L 8,0"
+                          Stroke="{StaticResource CbArrow}" StrokeThickness="1.5"
+                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource CbArrow}"/>
+                </Trigger>
+                <Trigger Property="IsChecked" Value="True">
+                    <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource CbTeal}"/>
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+
+        <!-- Default implicit ComboBox style — applies to ALL ComboBoxes -->
+        <Style TargetType="ComboBox">
+            <Setter Property="Foreground"      Value="{StaticResource CbFg}"/>
+            <Setter Property="Background"      Value="{StaticResource CbBg}"/>
+            <Setter Property="BorderBrush"     Value="{StaticResource CbBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontFamily"      Value="/Assets/Fonts/#Geist"/>
+            <Setter Property="FontSize"        Value="13"/>
+            <Setter Property="Height"          Value="40"/>
+            <Setter Property="Padding"         Value="12,0,0,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid SnapsToDevicePixels="True">
+                            <ToggleButton x:Name="ToggleBtn"
+                                          Template="{StaticResource DarkComboBoxToggle}"
+                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay,
+                                                      RelativeSource={RelativeSource TemplatedParent}}"
+                                          Focusable="False" ClickMode="Press"/>
+
+                            <ContentPresenter x:Name="ContentSite"
+                                              IsHitTestVisible="False"
+                                              Content="{TemplateBinding SelectionBoxItem}"
+                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                              Margin="{TemplateBinding Padding}"
+                                              VerticalAlignment="Center"
+                                              HorizontalAlignment="Left"/>
+
+                            <!-- Editable textbox (hidden unless IsEditable) -->
+                            <TextBox x:Name="PART_EditableTextBox"
+                                     Visibility="Hidden" IsReadOnly="{TemplateBinding IsReadOnly}"
+                                     Background="Transparent" Foreground="{StaticResource CbFg}"
+                                     BorderThickness="0" FontSize="{TemplateBinding FontSize}"
+                                     Margin="{TemplateBinding Padding}"
+                                     VerticalAlignment="Center"
+                                     HorizontalAlignment="Stretch"
+                                     CaretBrush="{StaticResource CbTeal}"
+                                     Focusable="True"/>
+
+                            <!-- Drop-down popup -->
+                            <Popup x:Name="PART_Popup"
+                                   IsOpen="{TemplateBinding IsDropDownOpen}"
+                                   Placement="Bottom" PopupAnimation="Slide"
+                                   AllowsTransparency="True" Focusable="False">
+                                <Border x:Name="DropDownBorder"
+                                        MinWidth="{TemplateBinding ActualWidth}"
+                                        MaxHeight="{TemplateBinding MaxDropDownHeight}"
+                                        Background="{StaticResource CbPopup}"
+                                        BorderBrush="{StaticResource CbBorder}"
+                                        BorderThickness="1" CornerRadius="6"
+                                        Margin="0,2,0,0" Padding="2">
+                                    <ScrollViewer SnapsToDevicePixels="True">
+                                        <StackPanel IsItemsHost="True"
+                                                    KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEditable" Value="True">
+                                <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="ContentSite" Property="Visibility" Value="Hidden"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Dark ComboBoxItem -->
+        <Style TargetType="ComboBoxItem">
+            <Setter Property="Foreground"  Value="{StaticResource CbFg}"/>
+            <Setter Property="Background"  Value="Transparent"/>
+            <Setter Property="FontFamily"  Value="/Assets/Fonts/#Geist"/>
+            <Setter Property="FontSize"    Value="13"/>
+            <Setter Property="Padding"     Value="12,8"/>
+            <Setter Property="Cursor"      Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBoxItem">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource CbHover}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource CbHover}"/>
+                                <Setter Property="Foreground" Value="{StaticResource CbTeal}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Application.Resources>
+</Application>
