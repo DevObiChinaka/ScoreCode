@@ -48,8 +48,15 @@ public class GeminiGradingService : IAiGradingService
         var payload = await resp.Content.ReadAsStringAsync(ct);
 
         if (!resp.IsSuccessStatusCode)
-            throw new InvalidOperationException(
-                $"Gemini request failed ({(int)resp.StatusCode}). {Truncate(payload, 300)}");
+        {
+            var message = (int)resp.StatusCode switch
+            {
+                429 => "AI grading is over its Gemini quota/rate limit. Check the API key's plan & billing at Google AI Studio, or try again shortly.",
+                401 or 403 => "AI grading key was rejected by Gemini. Check Ai:ApiKey in the API configuration.",
+                _ => $"Gemini request failed ({(int)resp.StatusCode}). {Truncate(payload, 200)}"
+            };
+            throw new InvalidOperationException(message);
+        }
 
         var text = ExtractText(payload)
             ?? throw new InvalidOperationException("Gemini returned no gradable content.");
