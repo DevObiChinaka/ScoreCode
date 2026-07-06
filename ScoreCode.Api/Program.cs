@@ -59,7 +59,13 @@ builder.Services.AddScoped<IExamService, ExamService>();
 builder.Services.AddScoped<ILecturerExamService, LecturerExamService>();
 builder.Services.AddScoped<IInstitutionService, InstitutionService>();
 builder.Services.AddSingleton<IEmailService, LoggingEmailService>();
-builder.Services.AddHttpClient<IAiGradingService, GeminiGradingService>();
+// AI grading provider is config-driven (Ai:Provider): "Gemini" or any
+// OpenAI-compatible endpoint (Groq/OpenRouter/OpenAI/Ollama) via "OpenAiCompatible".
+var aiProvider = builder.Configuration["Ai:Provider"] ?? "Gemini";
+if (aiProvider.Equals("Gemini", StringComparison.OrdinalIgnoreCase))
+    builder.Services.AddHttpClient<IAiGradingService, GeminiGradingService>();
+else
+    builder.Services.AddHttpClient<IAiGradingService, OpenAiCompatibleGradingService>();
 builder.Services.AddSingleton<ExamAutoPublishService>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<ExamAutoPublishService>());
 

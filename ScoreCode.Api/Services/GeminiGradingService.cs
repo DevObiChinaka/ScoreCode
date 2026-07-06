@@ -27,7 +27,7 @@ public class GeminiGradingService : IAiGradingService
             throw new AiNotConfiguredException(
                 "AI grading is not configured. Set the Ai:ApiKey value in the API configuration.");
 
-        var prompt = BuildPrompt(request);
+        var prompt = AiGradingPrompt.Build(request);
 
         var body = new
         {
@@ -61,36 +61,9 @@ public class GeminiGradingService : IAiGradingService
         var text = ExtractText(payload)
             ?? throw new InvalidOperationException("Gemini returned no gradable content.");
 
-        var (score, feedback) = ParseGrade(text);
+        var (score, feedback) = AiGradingPrompt.ParseGrade(text);
         score = Math.Clamp(score, 0, request.MaxMarks);
         return new AiGradeResult(score, feedback);
-    }
-
-    private static string BuildPrompt(AiGradeRequest r)
-    {
-        var guide = string.IsNullOrWhiteSpace(r.MarkingGuide)
-            ? "(No marking guide provided — grade on correctness, clarity and completeness.)"
-            : r.MarkingGuide;
-
-        return $$"""
-            You are an experienced computer science examiner grading a student's code answer.
-            Grade strictly against the marking guide and award a whole-number score out of {{r.MaxMarks}}.
-
-            Return ONLY JSON of the form: {"score": <integer 0..{{r.MaxMarks}}>, "feedback": "<2-4 sentence justification>"}.
-
-            QUESTION:
-            {{r.QuestionText}}
-
-            MARKING GUIDE:
-            {{guide}}
-
-            LANGUAGE: {{r.Language}}
-
-            STUDENT CODE:
-            ```
-            {{r.Code}}
-            ```
-            """;
     }
 
     /// <summary>Pull candidates[0].content.parts[0].text out of the Gemini response.</summary>
@@ -104,23 +77,6 @@ public class GeminiGradingService : IAiGradingService
         var parts = candidates[0].GetProperty("content").GetProperty("parts");
         if (parts.GetArrayLength() == 0) return null;
         return parts[0].GetProperty("text").GetString();
-    }
-
-    /// <summary>Parse the model's JSON answer, tolerating stray text around it.</summary>
-    private static (int Score, string Feedback) ParseGrade(string text)
-    {
-        var start = text.IndexOf('{');
-        var end = text.LastIndexOf('}');
-        var json = (start >= 0 && end > start) ? text[start..(end + 1)] : text;
-
-        using var doc = JsonDocument.Parse(json);
-        var root = doc.RootElement;
-
-        var score = root.TryGetProperty("score", out var s)
-            ? (s.ValueKind == JsonValueKind.Number ? s.GetInt32() : int.TryParse(s.GetString(), out var v) ? v : 0)
-            : 0;
-        var feedback = root.TryGetProperty("feedback", out var f) ? f.GetString() ?? "" : "";
-        return (score, feedback);
     }
 
     private static string Truncate(string s, int max) =>
