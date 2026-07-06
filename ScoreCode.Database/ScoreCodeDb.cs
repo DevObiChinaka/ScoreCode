@@ -5,7 +5,17 @@ namespace ScoreCode.Database;
 
 public class ScoreCodeDb : DbContext
 {
+    private readonly ITenantProvider? _tenant;
+
+    // Design-time / startup (no tenant scoping).
     public ScoreCodeDb(DbContextOptions<ScoreCodeDb> options) : base(options) { }
+
+    // Runtime (DI injects the request's tenant provider).
+    public ScoreCodeDb(DbContextOptions<ScoreCodeDb> options, ITenantProvider tenant) : base(options)
+        => _tenant = tenant;
+
+    /// <summary>The tenant to scope queries to, or null to see everything.</summary>
+    private Guid? CurrentTenantId => _tenant?.CurrentInstitutionId;
 
     public DbSet<Institution> Institutions => Set<Institution>();
     public DbSet<User> Users => Set<User>();
@@ -85,5 +95,23 @@ public class ScoreCodeDb : DbContext
             .WithMany()
             .HasForeignKey(s => s.InstitutionId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // ── Tenant isolation: global query filters ─────────────────────────
+        // When CurrentTenantId is null (platform admin, background jobs, or an
+        // anonymous request such as login) nothing is filtered; otherwise every
+        // read of a tenant-owned entity is confined to that institution.
+        m.Entity<User>().HasQueryFilter(u => CurrentTenantId == null || u.InstitutionId == CurrentTenantId);
+        m.Entity<Exam>().HasQueryFilter(e => CurrentTenantId == null || e.InstitutionId == CurrentTenantId);
+        m.Entity<Session>().HasQueryFilter(s => CurrentTenantId == null || s.InstitutionId == CurrentTenantId);
+        m.Entity<Submission>().HasQueryFilter(s => CurrentTenantId == null || s.InstitutionId == CurrentTenantId);
+
+        // Children scope through their tenant-owning parent, so filters stay
+        // consistent (removes EF's required-navigation warnings) and no query
+        // can pull a child whose parent is out of tenant.
+        m.Entity<Question>().HasQueryFilter(q => CurrentTenantId == null || q.Exam.InstitutionId == CurrentTenantId);
+        m.Entity<ExamStudent>().HasQueryFilter(es => CurrentTenantId == null || es.Exam.InstitutionId == CurrentTenantId);
+        m.Entity<Grade>().HasQueryFilter(g => CurrentTenantId == null || g.Submission.InstitutionId == CurrentTenantId);
+        m.Entity<ActivityLog>().HasQueryFilter(a => CurrentTenantId == null || a.Session.InstitutionId == CurrentTenantId);
+        m.Entity<RefreshToken>().HasQueryFilter(rt => CurrentTenantId == null || rt.User.InstitutionId == CurrentTenantId);
     }
 }

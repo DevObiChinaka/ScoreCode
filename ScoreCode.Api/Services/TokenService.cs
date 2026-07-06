@@ -25,14 +25,18 @@ public class TokenService : ITokenService
         var key = _config["Jwt:Key"]!;
         var expiryMinutes = _config.GetValue<int>("Jwt:AccessTokenExpiryMinutes", 15);
 
-        var claims = new[]
+        var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new Claim("idNumber", user.IdNumber),
-            new Claim(ClaimTypes.Role, user.Role),
-            new Claim(ClaimTypes.Name, user.Name)
+            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new("idNumber", user.IdNumber),
+            new(ClaimTypes.Role, user.Role),
+            new(ClaimTypes.Name, user.Name)
         };
+
+        // Tenant claim — absent for the platform admin (no institution).
+        if (user.InstitutionId.HasValue)
+            claims.Add(new Claim("institutionId", user.InstitutionId.Value.ToString()));
 
         var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
         var creds = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
