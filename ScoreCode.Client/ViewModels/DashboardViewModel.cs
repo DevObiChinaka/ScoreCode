@@ -8,6 +8,7 @@ public partial class DashboardViewModel : ObservableObject
 {
     // ── User info ──────────────────────────────────────────────────────────
     [ObservableProperty] private string _userIdNumber = string.Empty;
+    [ObservableProperty] private string _userName = string.Empty;
     [ObservableProperty] private string _userRole = string.Empty;
     [ObservableProperty] private string _userLevel = string.Empty;
     [ObservableProperty] private string _userInitials = string.Empty;
@@ -23,6 +24,7 @@ public partial class DashboardViewModel : ObservableObject
     public DashboardViewModel(StoredSession session)
     {
         UserIdNumber = session.IdNumber;
+        UserName = session.Name;
         UserRole = session.Role;
         UserInitials = session.IdNumber.Length >= 2
             ? session.IdNumber[..2].ToUpperInvariant()

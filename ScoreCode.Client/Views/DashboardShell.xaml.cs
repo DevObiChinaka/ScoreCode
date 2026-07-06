@@ -149,7 +149,7 @@ public partial class DashboardShell : Window
 
     private HomeView CreateHomeView()
     {
-        var home = new HomeView(_vm.UserRole, _vm.UserIdNumber, _api);
+        var home = new HomeView(_vm.UserRole, _vm.UserIdNumber, _vm.UserName, _api);
         home.NavigateRequested += (navKey) => NavigateTo(navKey);
         home.OpenExamEditorRequested += (examId) => OpenExamEditor(examId);
         return home;

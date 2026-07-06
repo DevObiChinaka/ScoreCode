@@ -334,8 +334,15 @@
                                       BorderBrush="{DynamicResource ThBrBorder}"
                                       BorderThickness="1"
                                       ItemsSource="{Binding Institutions}"
-                                      DisplayMemberPath="Name"
-                                      Margin="0,0,0,4"/>
+                                      SelectedValuePath="Id"
+                                      Margin="0,0,0,4">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Name}"
+                                                   Foreground="{DynamicResource ThBrTextPrimary}"/>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
                             <TextBlock Text="Select the school you are registering under."
                                        Style="{StaticResource LockHint}"/>
 

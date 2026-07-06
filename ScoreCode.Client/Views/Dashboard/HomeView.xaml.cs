@@ -19,7 +19,7 @@ public partial class HomeView : UserControl
     /// <summary>Raised when user clicks an exam to open in editor.</summary>
     public event Action<Guid>? OpenExamEditorRequested;
 
-    public HomeView(string role, string idNumber, ApiService? api = null)
+    public HomeView(string role, string idNumber, string? name = null, ApiService? api = null)
     {
         InitializeComponent();
         _role = role;
@@ -28,7 +28,8 @@ public partial class HomeView : UserControl
 
         var now = DateTime.Now;
         var greeting = now.Hour < 12 ? "Good morning" : now.Hour < 17 ? "Good afternoon" : "Good evening";
-        TxtWelcome.Text = $"{greeting}.";
+        var displayName = string.IsNullOrWhiteSpace(name) ? idNumber : name;
+        TxtWelcome.Text = $"{greeting}, {displayName}.";
         TxtSubtitle.Text = $"Signed in as {idNumber}  ·  {now:dddd, dd MMMM yyyy}";
 
         Loaded += async (_, _) => await LoadDashboardAsync();
