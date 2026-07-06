@@ -29,7 +29,7 @@ public class AuthController : ControllerBase
         if (request.InstitutionId == Guid.Empty ||
             string.IsNullOrWhiteSpace(request.MatricNumber) ||
             string.IsNullOrWhiteSpace(request.ProgrammeOfStudy) ||
-            request.Level <= 0)
+            string.IsNullOrWhiteSpace(request.Level))
             return BadRequest(ApiResponse<object>.Fail("validation_failed", "All fields, including an institution, are required."));
 
         try

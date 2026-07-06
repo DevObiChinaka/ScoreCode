@@ -1,4 +1,5 @@
 using ScoreCode.Shared.DTOs.Auth;
+using ScoreCode.Shared.DTOs.Institutions;
 
 namespace ScoreCode.Client.Services;
 
@@ -34,11 +35,19 @@ public class AuthClientService
         return (true, null, result.Data);
     }
 
+    /// <summary>Approved institutions for the registration dropdown (anonymous).</summary>
+    public async Task<List<InstitutionOption>> GetInstitutionOptionsAsync()
+    {
+        var result = await _api.GetAsync<List<InstitutionOption>>("institutions/options");
+        return result?.Data ?? [];
+    }
+
     public async Task<(bool Success, string? Error)> RegisterStudentAsync(
-        string matricNumber, string programme, string level, string password, string confirmPassword)
+        Guid institutionId, string matricNumber, string programme, string level, string password, string confirmPassword)
     {
         var result = await _api.PostAsync<LoginResponse>("auth/register", new
         {
+            InstitutionId    = institutionId,
             MatricNumber   = matricNumber,
             ProgrammeOfStudy = programme,
             Level          = level,

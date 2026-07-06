@@ -1,6 +1,8 @@
+using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ScoreCode.Client.Services;
+using ScoreCode.Shared.DTOs.Institutions;
 
 namespace ScoreCode.Client.ViewModels.Auth;
 
@@ -9,6 +11,27 @@ public partial class RegisterViewModel : ObservableObject
     private readonly AuthClientService _auth;
 
     public RegisterViewModel(AuthClientService auth) => _auth = auth;
+
+    /// <summary>Approved institutions for the dropdown.</summary>
+    public ObservableCollection<InstitutionOption> Institutions { get; } = [];
+
+    /// <summary>Set from code-behind (selected dropdown item) before Register runs.</summary>
+    public Guid InstitutionId { get; set; }
+
+    /// <summary>Load approved institutions into the dropdown.</summary>
+    public async Task LoadInstitutionsAsync()
+    {
+        try
+        {
+            var options = await _auth.GetInstitutionOptionsAsync();
+            Institutions.Clear();
+            foreach (var o in options) Institutions.Add(o);
+        }
+        catch
+        {
+            // Leave empty; the register button will report the missing selection.
+        }
+    }
 
     [ObservableProperty] private string _matricNumber      = string.Empty;
     [ObservableProperty] private string _programmeOfStudy = string.Empty;
@@ -30,6 +53,13 @@ public partial class RegisterViewModel : ObservableObject
         HasSuccess = false;
         ErrorMessage  = string.Empty;
         SuccessMessage = string.Empty;
+
+        if (InstitutionId == Guid.Empty)
+        {
+            ErrorMessage = "Please select your institution.";
+            HasError = true;
+            return;
+        }
 
         if (string.IsNullOrWhiteSpace(MatricNumber) ||
             string.IsNullOrWhiteSpace(ProgrammeOfStudy) ||
@@ -59,7 +89,7 @@ public partial class RegisterViewModel : ObservableObject
         try
         {
             var (success, error) = await _auth.RegisterStudentAsync(
-                MatricNumber, ProgrammeOfStudy, Level, Password, ConfirmPassword);
+                InstitutionId, MatricNumber, ProgrammeOfStudy, Level, Password, ConfirmPassword);
 
             if (!success)
             {

@@ -23,6 +23,17 @@ public partial class RegisterView : UserControl
             CmbLevel.Items.Add(l);
         CmbLevel.SelectedIndex = 0;
 
+        // Load approved institutions into the dropdown when the view appears.
+        Loaded += async (_, _) =>
+        {
+            if (DataContext is ViewModels.Auth.RegisterViewModel vm)
+            {
+                await vm.LoadInstitutionsAsync();
+                if (CmbInstitution.Items.Count > 0 && CmbInstitution.SelectedIndex < 0)
+                    CmbInstitution.SelectedIndex = 0;
+            }
+        };
+
         // Enter key submits
         KeyDown += (_, e) => { if (e.Key == Key.Enter) BtnRegister_Click(this, e); };
     }
@@ -105,6 +116,7 @@ public partial class RegisterView : UserControl
             vm.ConfirmPassword = (FindName("PbConfirmPassword") as PasswordBox)?.Password ?? string.Empty;
             vm.ProgrammeOfStudy = CmbProgramme.SelectedItem?.ToString() ?? "";
             vm.Level            = CmbLevel.SelectedItem?.ToString() ?? "";
+            vm.InstitutionId    = (CmbInstitution.SelectedItem as ScoreCode.Shared.DTOs.Institutions.InstitutionOption)?.Id ?? Guid.Empty;
 
             if (vm.RegisterCommand.CanExecute(null))
                 vm.RegisterCommand.Execute(null);

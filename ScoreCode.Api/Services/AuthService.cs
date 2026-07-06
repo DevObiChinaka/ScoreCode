@@ -53,7 +53,7 @@ public class AuthService : IAuthService
             Role = Constants.Roles.Student,
             InstitutionId = institution.Id,
             ProgrammeOfStudy = request.ProgrammeOfStudy,
-            Level = request.Level.ToString(),
+            Level = request.Level,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };

@@ -325,6 +325,20 @@
                                        FontSize="14" Foreground="{DynamicResource ThBrTextSecondary}"
                                        Margin="0,0,0,26" TextWrapping="Wrap"/>
 
+                            <!-- Institution -->
+                            <TextBlock Text="Institution" Style="{StaticResource FieldLabel}"/>
+                            <ComboBox x:Name="CmbInstitution" Height="46" FontSize="14"
+                                      FontFamily="/Assets/Fonts/#Geist"
+                                      Background="{DynamicResource ThBrBgInput}"
+                                      Foreground="{DynamicResource ThBrTextPrimary}"
+                                      BorderBrush="{DynamicResource ThBrBorder}"
+                                      BorderThickness="1"
+                                      ItemsSource="{Binding Institutions}"
+                                      DisplayMemberPath="Name"
+                                      Margin="0,0,0,4"/>
+                            <TextBlock Text="Select the school you are registering under."
+                                       Style="{StaticResource LockHint}"/>
+
                             <!-- Matric -->
                             <TextBlock Text="Matric Number" Style="{StaticResource FieldLabel}"/>
                             <TextBox x:Name="TxtMatric" Style="{StaticResource Input}"
