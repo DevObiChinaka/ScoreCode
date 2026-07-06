@@ -12,6 +12,10 @@ public class Session
     public string Status { get; set; } = "Active";
     public DateTime LastHeartbeatAt { get; set; } = DateTime.UtcNow;
 
+    // Tenant (denormalised from the exam for direct filtering)
+    public Guid? InstitutionId { get; set; }
+    public Institution? Institution { get; set; }
+
     // Navigation
     public User Student { get; set; } = null!;
     public Exam Exam { get; set; } = null!;

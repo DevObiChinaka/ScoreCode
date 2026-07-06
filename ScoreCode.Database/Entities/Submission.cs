@@ -13,6 +13,10 @@ public class Submission
     public string Hash { get; set; } = string.Empty;
     public string UploadStatus { get; set; } = "Uploaded";
 
+    // Tenant (denormalised from the session for direct filtering)
+    public Guid? InstitutionId { get; set; }
+    public Institution? Institution { get; set; }
+
     // Navigation
     public Session Session { get; set; } = null!;
     public User Student { get; set; } = null!;

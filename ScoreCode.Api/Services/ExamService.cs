@@ -111,7 +111,8 @@ public class ExamService : IExamService
             Nonce = nonce,
             StartedAt = now,
             Status = Constants.SessionStatuses.Active,
-            LastHeartbeatAt = now
+            LastHeartbeatAt = now,
+            InstitutionId = exam.InstitutionId
         };
 
         _db.Sessions.Add(session);
@@ -165,7 +166,8 @@ public class ExamService : IExamService
                     SubmittedAt = DateTime.UtcNow,
                     FinalizedAt = answer.FinalizedAt,
                     Hash = answer.Hash,
-                    UploadStatus = "Uploaded"
+                    UploadStatus = "Uploaded",
+                    InstitutionId = session.InstitutionId
                 });
             }
         }

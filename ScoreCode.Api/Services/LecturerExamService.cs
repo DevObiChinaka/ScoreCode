@@ -16,10 +16,17 @@ public class LecturerExamService : ILecturerExamService
 
     public async Task<LecturerExamDto> CreateExamAsync(Guid lecturerId, CreateExamRequest req)
     {
+        // Tenant the exam to the lecturer's institution.
+        var institutionId = await _db.Users
+            .Where(u => u.Id == lecturerId)
+            .Select(u => u.InstitutionId)
+            .FirstOrDefaultAsync();
+
         var exam = new Exam
         {
             Id = Guid.NewGuid(),
             LecturerId = lecturerId,
+            InstitutionId = institutionId,
             Title = req.Title,
             CourseCode = req.CourseCode,
             ScheduledAt = req.ScheduledAt.ToUniversalTime(),

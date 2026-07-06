@@ -13,6 +13,10 @@ public class User
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    // Tenant — null only for the platform admin (no institution)
+    public Guid? InstitutionId { get; set; }
+    public Institution? Institution { get; set; }
+
     // Navigation
     public ICollection<Exam> CreatedExams { get; set; } = [];
     public ICollection<ExamStudent> ExamStudents { get; set; } = [];

@@ -18,6 +18,10 @@ public class Exam
     public bool ResultsReleased { get; set; }
     public DateTime? ResultsReleasedAt { get; set; }
 
+    // Tenant (denormalised from the owning lecturer for direct filtering)
+    public Guid? InstitutionId { get; set; }
+    public Institution? Institution { get; set; }
+
     // Navigation
     public User Lecturer { get; set; } = null!;
     public ICollection<Question> Questions { get; set; } = [];

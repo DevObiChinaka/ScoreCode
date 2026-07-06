@@ -7,6 +7,7 @@ public class ScoreCodeDb : DbContext
 {
     public ScoreCodeDb(DbContextOptions<ScoreCodeDb> options) : base(options) { }
 
+    public DbSet<Institution> Institutions => Set<Institution>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Exam> Exams => Set<Exam>();
     public DbSet<Question> Questions => Set<Question>();
@@ -57,5 +58,32 @@ public class ScoreCodeDb : DbContext
         m.Entity<RefreshToken>()
             .HasIndex(rt => rt.Token)
             .IsUnique();
+
+        // ── Tenancy: Institution relationships ─────────────────────────────
+        // All tenant FKs are Restrict — an institution is never cascade-deleted
+        // out from under its users/exams/sessions/submissions.
+        m.Entity<User>()
+            .HasOne(u => u.Institution)
+            .WithMany(i => i.Users)
+            .HasForeignKey(u => u.InstitutionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        m.Entity<Exam>()
+            .HasOne(e => e.Institution)
+            .WithMany()
+            .HasForeignKey(e => e.InstitutionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        m.Entity<Session>()
+            .HasOne(s => s.Institution)
+            .WithMany()
+            .HasForeignKey(s => s.InstitutionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        m.Entity<Submission>()
+            .HasOne(s => s.Institution)
+            .WithMany()
+            .HasForeignKey(s => s.InstitutionId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

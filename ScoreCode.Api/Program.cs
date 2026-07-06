@@ -103,6 +103,43 @@ using (var scope = app.Services.CreateScope())
         await db.SaveChangesAsync();
         Console.WriteLine($"[Seed] Admin created — IdNumber: {admin.IdNumber}");
     }
+
+    // ── Tenancy backfill (Phase 1) ─────────────────────────────────────────
+    // Ensure a default institution exists and assign any tenant-less rows to it,
+    // so existing single-tenant data keeps working under the new model. The
+    // platform admin (role Admin) intentionally stays tenant-less.
+    var defaultInst = await db.Institutions
+        .FirstOrDefaultAsync(i => i.Name == "Default Institution");
+    if (defaultInst is null)
+    {
+        defaultInst = new Institution
+        {
+            Id = Guid.NewGuid(),
+            Name = "Default Institution",
+            Type = "University",
+            Status = Constants.InstitutionStatuses.Approved,
+            CreatedAt = DateTime.UtcNow,
+            ApprovedAt = DateTime.UtcNow
+        };
+        db.Institutions.Add(defaultInst);
+        await db.SaveChangesAsync();
+        Console.WriteLine($"[Seed] Default institution created — {defaultInst.Id}");
+    }
+
+    await db.Users
+        .Where(u => u.InstitutionId == null
+                 && u.Role != Constants.Roles.Admin
+                 && u.Role != Constants.Roles.PlatformAdmin)
+        .ExecuteUpdateAsync(s => s.SetProperty(u => u.InstitutionId, defaultInst.Id));
+    await db.Exams
+        .Where(e => e.InstitutionId == null)
+        .ExecuteUpdateAsync(s => s.SetProperty(e => e.InstitutionId, defaultInst.Id));
+    await db.Sessions
+        .Where(x => x.InstitutionId == null)
+        .ExecuteUpdateAsync(s => s.SetProperty(x => x.InstitutionId, defaultInst.Id));
+    await db.Submissions
+        .Where(x => x.InstitutionId == null)
+        .ExecuteUpdateAsync(s => s.SetProperty(x => x.InstitutionId, defaultInst.Id));
 }
 
 if (app.Environment.IsDevelopment())

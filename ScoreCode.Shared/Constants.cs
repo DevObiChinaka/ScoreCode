@@ -4,9 +4,20 @@ public static class Constants
 {
     public static class Roles
     {
-        public const string Admin = "Admin";
+        public const string Admin = "Admin";               // legacy single-tenant admin (== platform for now)
+        public const string PlatformAdmin = "PlatformAdmin"; // owns the platform; approves institutions (no tenant)
+        public const string InstitutionAdmin = "InstitutionAdmin"; // admin of one institution
         public const string Lecturer = "Lecturer";
         public const string Student = "Student";
+    }
+
+    /// <summary>Lifecycle states stored in <c>Institution.Status</c>.</summary>
+    public static class InstitutionStatuses
+    {
+        public const string Pending = "Pending";
+        public const string Approved = "Approved";
+        public const string Rejected = "Rejected";
+        public const string Suspended = "Suspended";
     }
 
     public static class ErrorCodes

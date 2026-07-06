@@ -72,6 +72,9 @@ namespace ScoreCode.Database.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("InstitutionId")
+                        .HasColumnType("uuid");
+
                     b.Property<bool>("IntelliSenseEnabled")
                         .HasColumnType("boolean");
 
@@ -103,6 +106,8 @@ namespace ScoreCode.Database.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("InstitutionId");
 
                     b.HasIndex("LecturerId");
 
@@ -173,6 +178,50 @@ namespace ScoreCode.Database.Migrations
                         .IsUnique();
 
                     b.ToTable("Grades");
+                });
+
+            modelBuilder.Entity("ScoreCode.Database.Entities.Institution", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ContactEmail")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ContactPerson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Prefix")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Institutions");
                 });
 
             modelBuilder.Entity("ScoreCode.Database.Entities.Question", b =>
@@ -257,6 +306,9 @@ namespace ScoreCode.Database.Migrations
                     b.Property<Guid>("ExamId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("InstitutionId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("LastHeartbeatAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -277,6 +329,8 @@ namespace ScoreCode.Database.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ExamId");
+
+                    b.HasIndex("InstitutionId");
 
                     b.HasIndex("StudentId");
 
@@ -303,6 +357,9 @@ namespace ScoreCode.Database.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("InstitutionId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("QuestionId")
                         .HasColumnType("uuid");
 
@@ -320,6 +377,8 @@ namespace ScoreCode.Database.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("InstitutionId");
 
                     b.HasIndex("QuestionId");
 
@@ -347,6 +406,9 @@ namespace ScoreCode.Database.Migrations
                     b.Property<string>("IdNumber")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<Guid?>("InstitutionId")
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
@@ -376,6 +438,8 @@ namespace ScoreCode.Database.Migrations
                     b.HasIndex("IdNumber")
                         .IsUnique();
 
+                    b.HasIndex("InstitutionId");
+
                     b.ToTable("Users");
                 });
 
@@ -392,11 +456,18 @@ namespace ScoreCode.Database.Migrations
 
             modelBuilder.Entity("ScoreCode.Database.Entities.Exam", b =>
                 {
+                    b.HasOne("ScoreCode.Database.Entities.Institution", "Institution")
+                        .WithMany()
+                        .HasForeignKey("InstitutionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("ScoreCode.Database.Entities.User", "Lecturer")
                         .WithMany("CreatedExams")
                         .HasForeignKey("LecturerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Institution");
 
                     b.Navigation("Lecturer");
                 });
@@ -461,6 +532,11 @@ namespace ScoreCode.Database.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("ScoreCode.Database.Entities.Institution", "Institution")
+                        .WithMany()
+                        .HasForeignKey("InstitutionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("ScoreCode.Database.Entities.User", "Student")
                         .WithMany("Sessions")
                         .HasForeignKey("StudentId")
@@ -469,11 +545,18 @@ namespace ScoreCode.Database.Migrations
 
                     b.Navigation("Exam");
 
+                    b.Navigation("Institution");
+
                     b.Navigation("Student");
                 });
 
             modelBuilder.Entity("ScoreCode.Database.Entities.Submission", b =>
                 {
+                    b.HasOne("ScoreCode.Database.Entities.Institution", "Institution")
+                        .WithMany()
+                        .HasForeignKey("InstitutionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("ScoreCode.Database.Entities.Question", "Question")
                         .WithMany("Submissions")
                         .HasForeignKey("QuestionId")
@@ -492,11 +575,23 @@ namespace ScoreCode.Database.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Institution");
+
                     b.Navigation("Question");
 
                     b.Navigation("Session");
 
                     b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("ScoreCode.Database.Entities.User", b =>
+                {
+                    b.HasOne("ScoreCode.Database.Entities.Institution", "Institution")
+                        .WithMany("Users")
+                        .HasForeignKey("InstitutionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Institution");
                 });
 
             modelBuilder.Entity("ScoreCode.Database.Entities.Exam", b =>
@@ -506,6 +601,11 @@ namespace ScoreCode.Database.Migrations
                     b.Navigation("Questions");
 
                     b.Navigation("Sessions");
+                });
+
+            modelBuilder.Entity("ScoreCode.Database.Entities.Institution", b =>
+                {
+                    b.Navigation("Users");
                 });
 
             modelBuilder.Entity("ScoreCode.Database.Entities.Question", b =>
