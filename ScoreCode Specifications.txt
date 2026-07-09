@@ -32,7 +32,7 @@ ScoreCode is a **secure desktop-based exam management and code evaluation system
 
 **Mechanisms:**
 
-1. **Fullscreen / Kiosk Mode:** Locks student interface; disables minimize, resize, ALT+TAB.
+1. **Fullscreen / Restricted Exam Mode:** Locks the student interface during an exam.
 2. **Auto-submit triggers:** Window switch, app close, system restart, and exam timer end.
 3. **Copy/Paste Disabled:** Keyboard shortcuts and context menu blocked.
 4. **Exam Timer Enforcement:** Automatic submission at end of time.

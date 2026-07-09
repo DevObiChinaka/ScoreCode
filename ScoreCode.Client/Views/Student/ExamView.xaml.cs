@@ -693,7 +693,7 @@ public partial class ExamView : Window
         if (_editorReady)
             _ = Editor.ExecuteScriptAsync("setReadOnly(true)");
 
-        // Release kiosk lock but keep window maximized for UI consistency
+        // Release the restricted-mode lock but keep window maximized for UI consistency
         Topmost = false;
         ResizeMode = ResizeMode.CanResize;
         WindowStyle = WindowStyle.SingleBorderWindow;

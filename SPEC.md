@@ -305,7 +305,7 @@ Contains Entity Framework Core `DbContext`, entity models, and migrations. Refer
 | Home view | ✅ Done | Role-specific stat cards, activity |
 | Geist font & Lucide icons | ✅ Done | Variable TTF + 12 SVG geometry icons |
 | Code editor (Monaco) | ✅ Done | Bundled locally (offline), JetBrains Mono font |
-| Exam taking flow | ✅ Done | Kiosk mode, timer, auto-submit on timeout |
+| Exam taking flow | ✅ Done | Restricted exam mode, timer, auto-submit on timeout |
 | Anti-cheating | ✅ Done | Fullscreen lock, copy/paste disable, released on submit |
 | Submission system | ✅ Done | Network retry with anti-cheat release |
 | Autosave | ✅ Done | SQLite every 5s, dirty-flag polling |
