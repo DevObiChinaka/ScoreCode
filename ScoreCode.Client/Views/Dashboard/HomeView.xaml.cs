@@ -29,8 +29,9 @@ public partial class HomeView : UserControl
         var now = DateTime.Now;
         var greeting = now.Hour < 12 ? "Good morning" : now.Hour < 17 ? "Good afternoon" : "Good evening";
         var displayName = string.IsNullOrWhiteSpace(name) ? idNumber : name;
-        TxtWelcome.Text = $"{greeting}, {displayName}.";
-        TxtSubtitle.Text = $"Signed in as {idNumber}  ·  {now:dddd, dd MMMM yyyy}";
+        TxtEyebrow.Text = now.ToString("dddd, dd MMMM").ToUpperInvariant();
+        TxtWelcome.Text = $"{greeting}, {displayName}";
+        TxtSubtitle.Text = $"Signed in as {idNumber}";
 
         Loaded += async (_, _) => await LoadDashboardAsync();
     }
@@ -318,42 +319,32 @@ public partial class HomeView : UserControl
         var card = new Border
         {
             Background = ThemeManager.GetBrush("ThBgPanel"),
-            CornerRadius = new CornerRadius(10),
+            CornerRadius = new CornerRadius(13),
             BorderBrush = ThemeManager.GetBrush("ThBorder"),
             BorderThickness = new Thickness(1),
             Padding = new Thickness(20, 18, 20, 18),
-            Margin = new Thickness(0, 0, 12, 0),
+            Margin = new Thickness(0, 0, 14, 0),
         };
 
         var stack = new StackPanel();
 
-        // Accent dot + title
-        var header = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 10) };
-        header.Children.Add(new Border
-        {
-            Width = 8, Height = 8,
-            CornerRadius = new CornerRadius(4),
-            Background = accent,
-            Margin = new Thickness(0, 0, 8, 0),
-            VerticalAlignment = VerticalAlignment.Center
-        });
-        header.Children.Add(new TextBlock
-        {
-            Text = title,
-            FontSize = 12,
-            Foreground = ThemeManager.GetBrush("ThTextSecondary"),
-            VerticalAlignment = VerticalAlignment.Center,
-            FontFamily = Font()
-        });
-        stack.Children.Add(header);
-
-        // Value
+        // Value (mono figure)
         stack.Children.Add(new TextBlock
         {
             Text = value,
-            FontSize = 26,
-            FontWeight = FontWeights.Bold,
+            FontSize = 27,
+            FontWeight = FontWeights.SemiBold,
             Foreground = ThemeManager.GetBrush("ThTextPrimary"),
+            FontFamily = MonoFont()
+        });
+
+        // Title
+        stack.Children.Add(new TextBlock
+        {
+            Text = title,
+            FontSize = 12.5,
+            Foreground = ThemeManager.GetBrush("ThTextMuted"),
+            Margin = new Thickness(0, 4, 0, 0),
             FontFamily = Font()
         });
 
@@ -400,11 +391,11 @@ public partial class HomeView : UserControl
         var card = new Border
         {
             Background = ThemeManager.GetBrush("ThBgPanel"),
-            CornerRadius = new CornerRadius(10),
+            CornerRadius = new CornerRadius(13),
             BorderBrush = ThemeManager.GetBrush("ThBorder"),
             BorderThickness = new Thickness(1),
             Padding = new Thickness(18, 16, 18, 16),
-            Margin = new Thickness(0, 0, 12, 0),
+            Margin = new Thickness(0, 0, 14, 0),
             Cursor = System.Windows.Input.Cursors.Hand
         };
 
@@ -445,23 +436,23 @@ public partial class HomeView : UserControl
     // ── Helpers ─────────────────────────────────────────────────────────────
     private static Border MakeRow() => new()
     {
-        Background = ThemeManager.GetBrush("ThBgPanel"),
+        Background = System.Windows.Media.Brushes.Transparent,
         BorderBrush = ThemeManager.GetBrush("ThBorder"),
         BorderThickness = new Thickness(0, 0, 0, 1),
-        CornerRadius = new CornerRadius(6),
-        Padding = new Thickness(14, 10, 14, 10),
-        Margin = new Thickness(0, 0, 0, 6)
+        CornerRadius = new CornerRadius(0),
+        Padding = new Thickness(4, 12, 4, 12),
+        Margin = new Thickness(0)
     };
 
     private static Border MakeTag(string text, Color color) => new()
     {
-        Background = new SolidColorBrush(Color.FromArgb(0x20, color.R, color.G, color.B)),
-        CornerRadius = new CornerRadius(4),
-        Padding = new Thickness(8, 3, 8, 3),
+        Background = new SolidColorBrush(Color.FromArgb(0x24, color.R, color.G, color.B)),
+        CornerRadius = new CornerRadius(999),
+        Padding = new Thickness(10, 3, 10, 3),
         VerticalAlignment = VerticalAlignment.Center,
         Child = new TextBlock
         {
-            Text = text, FontSize = 10, FontWeight = FontWeights.Bold,
+            Text = text, FontSize = 11, FontWeight = FontWeights.SemiBold,
             Foreground = new SolidColorBrush(color),
             FontFamily = new FontFamily("/Assets/Fonts/#Geist")
         }
@@ -483,4 +474,7 @@ public partial class HomeView : UserControl
 
     private static FontFamily Font() =>
         new("/Assets/Fonts/#Geist");
+
+    private static FontFamily MonoFont() =>
+        new("/Assets/Fonts/#Geist Mono, Consolas");
 }

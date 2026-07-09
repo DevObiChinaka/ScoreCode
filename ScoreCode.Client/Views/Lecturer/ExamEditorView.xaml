@@ -8,7 +8,7 @@
 
         <Style x:Key="ActionBtn" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource ThBrAccent}"/>
-            <Setter Property="Foreground" Value="#0D1117"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThBrTextOnAccent}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="FontFamily" Value="/Assets/Fonts/#Geist"/>

@@ -35,7 +35,8 @@
                     <Setter.Value>
                         <ControlTemplate TargetType="Button">
                             <Border x:Name="Bd" Background="{TemplateBinding Background}"
-                                    BorderThickness="0" Padding="0">
+                                    BorderThickness="0" CornerRadius="10"
+                                    Margin="10,1" Padding="0">
                                 <ContentPresenter HorizontalAlignment="Stretch"/>
                             </Border>
                             <ControlTemplate.Triggers>
@@ -94,17 +95,25 @@
                 <Grid Grid.Row="0" Margin="0,12,0,8">
                     <!-- Logo (visible when expanded) -->
                     <StackPanel x:Name="LogoFull" Orientation="Horizontal" Margin="16,0,0,0">
-                        <Border Width="28" Height="28" CornerRadius="6"
-                                Background="{StaticResource Teal}" Margin="0,0,10,0">
-                            <Grid>
-                                <Grid.RowDefinitions><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
-                                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
-                                <Border Grid.Row="0" Grid.Column="0" Background="#0D1117" Width="6" Height="6" CornerRadius="1.5" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                <Border Grid.Row="0" Grid.Column="1" Background="#0D1117" Width="6" Height="6" CornerRadius="1.5" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                <Border Grid.Row="1" Grid.Column="0" Background="#0D1117" Width="6" Height="6" CornerRadius="1.5" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                <Border Grid.Row="1" Grid.Column="1" Background="#0D1117" Width="6" Height="6" CornerRadius="1.5" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Viewbox Width="28" Height="28" Margin="0,0,10,0">
+                            <Grid Width="48" Height="48">
+                                <Border CornerRadius="12" Background="{StaticResource BgSurface}"
+                                        BorderBrush="{StaticResource BorderLine}" BorderThickness="1"/>
+                                <!-- upper arc (ink) -->
+                                <Path Data="M33.64,12.51 A15,15 0 0 0 9,24"
+                                      Stroke="{StaticResource TextPrimary}" StrokeThickness="5"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                <!-- lower arc (accent) -->
+                                <Path Data="M9,24 A15,15 0 0 0 33.64,35.49"
+                                      Stroke="{StaticResource Teal}" StrokeThickness="5"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                <!-- play chevron (green) -->
+                                <Path Data="M21,17 L30,24 L21,31"
+                                      Stroke="#14B88A" StrokeThickness="4.6"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                      StrokeLineJoin="Round"/>
                             </Grid>
-                        </Border>
+                        </Viewbox>
                         <TextBlock Text="ScoreCode" FontSize="15" FontWeight="SemiBold"
                                    Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
                     </StackPanel>
@@ -145,12 +154,12 @@
 
                             <!-- Initials circle -->
                             <Border Grid.Column="0" Grid.RowSpan="2"
-                                    Width="36" Height="36" CornerRadius="18"
-                                    Background="{StaticResource Teal}"
+                                    Width="36" Height="36" CornerRadius="9"
+                                    Background="{DynamicResource ThBrAccentGradient}"
                                     Margin="0,0,10,0" VerticalAlignment="Center">
                                 <TextBlock x:Name="TxtInitials" Text="SC"
                                            FontSize="13" FontWeight="Bold"
-                                           Foreground="#0D1117"
+                                           Foreground="#FFFFFF"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
 

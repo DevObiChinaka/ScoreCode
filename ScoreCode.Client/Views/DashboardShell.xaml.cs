@@ -83,13 +83,11 @@ public partial class DashboardShell : Window
         };
         label.SetValue(FrameworkElement.NameProperty, $"Lbl_{item.Key}");
 
-        // Left accent bar (hidden by default)
+        // Active pill background (hidden by default)
         var accent = new Border
         {
-            Width = 3,
-            Background = FindResource("Teal") as Brush,
-            HorizontalAlignment = HorizontalAlignment.Left,
-            CornerRadius = new CornerRadius(0, 2, 2, 0),
+            Background = FindResource("ThBrAccentSoft") as Brush,
+            CornerRadius = new CornerRadius(10),
             Visibility = Visibility.Collapsed
         };
         accent.SetValue(FrameworkElement.NameProperty, $"Accent_{item.Key}");
@@ -98,12 +96,12 @@ public partial class DashboardShell : Window
         var stack = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            Margin = new Thickness(16, 0, 0, 0)
+            Margin = new Thickness(11, 0, 0, 0)
         };
         stack.Children.Add(iconPath);
         stack.Children.Add(label);
 
-        var grid = new Grid { Height = 40 };
+        var grid = new Grid { Height = 38 };
         grid.Children.Add(accent);
         grid.Children.Add(stack);
 
@@ -244,8 +242,8 @@ public partial class DashboardShell : Window
 
             foreach (var child in grid.Children)
             {
-                // Accent bar
-                if (child is Border accent && accent.HorizontalAlignment == HorizontalAlignment.Left)
+                // Active pill background
+                if (child is Border accent)
                     accent.Visibility = active ? Visibility.Visible : Visibility.Collapsed;
 
                 // Icon + label
@@ -285,7 +283,7 @@ public partial class DashboardShell : Window
                     {
                         if (child is StackPanel sp)
                         {
-                            sp.Margin = new Thickness(16, 0, 0, 0);
+                            sp.Margin = new Thickness(11, 0, 0, 0);
                             foreach (var spChild in sp.Children)
                                 if (spChild is TextBlock tb)
                                     tb.Visibility = Visibility.Visible;
@@ -315,7 +313,7 @@ public partial class DashboardShell : Window
                     {
                         if (child is StackPanel sp)
                         {
-                            sp.Margin = new Thickness(18, 0, 0, 0);
+                            sp.Margin = new Thickness(11, 0, 0, 0);
                             foreach (var spChild in sp.Children)
                                 if (spChild is TextBlock tb)
                                     tb.Visibility = Visibility.Collapsed;

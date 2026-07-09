@@ -179,7 +179,7 @@
 
         <!-- ══════════ EDITOR AREA (Monaco via WebView2) ══════════ -->
         <wv2:WebView2 Grid.Row="2" x:Name="Editor"
-                      DefaultBackgroundColor="#0D1117"/>
+                      DefaultBackgroundColor="#0A0D12"/>
 
         <!-- ══════════ RUN BAR (always visible) ══════════ -->
         <Border Grid.Row="3" Background="{DynamicResource ThBrBgBase}" BorderBrush="{DynamicResource ThBrBorder}"

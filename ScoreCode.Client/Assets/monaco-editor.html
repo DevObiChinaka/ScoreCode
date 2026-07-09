@@ -19,7 +19,7 @@
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { width: 100%; height: 100%; overflow: hidden; background: #0D1117; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background: #0A0D12; }
         #editor-container { width: 100%; height: 100%; }
         /* Overflow widgets (suggest/hover) are positioned by Monaco itself via
            the `fixedOverflowWidgets: true` editor option. Do NOT override
@@ -45,85 +45,85 @@
                 inherit: true,
                 rules: [
                     // ── Universal tokens ──
-                    { token: 'comment',     foreground: '5C6B88', fontStyle: 'italic' },
-                    { token: 'keyword',     foreground: '00CDB7', fontStyle: 'bold' },
-                    { token: 'string',      foreground: '68D391' },
-                    { token: 'number',      foreground: 'F6AD55' },
-                    { token: 'type',        foreground: '63B3ED' },
-                    { token: 'identifier',  foreground: 'E8EEFF' },
-                    { token: 'delimiter',   foreground: '8B95A7' },
-                    { token: 'operator',    foreground: '8B95A7' },
-                    { token: 'predefined',  foreground: 'D6BCFA' },
-                    { token: 'constant',    foreground: 'F6AD55' },
+                    { token: 'comment',     foreground: '566072', fontStyle: 'italic' },
+                    { token: 'keyword',     foreground: 'EF8B83', fontStyle: 'bold' },
+                    { token: 'string',      foreground: '86D18F' },
+                    { token: 'number',      foreground: 'E0A06A' },
+                    { token: 'type',        foreground: '8AB4F8' },
+                    { token: 'identifier',  foreground: 'CDD3DE' },
+                    { token: 'delimiter',   foreground: '8A93A2' },
+                    { token: 'operator',    foreground: '8A93A2' },
+                    { token: 'predefined',  foreground: '8AB4F8' },
+                    { token: 'constant',    foreground: 'E0A06A' },
 
                     // ── Python ──
-                    { token: 'keyword.python',    foreground: '00CDB7', fontStyle: 'bold' },
-                    { token: 'string.python',     foreground: '68D391' },
-                    { token: 'number.python',     foreground: 'F6AD55' },
-                    { token: 'decorator.python',  foreground: 'F6AD55' },
-                    { token: 'predefined.python', foreground: 'D6BCFA' },
+                    { token: 'keyword.python',    foreground: 'EF8B83', fontStyle: 'bold' },
+                    { token: 'string.python',     foreground: '86D18F' },
+                    { token: 'number.python',     foreground: 'E0A06A' },
+                    { token: 'decorator.python',  foreground: 'E0A06A' },
+                    { token: 'predefined.python', foreground: '8AB4F8' },
 
                     // ── Java ──
-                    { token: 'keyword.java',          foreground: '00CDB7', fontStyle: 'bold' },
-                    { token: 'string.java',           foreground: '68D391' },
-                    { token: 'number.java',           foreground: 'F6AD55' },
-                    { token: 'annotation.java',       foreground: 'F6AD55' },
-                    { token: 'type.identifier.java',  foreground: '63B3ED' },
+                    { token: 'keyword.java',          foreground: 'EF8B83', fontStyle: 'bold' },
+                    { token: 'string.java',           foreground: '86D18F' },
+                    { token: 'number.java',           foreground: 'E0A06A' },
+                    { token: 'annotation.java',       foreground: 'E0A06A' },
+                    { token: 'type.identifier.java',  foreground: '8AB4F8' },
 
                     // ── C++ ──
-                    { token: 'keyword.cpp',     foreground: '00CDB7', fontStyle: 'bold' },
-                    { token: 'string.cpp',      foreground: '68D391' },
-                    { token: 'number.cpp',      foreground: 'F6AD55' },
-                    { token: 'directive.cpp',   foreground: 'D6BCFA' },
-                    { token: 'identifier.cpp',  foreground: 'E8EEFF' },
+                    { token: 'keyword.cpp',     foreground: 'EF8B83', fontStyle: 'bold' },
+                    { token: 'string.cpp',      foreground: '86D18F' },
+                    { token: 'number.cpp',      foreground: 'E0A06A' },
+                    { token: 'directive.cpp',   foreground: '8AB4F8' },
+                    { token: 'identifier.cpp',  foreground: 'CDD3DE' },
 
                     // ── JavaScript ──
-                    { token: 'keyword.js',    foreground: '00CDB7', fontStyle: 'bold' },
-                    { token: 'string.js',     foreground: '68D391' },
-                    { token: 'number.js',     foreground: 'F6AD55' },
-                    { token: 'regexp.js',     foreground: 'FC8181' },
+                    { token: 'keyword.js',    foreground: 'EF8B83', fontStyle: 'bold' },
+                    { token: 'string.js',     foreground: '86D18F' },
+                    { token: 'number.js',     foreground: 'E0A06A' },
+                    { token: 'regexp.js',     foreground: 'EC6A5E' },
 
                     // ── HTML ──
-                    { token: 'tag',                     foreground: 'FC8181' },
-                    { token: 'tag.html',                foreground: 'FC8181' },
-                    { token: 'attribute.name.html',     foreground: 'F6AD55' },
-                    { token: 'attribute.value.html',    foreground: '68D391' },
-                    { token: 'metatag.html',            foreground: '5C6B88' },
-                    { token: 'metatag.content.html',    foreground: '68D391' },
-                    { token: 'delimiter.html',          foreground: '8B95A7' },
+                    { token: 'tag',                     foreground: 'EF8B83' },
+                    { token: 'tag.html',                foreground: 'EF8B83' },
+                    { token: 'attribute.name.html',     foreground: 'E0A06A' },
+                    { token: 'attribute.value.html',    foreground: '86D18F' },
+                    { token: 'metatag.html',            foreground: '566072' },
+                    { token: 'metatag.content.html',    foreground: '86D18F' },
+                    { token: 'delimiter.html',          foreground: '8A93A2' },
 
                     // ── CSS ──
-                    { token: 'tag.css',              foreground: 'FC8181' },
-                    { token: 'attribute.name.css',   foreground: '63B3ED' },
-                    { token: 'attribute.value.css',  foreground: '68D391' },
-                    { token: 'number.css',           foreground: 'F6AD55' },
-                    { token: 'delimiter.css',        foreground: '8B95A7' },
+                    { token: 'tag.css',              foreground: 'EF8B83' },
+                    { token: 'attribute.name.css',   foreground: '8AB4F8' },
+                    { token: 'attribute.value.css',  foreground: '86D18F' },
+                    { token: 'number.css',           foreground: 'E0A06A' },
+                    { token: 'delimiter.css',        foreground: '8A93A2' },
                 ],
                 colors: {
-                    'editor.background':                  '#0D1117',
-                    'editor.foreground':                  '#E8EEFF',
-                    'editor.lineHighlightBackground':     '#1C233833',
-                    'editor.selectionBackground':         '#1F2A4066',
-                    'editorCursor.foreground':            '#00CDB7',
-                    'editorLineNumber.foreground':        '#364059',
-                    'editorLineNumber.activeForeground':  '#5C6B88',
-                    'editor.inactiveSelectionBackground': '#1F2A4033',
-                    'editorGutter.background':            '#0D1117',
-                    'editorWidget.background':            '#1C2338',
-                    'editorWidget.border':                '#1F2A40',
-                    'input.background':                   '#151D2E',
-                    'input.border':                       '#1F2A40',
-                    'scrollbarSlider.background':         '#1F2A4066',
-                    'scrollbarSlider.hoverBackground':    '#1F2A40AA',
+                    'editor.background':                  '#0A0D12',
+                    'editor.foreground':                  '#CDD3DE',
+                    'editor.lineHighlightBackground':     '#12161E55',
+                    'editor.selectionBackground':         '#3B74F040',
+                    'editorCursor.foreground':            '#5B8BFF',
+                    'editorLineNumber.foreground':        '#566072',
+                    'editorLineNumber.activeForeground':  '#9AA4B4',
+                    'editor.inactiveSelectionBackground': '#3B74F022',
+                    'editorGutter.background':            '#0A0D12',
+                    'editorWidget.background':            '#161B24',
+                    'editorWidget.border':                '#232A36',
+                    'input.background':                   '#12161E',
+                    'input.border':                       '#232A36',
+                    'scrollbarSlider.background':         '#323B4A66',
+                    'scrollbarSlider.hoverBackground':    '#323B4AAA',
                     // Suggest widget (autocomplete popup)
-                    'editorSuggestWidget.background':          '#1C2338',
-                    'editorSuggestWidget.border':              '#1F2A40',
-                    'editorSuggestWidget.foreground':          '#E8EEFF',
-                    'editorSuggestWidget.selectedBackground':  '#1F2A40',
-                    'editorSuggestWidget.highlightForeground': '#00CDB7',
+                    'editorSuggestWidget.background':          '#161B24',
+                    'editorSuggestWidget.border':              '#232A36',
+                    'editorSuggestWidget.foreground':          '#E8EBF1',
+                    'editorSuggestWidget.selectedBackground':  '#1C222D',
+                    'editorSuggestWidget.highlightForeground': '#5B8BFF',
                     // Hover widget
-                    'editorHoverWidget.background':  '#1C2338',
-                    'editorHoverWidget.border':      '#1F2A40',
+                    'editorHoverWidget.background':  '#161B24',
+                    'editorHoverWidget.border':      '#232A36',
                 }
             });
 
@@ -133,7 +133,7 @@
                 inherit: true,
                 rules: [
                     { token: 'comment',     foreground: '6A737D', fontStyle: 'italic' },
-                    { token: 'keyword',     foreground: '0E7C6B', fontStyle: 'bold' },
+                    { token: 'keyword',     foreground: '1F5FE0', fontStyle: 'bold' },
                     { token: 'string',      foreground: '22863A' },
                     { token: 'number',      foreground: 'B76E00' },
                     { token: 'type',        foreground: '0366D6' },
@@ -148,7 +148,7 @@
                     'editor.foreground':                  '#24292E',
                     'editor.lineHighlightBackground':     '#F6F8FA',
                     'editor.selectionBackground':         '#0366D625',
-                    'editorCursor.foreground':            '#0E7C6B',
+                    'editorCursor.foreground':            '#1F5FE0',
                     'editorLineNumber.foreground':        '#B0B8C4',
                     'editorLineNumber.activeForeground':  '#6A737D',
                     'editor.inactiveSelectionBackground': '#0366D615',
@@ -163,7 +163,7 @@
                     'editorSuggestWidget.border':              '#E1E4E8',
                     'editorSuggestWidget.foreground':          '#24292E',
                     'editorSuggestWidget.selectedBackground':  '#E1E4E8',
-                    'editorSuggestWidget.highlightForeground': '#0E7C6B',
+                    'editorSuggestWidget.highlightForeground': '#1F5FE0',
                     'editorHoverWidget.background':  '#F6F8FA',
                     'editorHoverWidget.border':      '#E1E4E8',
                 }
@@ -550,7 +550,7 @@
             if (editor && monaco) {
                 monaco.editor.setTheme(themeName);
                 // Update body background to match
-                var bg = themeName === 'scorecode-light' ? '#FFFFFF' : '#0D1117';
+                var bg = themeName === 'scorecode-light' ? '#FFFFFF' : '#0A0D12';
                 document.body.style.background = bg;
                 document.documentElement.style.background = bg;
             }

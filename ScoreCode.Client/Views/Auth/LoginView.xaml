@@ -5,10 +5,10 @@
              FontFamily="/Assets/Fonts/#Geist">
 
     <UserControl.Resources>
-        <SolidColorBrush x:Key="CodeKw"        Color="#00CDB7"/>
-        <SolidColorBrush x:Key="CodeFn"        Color="#61AFEF"/>
-        <SolidColorBrush x:Key="CodeStr"       Color="#98C379"/>
-        <SolidColorBrush x:Key="CodeCmt"       Color="#2D3E5B"/>
+        <SolidColorBrush x:Key="CodeKw"        Color="#EF8B83"/>
+        <SolidColorBrush x:Key="CodeFn"        Color="#8AB4F8"/>
+        <SolidColorBrush x:Key="CodeStr"       Color="#86D18F"/>
+        <SolidColorBrush x:Key="CodeCmt"       Color="#566072"/>
         <SolidColorBrush x:Key="ErrorBg"       Color="#1A0A0A"/>
 
         <!-- Input TextBox -->
@@ -321,17 +321,22 @@
 
                         <!-- Logo -->
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,32">
-                            <Border Width="26" Height="26" CornerRadius="6"
-                                    Background="{DynamicResource ThBrAccent}" Margin="0,0,10,0">
-                                <Grid>
-                                    <Grid.RowDefinitions><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
-                                    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
-                                    <Border Grid.Row="0" Grid.Column="0" Background="#0D1117" Width="5" Height="5" CornerRadius="1" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    <Border Grid.Row="0" Grid.Column="1" Background="#0D1117" Width="5" Height="5" CornerRadius="1" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    <Border Grid.Row="1" Grid.Column="0" Background="#0D1117" Width="5" Height="5" CornerRadius="1" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    <Border Grid.Row="1" Grid.Column="1" Background="#0D1117" Width="5" Height="5" CornerRadius="1" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Viewbox Width="28" Height="28" Margin="0,0,10,0">
+                                <Grid Width="48" Height="48">
+                                    <Border CornerRadius="12" Background="{DynamicResource ThBrBgSurface}"
+                                            BorderBrush="{DynamicResource ThBrBorder}" BorderThickness="1"/>
+                                    <Path Data="M33.64,12.51 A15,15 0 0 0 9,24"
+                                          Stroke="{DynamicResource ThBrTextPrimary}" StrokeThickness="5"
+                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                    <Path Data="M9,24 A15,15 0 0 0 33.64,35.49"
+                                          Stroke="{DynamicResource ThBrAccent}" StrokeThickness="5"
+                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                    <Path Data="M21,17 L30,24 L21,31"
+                                          Stroke="#14B88A" StrokeThickness="4.6"
+                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                          StrokeLineJoin="Round"/>
                                 </Grid>
-                            </Border>
+                            </Viewbox>
                             <TextBlock Text="ScoreCode" FontSize="16" FontWeight="SemiBold"
                                        Foreground="{DynamicResource ThBrTextPrimary}"
                                        VerticalAlignment="Center"/>

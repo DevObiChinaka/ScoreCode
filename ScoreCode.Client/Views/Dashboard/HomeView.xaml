@@ -17,16 +17,19 @@
     </UserControl.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <StackPanel Margin="32,28,32,32">
+        <StackPanel Margin="40,36,40,40" MaxWidth="960" HorizontalAlignment="Left">
 
             <!-- ── Welcome banner ── -->
-            <TextBlock x:Name="TxtWelcome" Text="Welcome back." FontSize="28" FontWeight="Bold"
-                       Foreground="{DynamicResource ThBrTextPrimary}" Margin="0,0,0,4"/>
-            <TextBlock x:Name="TxtSubtitle" FontSize="14"
-                       Foreground="{DynamicResource ThBrTextSecondary}" Margin="0,0,0,24"/>
+            <TextBlock x:Name="TxtEyebrow" Text="TODAY" FontSize="12" FontWeight="SemiBold"
+                       FontFamily="/Assets/Fonts/#Geist Mono, Consolas"
+                       Foreground="{DynamicResource ThBrAccentStrong}" Margin="0,0,0,8"/>
+            <TextBlock x:Name="TxtWelcome" Text="Welcome back." FontSize="34" FontWeight="SemiBold"
+                       Foreground="{DynamicResource ThBrTextPrimary}" Margin="0,0,0,6"/>
+            <TextBlock x:Name="TxtSubtitle" FontSize="15"
+                       Foreground="{DynamicResource ThBrTextSecondary}" Margin="0,0,0,28"/>
 
             <!-- ── Stat cards row ── -->
-            <UniformGrid x:Name="StatCardsGrid" Rows="1" Margin="0,0,0,28">
+            <UniformGrid x:Name="StatCardsGrid" Rows="1" Margin="0,0,0,30">
                 <!-- Cards added in code-behind per role -->
             </UniformGrid>
 
@@ -34,7 +37,7 @@
             <TextBlock x:Name="TxtSection1Title" Text="Upcoming Exams" FontSize="16" FontWeight="SemiBold"
                        Foreground="{DynamicResource ThBrTextPrimary}" Margin="0,0,0,12"/>
 
-            <Border Background="{StaticResource BgCard}" CornerRadius="10"
+            <Border Background="{StaticResource BgCard}" CornerRadius="14"
                     BorderBrush="{StaticResource BorderLine}" BorderThickness="1"
                     Padding="20,16" Margin="0,0,0,24">
                 <StackPanel x:Name="Section1Content">
@@ -48,7 +51,7 @@
             <TextBlock Text="Recent Activity" FontSize="16" FontWeight="SemiBold"
                        Foreground="{DynamicResource ThBrTextPrimary}" Margin="0,0,0,12"/>
 
-            <Border Background="{StaticResource BgCard}" CornerRadius="10"
+            <Border Background="{StaticResource BgCard}" CornerRadius="14"
                     BorderBrush="{StaticResource BorderLine}" BorderThickness="1"
                     Padding="20,16" Margin="0,0,0,24">
                 <StackPanel x:Name="Section2Content">
