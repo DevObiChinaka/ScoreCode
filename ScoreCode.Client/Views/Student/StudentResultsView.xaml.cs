@@ -384,6 +384,8 @@ public partial class StudentResultsView : UserControl
             };
             detailStack.Children.Add(codeBox);
 
+            bool isPreview = HtmlPreview.IsPreviewLanguage(q.Language);
+
             var runBtn = new Border
             {
                 Background = ThemeManager.GetBrush("ThAccent"), CornerRadius = new CornerRadius(8),
@@ -392,43 +394,77 @@ public partial class StudentResultsView : UserControl
             };
             var runLabel = new TextBlock
             {
-                Text = "▶  Run code", FontSize = 12.5, FontWeight = FontWeights.Medium,
+                Text = isPreview ? "▶  Show preview" : "▶  Run code",
+                FontSize = 12.5, FontWeight = FontWeights.Medium,
                 Foreground = ThemeManager.GetBrush("ThTextOnAccent"), FontFamily = _font
             };
             runBtn.Child = runLabel;
-
-            var outputBox = new TextBox
-            {
-                IsReadOnly = true, FontFamily = _mono, FontSize = 12,
-                Background = System.Windows.Media.Brushes.Transparent,
-                Foreground = ThemeManager.GetBrush("ThCodeText"),
-                BorderBrush = ThemeManager.GetBrush("ThBorder"), BorderThickness = new Thickness(1),
-                Padding = new Thickness(11, 9, 11, 9), AcceptsReturn = true, TextWrapping = TextWrapping.Wrap,
-                MaxHeight = 150, Visibility = Visibility.Collapsed, Margin = new Thickness(0, 8, 0, 0)
-            };
-
-            bool running = false;
-            runBtn.MouseLeftButtonUp += async (_, _) =>
-            {
-                if (running) return;
-                running = true;
-                runLabel.Text = "Running…";
-                outputBox.Visibility = Visibility.Visible;
-                outputBox.Text = "Executing…";
-                try
-                {
-                    var result = await CodeExecutionService.ExecuteAsync(q.Code, q.Language);
-                    var errors = result.CompilationError ?? result.Stderr;
-                    outputBox.Text = string.IsNullOrWhiteSpace(result.Stdout)
-                        ? (string.IsNullOrWhiteSpace(errors) ? "(no output)" : errors)
-                        : result.Stdout + (string.IsNullOrWhiteSpace(errors) ? "" : "\n\n⚠ " + errors);
-                }
-                catch (Exception ex) { outputBox.Text = $"Error: {ex.Message}"; }
-                finally { running = false; runLabel.Text = "▶  Run code"; }
-            };
-
             detailStack.Children.Add(runBtn);
-            detailStack.Children.Add(outputBox);
+
+            if (isPreview)
+            {
+                // HTML / CSS → render a live preview instead of text output.
+                var previewHost = new Border
+                {
+                    BorderBrush = ThemeManager.GetBrush("ThBorder"), BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(8), Height = 320, Margin = new Thickness(0, 8, 0, 0),
+                    Background = System.Windows.Media.Brushes.White, ClipToBounds = true,
+                    Visibility = Visibility.Collapsed
+                };
+                var web = new Microsoft.Web.WebView2.Wpf.WebView2
+                {
+                    DefaultBackgroundColor = System.Drawing.Color.White
+                };
+                previewHost.Child = web;
+                detailStack.Children.Add(previewHost);
+
+                bool shown = false, rendered = false;
+                runBtn.MouseLeftButtonUp += async (_, _) =>
+                {
+                    shown = !shown;
+                    previewHost.Visibility = shown ? Visibility.Visible : Visibility.Collapsed;
+                    runLabel.Text = shown ? "Hide preview" : "▶  Show preview";
+                    if (shown && !rendered)
+                    {
+                        rendered = true;
+                        try { await HtmlPreview.RenderAsync(web, q.Code, q.Language, "ResultsPreview"); }
+                        catch { rendered = false; }
+                    }
+                };
+            }
+            else
+            {
+                var outputBox = new TextBox
+                {
+                    IsReadOnly = true, FontFamily = _mono, FontSize = 12,
+                    Background = System.Windows.Media.Brushes.Transparent,
+                    Foreground = ThemeManager.GetBrush("ThCodeText"),
+                    BorderBrush = ThemeManager.GetBrush("ThBorder"), BorderThickness = new Thickness(1),
+                    Padding = new Thickness(11, 9, 11, 9), AcceptsReturn = true, TextWrapping = TextWrapping.Wrap,
+                    MaxHeight = 150, Visibility = Visibility.Collapsed, Margin = new Thickness(0, 8, 0, 0)
+                };
+                detailStack.Children.Add(outputBox);
+
+                bool running = false;
+                runBtn.MouseLeftButtonUp += async (_, _) =>
+                {
+                    if (running) return;
+                    running = true;
+                    runLabel.Text = "Running…";
+                    outputBox.Visibility = Visibility.Visible;
+                    outputBox.Text = "Executing…";
+                    try
+                    {
+                        var result = await CodeExecutionService.ExecuteAsync(q.Code, q.Language);
+                        var errors = result.CompilationError ?? result.Stderr;
+                        outputBox.Text = string.IsNullOrWhiteSpace(result.Stdout)
+                            ? (string.IsNullOrWhiteSpace(errors) ? "(no output)" : errors)
+                            : result.Stdout + (string.IsNullOrWhiteSpace(errors) ? "" : "\n\n⚠ " + errors);
+                    }
+                    catch (Exception ex) { outputBox.Text = $"Error: {ex.Message}"; }
+                    finally { running = false; runLabel.Text = "▶  Run code"; }
+                };
+            }
         }
 
         if (hasFeedback)
