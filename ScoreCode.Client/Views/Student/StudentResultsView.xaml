@@ -3,59 +3,59 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="{DynamicResource ThBrBgBase}" FontFamily="/Assets/Fonts/#Geist">
 
-    <UserControl.Resources>
-        <ResourceDictionary>
-            <SolidColorBrush x:Key="BgBase"        Color="{DynamicResource ThBgBase}"/>
-            <SolidColorBrush x:Key="BgCard"        Color="{DynamicResource ThBgPanel}"/>
-            <SolidColorBrush x:Key="BgSurface"     Color="{DynamicResource ThBgSurface}"/>
-            <SolidColorBrush x:Key="Teal"          Color="{DynamicResource ThAccent}"/>
-            <SolidColorBrush x:Key="TextPrimary"   Color="{DynamicResource ThTextPrimary}"/>
-            <SolidColorBrush x:Key="TextSecondary" Color="{DynamicResource ThTextSecondary}"/>
-            <SolidColorBrush x:Key="TextMuted"     Color="{DynamicResource ThTextMuted}"/>
-            <SolidColorBrush x:Key="BorderLine"    Color="{DynamicResource ThBorder}"/>
-            <SolidColorBrush x:Key="Orange"        Color="{DynamicResource ThWarning}"/>
-            <SolidColorBrush x:Key="Purple"        Color="#A78BFA"/>
-            <SolidColorBrush x:Key="Green"         Color="{DynamicResource ThSuccess}"/>
-            <SolidColorBrush x:Key="Red"           Color="{DynamicResource ThError}"/>
-        </ResourceDictionary>
-    </UserControl.Resources>
-
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <StackPanel Margin="32,28,32,32">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="14*" MaxWidth="1000"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
 
-            <!-- ── Header ── -->
-            <TextBlock Text="My Results" FontSize="24" FontWeight="Bold"
-                       Foreground="{StaticResource TextPrimary}" Margin="0,0,0,4"/>
-            <TextBlock Text="View your graded exam results below." FontSize="13"
-                       Foreground="{StaticResource TextSecondary}" Margin="0,0,0,24"/>
+            <StackPanel Grid.Column="1" Margin="8,40,8,48">
 
-            <!-- ── Loading indicator ── -->
-            <TextBlock x:Name="TxtLoading" Text="Loading results..."
-                       FontSize="13" Foreground="{StaticResource TextMuted}"
-                       HorizontalAlignment="Center" Margin="0,40"
-                       Visibility="Visible"/>
+                <!-- Header -->
+                <TextBlock Text="My Results" FontSize="29" FontWeight="Medium"
+                           Foreground="{DynamicResource ThBrTextPrimary}" Margin="0,0,0,6"/>
+                <TextBlock Text="Graded exams your lecturer has released"
+                           FontSize="14.5" Foreground="{DynamicResource ThBrTextSecondary}" Margin="0,0,0,26"/>
 
-            <!-- ── Empty state ── -->
-            <Border x:Name="EmptyState" Visibility="Collapsed"
-                    Background="{StaticResource BgCard}" CornerRadius="10"
-                    BorderBrush="{StaticResource BorderLine}" BorderThickness="1"
-                    Padding="32,40">
-                <StackPanel HorizontalAlignment="Center">
-                    <TextBlock Text="📋" FontSize="36" HorizontalAlignment="Center"
-                               Margin="0,0,0,12"/>
-                    <TextBlock Text="No results available yet" FontSize="16" FontWeight="SemiBold"
-                               Foreground="{StaticResource TextPrimary}"
-                               HorizontalAlignment="Center" Margin="0,0,0,6"/>
-                    <TextBlock Text="Results will appear here once your lecturer releases them."
-                               FontSize="13" Foreground="{StaticResource TextSecondary}"
-                               HorizontalAlignment="Center" TextWrapping="Wrap"
-                               TextAlignment="Center"/>
+                <!-- Performance summary (built in code-behind) -->
+                <StackPanel x:Name="SummaryHost"/>
+
+                <!-- Section label + sort control -->
+                <Grid x:Name="ListHeader" Margin="0,30,0,14" Visibility="Collapsed">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="ALL RESULTS" VerticalAlignment="Center"
+                               FontSize="12.5" FontWeight="Medium"
+                               Foreground="{DynamicResource ThBrTextMuted}"/>
+                    <Border Grid.Column="1" CornerRadius="11" Padding="3"
+                            Background="{DynamicResource ThBrBgInput}"
+                            BorderBrush="{DynamicResource ThBrBorder}" BorderThickness="1">
+                        <StackPanel x:Name="SortBar" Orientation="Horizontal"/>
+                    </Border>
+                </Grid>
+
+                <!-- Loading -->
+                <TextBlock x:Name="TxtLoading" Text="Loading results…"
+                           FontSize="14" Foreground="{DynamicResource ThBrTextMuted}"
+                           HorizontalAlignment="Center" Margin="0,60"/>
+
+                <!-- Empty -->
+                <StackPanel x:Name="EmptyState" HorizontalAlignment="Center" Margin="0,70" Visibility="Collapsed">
+                    <TextBlock Text="No results available yet" FontSize="16" FontWeight="Medium"
+                               Foreground="{DynamicResource ThBrTextSecondary}" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Results appear here once your lecturer releases them"
+                               FontSize="13" Foreground="{DynamicResource ThBrTextMuted}"
+                               HorizontalAlignment="Center" Margin="0,5,0,0"/>
                 </StackPanel>
-            </Border>
 
-            <!-- ── Results list ── -->
-            <StackPanel x:Name="ResultsList"/>
+                <!-- Results list -->
+                <StackPanel x:Name="ResultsList"/>
 
-        </StackPanel>
+            </StackPanel>
+        </Grid>
     </ScrollViewer>
 </UserControl>
