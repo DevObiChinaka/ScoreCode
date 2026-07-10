@@ -30,10 +30,15 @@ public partial class ExamListView : UserControl
 
         SearchBox.TextChanged += (_, _) =>
         {
-            SearchPlaceholder.Visibility = string.IsNullOrEmpty(SearchBox.Text)
-                ? Visibility.Visible : Visibility.Collapsed;
+            bool empty = string.IsNullOrEmpty(SearchBox.Text);
+            SearchPlaceholder.Visibility = empty ? Visibility.Visible : Visibility.Collapsed;
+            ClearBtn.Visibility = empty ? Visibility.Collapsed : Visibility.Visible;
             Render();
         };
+        SearchBox.GotKeyboardFocus += (_, _) => SearchBorder.BorderBrush = ThemeManager.GetBrush("ThAccentLine");
+        SearchBox.LostKeyboardFocus += (_, _) => SearchBorder.BorderBrush = ThemeManager.GetBrush("ThBorder");
+        SearchBox.KeyDown += (_, e) => { if (e.Key == System.Windows.Input.Key.Escape) SearchBox.Clear(); };
+        ClearBtn.MouseLeftButtonUp += (_, _) => { SearchBox.Clear(); SearchBox.Focus(); };
 
         Loaded += async (_, _) => await LoadExamsAsync();
     }
@@ -84,27 +89,32 @@ public partial class ExamListView : UserControl
         bool active = _filter == filter;
         var pill = new Border
         {
-            Background = active ? ThemeManager.GetBrush("ThAccentSoft") : System.Windows.Media.Brushes.Transparent,
+            Background = active ? ThemeManager.GetBrush("ThAccent") : System.Windows.Media.Brushes.Transparent,
             CornerRadius = new CornerRadius(8),
-            Padding = new Thickness(12, 6, 12, 6),
-            Margin = new Thickness(6, 0, 0, 0),
+            Padding = new Thickness(13, 6, 13, 6),
+            Margin = new Thickness(1, 0, 1, 0),
             Cursor = System.Windows.Input.Cursors.Hand
         };
         var sp = new StackPanel { Orientation = Orientation.Horizontal };
         sp.Children.Add(new TextBlock
         {
             Text = label, FontSize = 13, FontWeight = FontWeights.Medium,
-            Foreground = active ? ThemeManager.GetBrush("ThAccentStrong") : ThemeManager.GetBrush("ThTextSecondary"),
+            Foreground = active ? ThemeManager.GetBrush("ThTextOnAccent") : ThemeManager.GetBrush("ThTextSecondary"),
             FontFamily = _font, VerticalAlignment = VerticalAlignment.Center
         });
         sp.Children.Add(new TextBlock
         {
             Text = count.ToString(), FontSize = 12,
-            Foreground = active ? ThemeManager.GetBrush("ThAccentStrong") : ThemeManager.GetBrush("ThTextMuted"),
+            Foreground = active ? ThemeManager.GetBrush("ThTextOnAccent") : ThemeManager.GetBrush("ThTextMuted"),
             FontFamily = _mono, Margin = new Thickness(7, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center,
-            Opacity = active ? 0.85 : 0.7
+            Opacity = active ? 0.9 : 0.7
         });
         pill.Child = sp;
+        if (!active)
+        {
+            pill.MouseEnter += (_, _) => pill.Background = ThemeManager.GetBrush("ThBgHover");
+            pill.MouseLeave += (_, _) => pill.Background = System.Windows.Media.Brushes.Transparent;
+        }
         pill.MouseLeftButtonUp += (_, _) => { _filter = filter; RebuildFilterBar(); Render(); };
         return pill;
     }
@@ -160,7 +170,7 @@ public partial class ExamListView : UserControl
             ExamState.Active when resuming => ThemeManager.GetColor("ThAccentStrong"),
             ExamState.Active => ThemeManager.GetColor("ThSuccess"),
             ExamState.Upcoming => ThemeManager.GetColor("ThWarning"),
-            _ => exam.SessionStatus == "Completed" ? ThemeManager.GetColor("ThSuccess") : ThemeManager.GetColor("ThTextMuted")
+            _ => ThemeManager.GetColor("ThTextMuted") // completed / closed
         };
 
         var row = new Border
@@ -286,7 +296,7 @@ public partial class ExamListView : UserControl
         return new TextBlock
         {
             Text = "View result →", FontSize = 12.5, FontWeight = FontWeights.Medium,
-            Foreground = ThemeManager.GetBrush("ThTextSecondary"), FontFamily = _font,
+            Foreground = ThemeManager.GetBrush("ThAccentStrong"), FontFamily = _font,
             VerticalAlignment = VerticalAlignment.Center
         };
     }
