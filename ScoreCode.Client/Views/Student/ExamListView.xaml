@@ -93,16 +93,21 @@
 
             <!-- List area -->
             <Grid Grid.Row="2">
-                <ScrollViewer x:Name="ListScroller" VerticalScrollBarVisibility="Auto"
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <ScrollViewer Grid.Row="0" x:Name="ListScroller" VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled" Visibility="Collapsed">
-                    <StackPanel x:Name="ListPanel" Margin="0,0,0,40"/>
+                    <StackPanel x:Name="ListPanel" Margin="0,0,0,8"/>
                 </ScrollViewer>
 
-                <TextBlock x:Name="TxtLoading" Text="Loading exams…"
+                <TextBlock Grid.Row="0" x:Name="TxtLoading" Text="Loading exams…"
                            FontSize="14" Foreground="{DynamicResource ThBrTextMuted}"
                            HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,60,0,0"/>
 
-                <StackPanel x:Name="EmptyState" HorizontalAlignment="Center"
+                <StackPanel Grid.Row="0" x:Name="EmptyState" HorizontalAlignment="Center"
                             VerticalAlignment="Top" Margin="0,70,0,0" Visibility="Collapsed">
                     <Path Data="{StaticResource Icon.FileText}" Stroke="{DynamicResource ThBrTextMuted}"
                           StrokeThickness="1.5" Width="44" Height="44" Stretch="Uniform"
@@ -113,6 +118,18 @@
                                FontSize="13" Foreground="{DynamicResource ThBrTextMuted}" HorizontalAlignment="Center"
                                Margin="0,5,0,0"/>
                 </StackPanel>
+
+                <!-- Pager (built in code-behind) -->
+                <Grid Grid.Row="1" x:Name="PagerHost" Margin="0,10,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" x:Name="RangeLabel" VerticalAlignment="Center"
+                               FontSize="12.5" Foreground="{DynamicResource ThBrTextMuted}"
+                               FontFamily="/Assets/Fonts/#Geist"/>
+                    <StackPanel Grid.Column="1" x:Name="PagerBar" Orientation="Horizontal"/>
+                </Grid>
             </Grid>
 
         </Grid>
