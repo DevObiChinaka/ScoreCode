@@ -10,6 +10,7 @@ using ScoreCode.Client.Views.Student;
 using ScoreCode.Client.Views.Admin;
 using ScoreCode.Client.Views.Lecturer;
 using ScoreCode.Client.ViewModels;
+using ScoreCode.Shared.DTOs.Exams;
 
 namespace ScoreCode.Client.Views;
 
@@ -186,8 +187,17 @@ public partial class DashboardShell : Window
     private ExamListView CreateExamListView()
     {
         var examList = new ExamListView(_api);
-        examList.ExamStartRequested += async (examId) => await StartExamAsync(examId);
+        examList.ExamStartRequested += ShowPreflight;
         return examList;
+    }
+
+    /// <summary>Show the pre-flight "Focus Room" screen before launching the exam.</summary>
+    private void ShowPreflight(ExamListItemDto exam)
+    {
+        var preflight = new PreflightView(exam, _vm.UserIdNumber);
+        preflight.EnterRequested += async () => await StartExamAsync(exam.Id);
+        preflight.CancelRequested += () => NavigateTo("Exams");
+        ContentHost.Content = preflight;
     }
 
     private async Task StartExamAsync(Guid examId)

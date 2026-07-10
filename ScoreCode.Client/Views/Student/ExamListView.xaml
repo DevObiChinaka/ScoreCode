@@ -41,47 +41,50 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <Grid Margin="32,24">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="14*" MaxWidth="1000"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
 
-        <!-- Header -->
-        <TextBlock Grid.Row="0" Text="My Exams" FontSize="22" FontWeight="SemiBold"
-                   Foreground="{DynamicResource ThBrTextPrimary}" Margin="0,0,0,4"/>
-        <TextBlock Grid.Row="1" x:Name="TxtSubtitle" Text="Your assigned exams"
-                   FontSize="13" Foreground="{DynamicResource ThBrTextSecondary}" Margin="0,0,0,20"/>
+            <StackPanel Grid.Column="1" Margin="8,40,8,48">
 
-        <!-- Loading indicator -->
-        <TextBlock Grid.Row="2" x:Name="TxtLoading" Text="Loading exams..."
-                   FontSize="14" Foreground="{DynamicResource ThBrTextMuted}"
-                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <!-- Header -->
+                <TextBlock Text="My Exams" FontSize="29" FontWeight="Medium"
+                           Foreground="{DynamicResource ThBrTextPrimary}" Margin="0,0,0,6"/>
+                <TextBlock x:Name="TxtSubtitle" Text="Exams assigned to you by your lecturers"
+                           FontSize="14.5" Foreground="{DynamicResource ThBrTextSecondary}" Margin="0,0,0,28"/>
 
-        <!-- Empty state -->
-        <StackPanel Grid.Row="2" x:Name="EmptyState" HorizontalAlignment="Center"
-                    VerticalAlignment="Center" Visibility="Collapsed">
-            <Path Data="{StaticResource Icon.FileText}" Stroke="{DynamicResource ThBrTextMuted}"
-                  StrokeThickness="1.5" Width="48" Height="48" Stretch="Uniform"
-                  HorizontalAlignment="Center" Margin="0,0,0,12"/>
-            <TextBlock Text="No exams assigned yet" FontSize="16" FontWeight="Medium"
-                       Foreground="{DynamicResource ThBrTextSecondary}" HorizontalAlignment="Center"/>
-            <TextBlock Text="Check back when your lecturer publishes an exam"
-                       FontSize="13" Foreground="{DynamicResource ThBrTextMuted}" HorizontalAlignment="Center"
-                       Margin="0,4,0,0"/>
-        </StackPanel>
+                <!-- Loading indicator -->
+                <TextBlock x:Name="TxtLoading" Text="Loading exams…"
+                           FontSize="14" Foreground="{DynamicResource ThBrTextMuted}"
+                           HorizontalAlignment="Center" Margin="0,60"/>
 
-        <!-- Card grid -->
-        <ScrollViewer Grid.Row="2" x:Name="CardScroller" VerticalScrollBarVisibility="Auto"
-                      Visibility="Collapsed">
-            <ItemsControl x:Name="ExamCards">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <WrapPanel Orientation="Horizontal"/>
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-            </ItemsControl>
-        </ScrollViewer>
-    </Grid>
+                <!-- Empty state -->
+                <StackPanel x:Name="EmptyState" HorizontalAlignment="Center"
+                            Margin="0,60" Visibility="Collapsed">
+                    <Path Data="{StaticResource Icon.FileText}" Stroke="{DynamicResource ThBrTextMuted}"
+                          StrokeThickness="1.5" Width="46" Height="46" Stretch="Uniform"
+                          HorizontalAlignment="Center" Margin="0,0,0,14"/>
+                    <TextBlock Text="No exams assigned yet" FontSize="16" FontWeight="Medium"
+                               Foreground="{DynamicResource ThBrTextSecondary}" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Check back when your lecturer publishes an exam"
+                               FontSize="13" Foreground="{DynamicResource ThBrTextMuted}" HorizontalAlignment="Center"
+                               Margin="0,5,0,0"/>
+                </StackPanel>
+
+                <!-- Card grid -->
+                <ItemsControl x:Name="ExamCards" Visibility="Collapsed">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+
+            </StackPanel>
+        </Grid>
+    </ScrollViewer>
 </UserControl>

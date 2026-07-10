@@ -13,8 +13,11 @@ public partial class ExamListView : UserControl
 {
     private readonly ExamClientService _examService;
 
-    /// <summary>Raised when the student clicks "Start Exam" on an active card.</summary>
-    public event Action<Guid>? ExamStartRequested;
+    /// <summary>Raised when the student chooses to begin/resume an exam.</summary>
+    public event Action<ExamListItemDto>? ExamStartRequested;
+
+    private static readonly FontFamily _font = new("/Assets/Fonts/#Geist");
+    private static readonly FontFamily _mono = new("/Assets/Fonts/#Geist Mono, Consolas");
 
     public ExamListView(ApiService api)
     {
@@ -27,7 +30,7 @@ public partial class ExamListView : UserControl
     {
         TxtLoading.Visibility = Visibility.Visible;
         EmptyState.Visibility = Visibility.Collapsed;
-        CardScroller.Visibility = Visibility.Collapsed;
+        ExamCards.Visibility = Visibility.Collapsed;
 
         try
         {
@@ -41,7 +44,7 @@ public partial class ExamListView : UserControl
                 return;
             }
 
-            CardScroller.Visibility = Visibility.Visible;
+            ExamCards.Visibility = Visibility.Visible;
             ExamCards.Items.Clear();
 
             foreach (var exam in exams)
@@ -53,198 +56,158 @@ public partial class ExamListView : UserControl
         }
     }
 
-    // ── Card builder ──────────────────────────────────────────────────────
+    // ── Card builder (mock layout) ────────────────────────────────────────
     private UIElement BuildExamCard(ExamListItemDto exam)
     {
         var state = GetExamState(exam);
+        bool resuming = exam.SessionStatus == "Active";
 
-        // Left accent border colour
-        var accentBrush = state switch
+        var card = new Border
         {
-            ExamState.Active => ThemeManager.GetBrush("ThSuccess"),
-            ExamState.Upcoming => ThemeManager.GetBrush("ThWarning"),
-            _ => ThemeManager.GetBrush("ThTextMuted")
-        };
-
-        // Card container
-        var cardBorder = new Border
-        {
-            Width = 320,
-            MinHeight = 180,
+            Width = 468,
+            MinHeight = 172,
             Margin = new Thickness(0, 0, 16, 16),
-            CornerRadius = new CornerRadius(10),
-            Background = ThemeManager.GetBrush("ThBgSurface"),
+            CornerRadius = new CornerRadius(15),
+            Background = ThemeManager.GetBrush("ThBgPanel"),
             BorderBrush = ThemeManager.GetBrush("ThBorder"),
-            BorderThickness = new Thickness(0),
-            Cursor = System.Windows.Input.Cursors.Hand,
-            Padding = new Thickness(0)
+            BorderThickness = new Thickness(1),
+            Padding = new Thickness(22)
         };
 
-        // Inner grid with left accent bar
-        var innerGrid = new Grid();
-        innerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(4) });
-        innerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        var content = new StackPanel();
 
-        // Left accent bar
-        var accentBar = new Border
+        // Top row: status badge (left) + course code (right)
+        var top = new Grid();
+        top.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        top.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        (string text, Color color) badge = state switch
         {
-            Background = accentBrush,
-            CornerRadius = new CornerRadius(10, 0, 0, 10),
-            Width = 4
+            ExamState.Active when resuming => ("In progress", ThemeManager.GetColor("ThAccentStrong")),
+            ExamState.Active => ("Available now", ThemeManager.GetColor("ThSuccess")),
+            ExamState.Upcoming => ("Scheduled", ThemeManager.GetColor("ThWarning")),
+            _ => exam.SessionStatus == "Completed"
+                ? ("Completed", ThemeManager.GetColor("ThSuccess"))
+                : ("Closed", ThemeManager.GetColor("ThTextMuted"))
         };
-        Grid.SetColumn(accentBar, 0);
-        innerGrid.Children.Add(accentBar);
+        top.Children.Add(Pill(badge.text, badge.color));
 
-        // Pulse animation for active exams
-        if (state == ExamState.Active)
+        var course = new TextBlock
         {
-            var pulse = new DoubleAnimation(1.0, 0.3, TimeSpan.FromSeconds(1.2))
-            {
-                AutoReverse = true,
-                RepeatBehavior = RepeatBehavior.Forever,
-                EasingFunction = new SineEase()
-            };
-            accentBar.BeginAnimation(OpacityProperty, pulse);
-        }
-
-        // Content stack
-        var content = new StackPanel { Margin = new Thickness(16, 14, 16, 14) };
-        Grid.SetColumn(content, 1);
-
-        // Status badge
-        var badgeText = state switch
-        {
-            ExamState.Active => "LIVE",
-            ExamState.Upcoming => "UPCOMING",
-            ExamState.Completed => exam.SessionStatus == "Completed" ? "SUBMITTED" : "CLOSED",
-            _ => exam.Status.ToUpper()
+            Text = exam.CourseCode, FontSize = 11.5,
+            Foreground = ThemeManager.GetBrush("ThTextMuted"),
+            FontFamily = _mono, VerticalAlignment = VerticalAlignment.Center
         };
-
-        var badgeFg = state switch
-        {
-            ExamState.Active => ThemeManager.GetColor("ThSuccess"),
-            ExamState.Upcoming => ThemeManager.GetColor("ThWarning"),
-            _ => ThemeManager.GetColor("ThTextSecondary")
-        };
-
-        var badge = new Border
-        {
-            Background = new SolidColorBrush(Color.FromArgb(0x25, badgeFg.R, badgeFg.G, badgeFg.B)),
-            CornerRadius = new CornerRadius(4),
-            Padding = new Thickness(8, 3, 8, 3),
-            HorizontalAlignment = HorizontalAlignment.Left,
-            Margin = new Thickness(0, 0, 0, 10),
-            Child = new TextBlock
-            {
-                Text = badgeText,
-                FontSize = 10,
-                FontWeight = FontWeights.Bold,
-                Foreground = new SolidColorBrush(badgeFg)
-            }
-        };
-        content.Children.Add(badge);
-
-        // Course code
-        content.Children.Add(new TextBlock
-        {
-            Text = exam.CourseCode,
-            FontSize = 11,
-            Foreground = ThemeManager.GetBrush("ThTextSecondary"),
-            Margin = new Thickness(0, 0, 0, 2)
-        });
+        Grid.SetColumn(course, 1);
+        top.Children.Add(course);
+        content.Children.Add(top);
 
         // Title
         content.Children.Add(new TextBlock
         {
-            Text = exam.Title,
-            FontSize = 15,
-            FontWeight = FontWeights.SemiBold,
+            Text = exam.Title, FontSize = 17, FontWeight = FontWeights.Medium,
             Foreground = ThemeManager.GetBrush("ThTextPrimary"),
-            TextWrapping = TextWrapping.Wrap,
-            Margin = new Thickness(0, 0, 0, 12)
+            TextWrapping = TextWrapping.Wrap, FontFamily = _font,
+            Margin = new Thickness(0, 15, 0, 0)
         });
 
-        // Info row: duration + questions
-        var infoPanel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 6) };
-
-        infoPanel.Children.Add(CreateInfoChip($"{exam.DurationMinutes} min"));
-        infoPanel.Children.Add(CreateInfoChip($"{exam.QuestionCount} Q's"));
-
-        if (exam.Languages.Count > 0)
-            infoPanel.Children.Add(CreateInfoChip(string.Join(", ", exam.Languages)));
-
-        content.Children.Add(infoPanel);
-
-        // Date / countdown
-        var dateText = state switch
-        {
-            ExamState.Active => "Started — click to enter",
-            ExamState.Upcoming => FormatCountdown(exam.ScheduledAt),
-            _ => exam.ScheduledAt.ToLocalTime().ToString("MMM dd, yyyy · h:mm tt")
-        };
-
+        // Meta line
+        var meta = $"{exam.DurationMinutes} min · {exam.QuestionCount} question" + (exam.QuestionCount == 1 ? "" : "s");
+        if (exam.Languages.Count > 0) meta += "  ·  " + string.Join(", ", exam.Languages);
         content.Children.Add(new TextBlock
         {
-            Text = dateText,
-            FontSize = 12,
-            Foreground = state == ExamState.Active
-                ? ThemeManager.GetBrush("ThSuccess")
-                : ThemeManager.GetBrush("ThTextSecondary"),
-            Margin = new Thickness(0, 4, 0, 0)
+            Text = meta, FontSize = 12.5,
+            Foreground = ThemeManager.GetBrush("ThTextSecondary"),
+            FontFamily = _font, Margin = new Thickness(0, 6, 0, 0)
         });
 
-        // Start button for active exams
+        // When
+        var whenText = state switch
+        {
+            ExamState.Active when resuming => "Resume your in-progress attempt",
+            ExamState.Active => "Open now — closes " + exam.ScheduledAt.ToLocalTime().ToString("MMM dd, HH:mm"),
+            ExamState.Upcoming => FormatCountdown(exam.ScheduledAt),
+            _ => "Submitted " + exam.ScheduledAt.ToLocalTime().ToString("MMM dd, yyyy")
+        };
+        content.Children.Add(new TextBlock
+        {
+            Text = whenText, FontSize = 12,
+            Foreground = ThemeManager.GetBrush("ThTextMuted"),
+            FontFamily = _font, Margin = new Thickness(0, 14, 0, 0)
+        });
+
+        // Action
+        content.Children.Add(BuildCardAction(exam, state, resuming));
+
+        card.Child = content;
+
+        // Hover: accent the border for actionable cards
         if (state == ExamState.Active)
         {
-            var startBtn = new Border
+            card.MouseEnter += (_, _) => card.BorderBrush = ThemeManager.GetBrush("ThAccentLine");
+            card.MouseLeave += (_, _) => card.BorderBrush = ThemeManager.GetBrush("ThBorder");
+        }
+
+        return card;
+    }
+
+    private UIElement BuildCardAction(ExamListItemDto exam, ExamState state, bool resuming)
+    {
+        if (state == ExamState.Active)
+        {
+            var btn = new Border
             {
                 Background = ThemeManager.GetBrush("ThAccent"),
-                CornerRadius = new CornerRadius(6),
-                Padding = new Thickness(0, 8, 0, 8),
-                Margin = new Thickness(0, 12, 0, 0),
+                CornerRadius = new CornerRadius(10),
+                Padding = new Thickness(17, 10, 17, 10),
+                Margin = new Thickness(0, 18, 0, 0),
+                HorizontalAlignment = HorizontalAlignment.Left,
                 Cursor = System.Windows.Input.Cursors.Hand,
                 Child = new TextBlock
                 {
-                    Text = "Start Exam",
-                    FontSize = 13,
-                    FontWeight = FontWeights.SemiBold,
-                    Foreground = ThemeManager.GetBrush("ThTextOnAccent"),
-                    HorizontalAlignment = HorizontalAlignment.Center
+                    Text = resuming ? "Resume exam" : "Begin exam",
+                    FontSize = 13.5, FontWeight = FontWeights.Medium,
+                    Foreground = ThemeManager.GetBrush("ThTextOnAccent"), FontFamily = _font
                 }
             };
-            startBtn.MouseLeftButtonDown += (_, _) => ExamStartRequested?.Invoke(exam.Id);
-            content.Children.Add(startBtn);
+            btn.MouseLeftButtonUp += (_, _) => ExamStartRequested?.Invoke(exam);
+            btn.MouseEnter += (_, _) => btn.Background = ThemeManager.GetBrush("ThAccentStrong");
+            btn.MouseLeave += (_, _) => btn.Background = ThemeManager.GetBrush("ThAccent");
+            return btn;
         }
 
-        innerGrid.Children.Add(content);
-        cardBorder.Child = innerGrid;
-
-        // Hover effect
-        cardBorder.MouseEnter += (_, _) =>
-            cardBorder.Background = ThemeManager.GetBrush("ThBgHover");
-        cardBorder.MouseLeave += (_, _) =>
-            cardBorder.Background = ThemeManager.GetBrush("ThBgSurface");
-
-        return cardBorder;
-    }
-
-    // ── Helpers ──────────────────────────────────────────────────────────────
-    private static Border CreateInfoChip(string text)
-    {
+        // Non-actionable: a quiet outlined label
+        string label = state == ExamState.Upcoming ? "Not yet open" : "View in Results";
         return new Border
         {
-            Background = ThemeManager.GetBrush("ThBgPanel"),
-            CornerRadius = new CornerRadius(4),
-            Padding = new Thickness(8, 3, 8, 3),
-            Margin = new Thickness(0, 0, 6, 0),
+            BorderBrush = ThemeManager.GetBrush("ThBorderStrong"),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(10),
+            Padding = new Thickness(16, 9, 16, 9),
+            Margin = new Thickness(0, 18, 0, 0),
+            HorizontalAlignment = HorizontalAlignment.Left,
             Child = new TextBlock
             {
-                Text = text,
-                FontSize = 11,
-                Foreground = ThemeManager.GetBrush("ThTextSecondary")
+                Text = label, FontSize = 13,
+                Foreground = ThemeManager.GetBrush("ThTextMuted"), FontFamily = _font
             }
         };
     }
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+    private static Border Pill(string text, Color color) => new()
+    {
+        Background = new SolidColorBrush(Color.FromArgb(0x24, color.R, color.G, color.B)),
+        CornerRadius = new CornerRadius(999),
+        Padding = new Thickness(11, 4, 11, 4),
+        HorizontalAlignment = HorizontalAlignment.Left,
+        VerticalAlignment = VerticalAlignment.Center,
+        Child = new TextBlock
+        {
+            Text = text, FontSize = 11.5, FontWeight = FontWeights.Medium,
+            Foreground = new SolidColorBrush(color), FontFamily = _font
+        }
+    };
 
     private static string FormatCountdown(DateTime scheduledAt)
     {
