@@ -120,6 +120,76 @@
             </Setter>
         </Style>
 
+        <!-- ══════ Slim, modern scrollbars (app-wide) ══════ -->
+        <Style x:Key="SlimScrollThumb" TargetType="Thumb">
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+            <Setter Property="IsTabStop" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Thumb">
+                        <Border x:Name="ThumbBd" CornerRadius="4" Margin="2"
+                                Background="{DynamicResource ThBrBorderStrong}"/>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ThumbBd" Property="Background" Value="{DynamicResource ThBrTextMuted}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SlimScrollRepeat" TargetType="RepeatButton">
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="IsTabStop" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RepeatButton">
+                        <Border Background="Transparent"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="ScrollBar">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Width" Value="11"/>
+            <Setter Property="MinWidth" Value="11"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Grid x:Name="Root" Background="Transparent" SnapsToDevicePixels="True">
+                            <Track x:Name="PART_Track" Orientation="{TemplateBinding Orientation}"
+                                   IsDirectionReversed="True" Focusable="False">
+                                <Track.Thumb>
+                                    <Thumb x:Name="PART_Thumb" Style="{StaticResource SlimScrollThumb}" MinHeight="28"/>
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Style="{StaticResource SlimScrollRepeat}" Command="ScrollBar.PageDownCommand"/>
+                                </Track.IncreaseRepeatButton>
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Style="{StaticResource SlimScrollRepeat}" Command="ScrollBar.PageUpCommand"/>
+                                </Track.DecreaseRepeatButton>
+                            </Track>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Orientation" Value="Horizontal">
+                                <Setter Property="Width" Value="Auto"/>
+                                <Setter Property="MinWidth" Value="0"/>
+                                <Setter Property="Height" Value="11"/>
+                                <Setter Property="MinHeight" Value="11"/>
+                                <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="False"/>
+                                <Setter TargetName="PART_Thumb" Property="MinHeight" Value="0"/>
+                                <Setter TargetName="PART_Thumb" Property="MinWidth" Value="28"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- Dark ComboBoxItem -->
         <Style TargetType="ComboBoxItem">
             <Setter Property="Foreground"  Value="{StaticResource CbFg}"/>

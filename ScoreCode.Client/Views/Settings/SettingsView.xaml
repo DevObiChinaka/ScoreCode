@@ -5,26 +5,34 @@
              FontFamily="/Assets/Fonts/#Geist">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <StackPanel Margin="32,28,32,32">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="14*" MaxWidth="820"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+        <StackPanel Grid.Column="1" Margin="8,40,8,48">
 
             <!-- Header -->
-            <TextBlock Text="Settings" FontSize="24" FontWeight="Bold"
-                       Foreground="{DynamicResource ThBrTextPrimary}" Margin="0,0,0,4"/>
+            <TextBlock Text="Settings" FontSize="29" FontWeight="Medium"
+                       Foreground="{DynamicResource ThBrTextPrimary}" Margin="0,0,0,6"/>
             <TextBlock Text="Manage your profile, preferences, and account"
-                       FontSize="13" Foreground="{DynamicResource ThBrTextSecondary}" Margin="0,0,0,28"/>
+                       FontSize="14.5" Foreground="{DynamicResource ThBrTextSecondary}" Margin="0,0,0,30"/>
 
             <!-- ── Section: Profile ── -->
             <StackPanel x:Name="ProfileSection"/>
 
             <!-- ── Section: Appearance ── -->
-            <StackPanel x:Name="AppearanceSection" Margin="0,20,0,0"/>
+            <StackPanel x:Name="AppearanceSection" Margin="0,26,0,0"/>
 
             <!-- ── Section: Change Password ── -->
-            <StackPanel x:Name="PasswordSection" Margin="0,20,0,0"/>
+            <StackPanel x:Name="PasswordSection" Margin="0,26,0,0"/>
 
             <!-- ── Section: Default Exam Settings (lecturer only) ── -->
-            <StackPanel x:Name="ExamDefaultsSection" Margin="0,20,0,0"/>
+            <StackPanel x:Name="ExamDefaultsSection" Margin="0,26,0,0"/>
 
         </StackPanel>
+        </Grid>
     </ScrollViewer>
 </UserControl>

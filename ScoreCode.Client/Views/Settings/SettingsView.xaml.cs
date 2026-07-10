@@ -49,28 +49,55 @@ public partial class SettingsView : UserControl
     // ── Helpers ───────────────────────────────────────────────────────────
     private static readonly FontFamily _font = new("/Assets/Fonts/#Geist");
 
-    private Border MakeCard(string title, UIElement content)
+    /// <summary>Uppercase section label rendered above a card (mock style).</summary>
+    private TextBlock SectionLabel(string text) => new()
     {
-        var card = new Border
+        Text = text.ToUpperInvariant(), FontSize = 12, FontWeight = FontWeights.Medium,
+        Foreground = ThemeManager.GetBrush("ThTextMuted"),
+        FontFamily = _font, Margin = new Thickness(2, 0, 0, 12)
+    };
+
+    private Border MakeCard(UIElement content, Thickness pad)
+    {
+        return new Border
         {
             Background = ThemeManager.GetBrush("ThBgPanel"),
-            CornerRadius = new CornerRadius(10),
-            Padding = new Thickness(24, 20, 24, 20),
-            Margin = new Thickness(0, 0, 0, 0),
+            CornerRadius = new CornerRadius(14),
+            Padding = pad,
             BorderBrush = ThemeManager.GetBrush("ThBorder"),
-            BorderThickness = new Thickness(1)
+            BorderThickness = new Thickness(1),
+            Child = content
         };
+    }
 
-        var stack = new StackPanel();
-        stack.Children.Add(new TextBlock
+    /// <summary>A label/value settings row with a bottom hairline separator.</summary>
+    private Border MakeInfoRow(string label, string value, bool last)
+    {
+        var row = new Border
         {
-            Text = title, FontSize = 15, FontWeight = FontWeights.SemiBold,
-            Foreground = ThemeManager.GetBrush("ThTextPrimary"),
-            FontFamily = _font, Margin = new Thickness(0, 0, 0, 16)
+            Padding = new Thickness(18, 15, 18, 15),
+            BorderBrush = ThemeManager.GetBrush("ThBorder"),
+            BorderThickness = new Thickness(0, 0, 0, last ? 0 : 1)
+        };
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.Children.Add(new TextBlock
+        {
+            Text = label, FontSize = 13.5, Foreground = ThemeManager.GetBrush("ThTextSecondary"),
+            FontFamily = _font, VerticalAlignment = VerticalAlignment.Center
         });
-        stack.Children.Add(content);
-        card.Child = stack;
-        return card;
+        var v = new TextBlock
+        {
+            Text = value, FontSize = 13.5, FontWeight = FontWeights.Medium,
+            Foreground = ThemeManager.GetBrush("ThTextPrimary"), FontFamily = _font,
+            VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right,
+            TextTrimming = TextTrimming.CharacterEllipsis
+        };
+        Grid.SetColumn(v, 1);
+        grid.Children.Add(v);
+        row.Child = grid;
+        return row;
     }
 
     private TextBlock MakeLabel(string text) => new()
@@ -78,13 +105,6 @@ public partial class SettingsView : UserControl
         Text = text, FontSize = 12, FontWeight = FontWeights.Medium,
         Foreground = ThemeManager.GetBrush("ThTextSecondary"),
         FontFamily = _font, Margin = new Thickness(0, 0, 0, 6)
-    };
-
-    private TextBlock MakeValue(string text) => new()
-    {
-        Text = text, FontSize = 14,
-        Foreground = ThemeManager.GetBrush("ThTextPrimary"),
-        FontFamily = _font, Margin = new Thickness(0, 0, 0, 14)
     };
 
     private TextBox MakeInput(string placeholder = "") => new()
@@ -112,7 +132,7 @@ public partial class SettingsView : UserControl
     private Button MakeButton(string text, bool primary = true) => new()
     {
         Content = text,
-        FontSize = 13, FontWeight = FontWeights.SemiBold, FontFamily = _font,
+        FontSize = 13, FontWeight = FontWeights.Medium, FontFamily = _font,
         Background = primary ? ThemeManager.GetBrush("ThAccent") : ThemeManager.GetBrush("ThBgSurface"),
         Foreground = primary ? ThemeManager.GetBrush("ThTextOnAccent") : ThemeManager.GetBrush("ThTextPrimary"),
         Padding = new Thickness(20, 10, 20, 10),
@@ -122,68 +142,64 @@ public partial class SettingsView : UserControl
     };
 
     // ── Profile Section ──────────────────────────────────────────────────
+    private StackPanel? _profileRows;
+
     private void BuildProfileSection()
     {
-        var content = new StackPanel();
-        content.Children.Add(MakeValue("Loading…"));
-        ProfileSection.Children.Add(MakeCard("Profile", content));
+        _profileRows = new StackPanel();
+        _profileRows.Children.Add(MakeInfoRow("Loading…", "", true));
 
-        _ = LoadProfileAsync(content);
+        ProfileSection.Children.Add(SectionLabel("Account"));
+        ProfileSection.Children.Add(MakeCard(_profileRows, new Thickness(0)));
+
+        _ = LoadProfileAsync(_profileRows);
     }
 
     /// <summary>Fetch the signed-in user's details and render a role-specific profile.</summary>
-    private async Task LoadProfileAsync(StackPanel content)
+    private async Task LoadProfileAsync(StackPanel rows)
     {
         UserDto? p = null;
         try { p = (await _api.GetAsync<UserDto>("auth/me"))?.Data; }
         catch { /* fall back to session basics below */ }
 
-        content.Children.Clear();
+        // Build (label, value) pairs, then render as rows with separators.
+        var pairs = new List<(string, string)>();
 
         if (p is null)
         {
-            content.Children.Add(MakeLabel("ID Number"));
-            content.Children.Add(MakeValue(_userId));
-            content.Children.Add(MakeLabel("Role"));
-            content.Children.Add(MakeValue(_role));
-            return;
-        }
-
-        if (!string.IsNullOrWhiteSpace(p.InstitutionName))
-        {
-            content.Children.Add(MakeLabel("Institution"));
-            content.Children.Add(MakeValue(p.InstitutionName));
-        }
-
-        if (_role == "Student")
-        {
-            // Anonymous student — no name; identified by matric.
-            content.Children.Add(MakeLabel("Matric Number"));
-            content.Children.Add(MakeValue(p.IdNumber));
-            content.Children.Add(MakeLabel("Programme of Study"));
-            content.Children.Add(MakeValue(Dash(p.ProgrammeOfStudy)));
-            content.Children.Add(MakeLabel("Level"));
-            content.Children.Add(MakeValue(Dash(p.Level)));
-        }
-        else if (_role == "Lecturer")
-        {
-            content.Children.Add(MakeLabel("Name"));
-            content.Children.Add(MakeValue(Dash(p.Name)));
-            content.Children.Add(MakeLabel("Staff ID"));
-            content.Children.Add(MakeValue(p.IdNumber));
-            content.Children.Add(MakeLabel("Department"));
-            content.Children.Add(MakeValue(Dash(p.Department)));
+            pairs.Add(("ID Number", _userId));
+            pairs.Add(("Role", _role));
         }
         else
         {
-            content.Children.Add(MakeLabel("Name"));
-            content.Children.Add(MakeValue(Dash(p.Name)));
-            content.Children.Add(MakeLabel("ID Number"));
-            content.Children.Add(MakeValue(p.IdNumber));
+            if (!string.IsNullOrWhiteSpace(p.InstitutionName))
+                pairs.Add(("Institution", p.InstitutionName!));
+
+            if (_role == "Student")
+            {
+                // Anonymous student — no name; identified by matric.
+                pairs.Add(("Matric Number", p.IdNumber));
+                pairs.Add(("Programme of Study", Dash(p.ProgrammeOfStudy)));
+                pairs.Add(("Level", Dash(p.Level)));
+            }
+            else if (_role == "Lecturer")
+            {
+                pairs.Add(("Name", Dash(p.Name)));
+                pairs.Add(("Staff ID", p.IdNumber));
+                pairs.Add(("Department", Dash(p.Department)));
+            }
+            else
+            {
+                pairs.Add(("Name", Dash(p.Name)));
+                pairs.Add(("ID Number", p.IdNumber));
+            }
+
+            pairs.Add(("Role", _role));
         }
 
-        content.Children.Add(MakeLabel("Role"));
-        content.Children.Add(MakeValue(_role));
+        rows.Children.Clear();
+        for (int i = 0; i < pairs.Count; i++)
+            rows.Children.Add(MakeInfoRow(pairs[i].Item1, pairs[i].Item2, i == pairs.Count - 1));
     }
 
     private static string Dash(string? value) => string.IsNullOrWhiteSpace(value) ? "—" : value;
@@ -198,8 +214,8 @@ public partial class SettingsView : UserControl
         // Theme toggle row
         var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 4, 0, 0) };
 
-        var darkBtn = MakeThemeOption("🌙 Dark", AppTheme.Dark);
-        var lightBtn = MakeThemeOption("☀️ Light", AppTheme.Light);
+        var darkBtn = MakeThemeOption("Dark", AppTheme.Dark);
+        var lightBtn = MakeThemeOption("Light", AppTheme.Light);
 
         row.Children.Add(darkBtn);
         row.Children.Add(lightBtn);
@@ -208,11 +224,12 @@ public partial class SettingsView : UserControl
         content.Children.Add(new TextBlock
         {
             Text = "Your preference is saved automatically",
-            FontSize = 11, Foreground = ThemeManager.GetBrush("ThTextMuted"),
-            FontFamily = _font, Margin = new Thickness(0, 10, 0, 0)
+            FontSize = 11.5, Foreground = ThemeManager.GetBrush("ThTextMuted"),
+            FontFamily = _font, Margin = new Thickness(0, 12, 0, 0)
         });
 
-        AppearanceSection.Children.Add(MakeCard("Appearance", content));
+        AppearanceSection.Children.Add(SectionLabel("Appearance"));
+        AppearanceSection.Children.Add(MakeCard(content, new Thickness(22, 18, 22, 18)));
     }
 
     private Border MakeThemeOption(string label, AppTheme theme)
@@ -220,27 +237,31 @@ public partial class SettingsView : UserControl
         var isActive = ThemeManager.CurrentTheme == theme;
         var border = new Border
         {
-            Background = isActive ? ThemeManager.GetBrush("ThAccent") : ThemeManager.GetBrush("ThBgSurface"),
-            CornerRadius = new CornerRadius(8),
-            Padding = new Thickness(20, 12, 20, 12),
+            Background = isActive ? ThemeManager.GetBrush("ThAccentSoft") : ThemeManager.GetBrush("ThBgElev"),
+            CornerRadius = new CornerRadius(9),
+            Padding = new Thickness(18, 9, 18, 9),
             Margin = new Thickness(0, 0, 10, 0),
             Cursor = Cursors.Hand,
-            BorderBrush = isActive ? ThemeManager.GetBrush("ThAccent") : ThemeManager.GetBrush("ThBorder"),
-            BorderThickness = new Thickness(2)
+            BorderBrush = isActive ? ThemeManager.GetBrush("ThAccentLine") : ThemeManager.GetBrush("ThBorder"),
+            BorderThickness = new Thickness(1)
         };
 
-        border.Child = new TextBlock
+        var content = new StackPanel { Orientation = Orientation.Horizontal };
+        content.Children.Add(new System.Windows.Shapes.Ellipse
         {
-            Text = label, FontSize = 14, FontWeight = FontWeights.SemiBold,
-            Foreground = isActive ? ThemeManager.GetBrush("ThTextOnAccent") : ThemeManager.GetBrush("ThTextPrimary"),
-            FontFamily = _font
-        };
-
-        border.MouseLeftButtonDown += (_, _) =>
+            Width = 9, Height = 9, Margin = new Thickness(0, 0, 9, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            Fill = isActive ? ThemeManager.GetBrush("ThAccent") : ThemeManager.GetBrush("ThBorderStrong")
+        });
+        content.Children.Add(new TextBlock
         {
-            ThemeManager.ApplyTheme(theme);
-        };
+            Text = label, FontSize = 13.5, FontWeight = FontWeights.Medium,
+            Foreground = isActive ? ThemeManager.GetBrush("ThAccentStrong") : ThemeManager.GetBrush("ThTextPrimary"),
+            FontFamily = _font, VerticalAlignment = VerticalAlignment.Center
+        });
+        border.Child = content;
 
+        border.MouseLeftButtonDown += (_, _) => ThemeManager.ApplyTheme(theme);
         return border;
     }
 
@@ -313,7 +334,8 @@ public partial class SettingsView : UserControl
         // Enter key submits
         content.KeyDown += (_, e) => { if (e.Key == System.Windows.Input.Key.Enter) BtnChangePassword_Click(btn, e); };
 
-        PasswordSection.Children.Add(MakeCard("Security", content));
+        PasswordSection.Children.Add(SectionLabel("Security"));
+        PasswordSection.Children.Add(MakeCard(content, new Thickness(22, 18, 22, 18)));
     }
 
     private TextBlock? _confirmIcon, _confirmLabel;
@@ -536,6 +558,7 @@ public partial class SettingsView : UserControl
             FontFamily = _font, TextWrapping = TextWrapping.Wrap
         });
 
-        ExamDefaultsSection.Children.Add(MakeCard("Default Exam Settings", content));
+        ExamDefaultsSection.Children.Add(SectionLabel("Default Exam Settings"));
+        ExamDefaultsSection.Children.Add(MakeCard(content, new Thickness(22, 18, 22, 18)));
     }
 }
