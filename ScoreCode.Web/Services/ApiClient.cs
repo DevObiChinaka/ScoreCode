@@ -49,6 +49,13 @@ public class ApiClient
         return body?.Data ?? [];
     }
 
+    public async Task<PlatformDashboardDto?> GetPlatformDashboardAsync()
+    {
+        Authorize();
+        var body = await _http.GetFromJsonAsync<ApiResponse<PlatformDashboardDto>>("/api/v1/dashboard/platform");
+        return body?.Data;
+    }
+
     public async Task<ApproveInstitutionResponse?> ApproveInstitutionAsync(Guid id)
     {
         Authorize();

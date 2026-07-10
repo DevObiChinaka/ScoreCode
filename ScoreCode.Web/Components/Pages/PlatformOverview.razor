@@ -10,19 +10,43 @@
 
 <div class="stats">
     <div class="stat"><div class="n teal">@_all.Count</div><div class="l">Institutions</div></div>
+    <div class="stat"><div class="n">@(_dash?.TotalStudents ?? 0)</div><div class="l">Students</div></div>
+    <div class="stat"><div class="n">@(_dash?.TotalLecturers ?? 0)</div><div class="l">Lecturers</div></div>
+    <div class="stat"><div class="n">@(_dash?.TotalExams ?? 0)</div><div class="l">Exams</div></div>
+    <div class="stat"><div class="n ok">@(_dash?.ActiveExams ?? 0)</div><div class="l">Active exams</div></div>
+    <div class="stat"><div class="n">@(_dash?.TotalSubmissions ?? 0)</div><div class="l">Submissions</div></div>
+</div>
+
+<div class="stats">
     <div class="stat"><div class="n warn">@Count("Pending")</div><div class="l">Pending review</div></div>
     <div class="stat"><div class="n ok">@Count("Approved")</div><div class="l">Approved</div></div>
     <div class="stat"><div class="n">@Count("Suspended")</div><div class="l">Suspended</div></div>
+    @foreach (var g in _all.GroupBy(i => string.IsNullOrWhiteSpace(i.Type) ? "Other" : i.Type).OrderByDescending(g => g.Count()).Take(3))
+    {
+        <div class="stat"><div class="n">@g.Count()</div><div class="l">@g.Key</div></div>
+    }
 </div>
 
-@if (!_loading && _all.Any())
+@if (_dash is not null && _dash.TopInstitutions.Any())
 {
-    <div class="section-title">By type</div>
-    <div class="stats">
-        @foreach (var g in _all.GroupBy(i => string.IsNullOrWhiteSpace(i.Type) ? "Other" : i.Type).OrderByDescending(g => g.Count()))
-        {
-            <div class="stat"><div class="n">@g.Count()</div><div class="l">@g.Key</div></div>
-        }
+    <div class="section-title">Most active institutions</div>
+    <div class="tablewrap">
+        <table>
+            <thead><tr><th>Institution</th><th>Type</th><th>Students</th><th>Lecturers</th><th>Exams</th><th>Status</th></tr></thead>
+            <tbody>
+                @foreach (var t in _dash.TopInstitutions)
+                {
+                    <tr>
+                        <td class="primary">@t.Name</td>
+                        <td>@t.Type</td>
+                        <td class="mono">@t.Students</td>
+                        <td class="mono">@t.Lecturers</td>
+                        <td class="mono">@t.Exams</td>
+                        <td><span class="badge @t.Status.ToLowerInvariant()">@t.Status</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
     </div>
 }
 
@@ -66,6 +90,7 @@ else
 
 @code {
     private List<InstitutionDto> _all = new();
+    private PlatformDashboardDto? _dash;
     private bool _loading = true;
 
     private IEnumerable<InstitutionDto> Pending => _all.Where(i => i.Status == "Pending");
@@ -75,6 +100,7 @@ else
     {
         if (!Auth.IsPlatformAdmin) { Nav.NavigateTo("/login"); return; }
         _all = await Api.GetInstitutionsAsync(null);
+        _dash = await Api.GetPlatformDashboardAsync();
         _loading = false;
     }
 }

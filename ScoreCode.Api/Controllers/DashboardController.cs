@@ -190,4 +190,66 @@ public class DashboardController : ControllerBase
 
         return Ok(ApiResponse<LecturerDashboardDto>.Ok(dto));
     }
+
+    // GET /api/v1/dashboard/platform
+    [HttpGet("platform")]
+    [Authorize(Roles = Constants.Roles.PlatformOrAdmin)]
+    public async Task<IActionResult> GetPlatformDashboard()
+    {
+        // Platform admins have no tenant scope, so these aggregate across all institutions.
+        var institutions = await _db.Institutions.ToListAsync();
+
+        var userCounts = await _db.Users
+            .Where(u => u.InstitutionId != null)
+            .GroupBy(u => u.InstitutionId)
+            .Select(g => new
+            {
+                InstitutionId = g.Key,
+                Students = g.Count(u => u.Role == Constants.Roles.Student),
+                Lecturers = g.Count(u => u.Role == Constants.Roles.Lecturer)
+            })
+            .ToListAsync();
+
+        var examCounts = await _db.Exams
+            .Where(e => e.InstitutionId != null)
+            .GroupBy(e => e.InstitutionId)
+            .Select(g => new { InstitutionId = g.Key, Count = g.Count() })
+            .ToListAsync();
+
+        var top = institutions
+            .Select(i =>
+            {
+                var uc = userCounts.FirstOrDefault(x => x.InstitutionId == i.Id);
+                var ec = examCounts.FirstOrDefault(x => x.InstitutionId == i.Id);
+                return new TopInstitutionDto
+                {
+                    Name = i.Name,
+                    Type = i.Type,
+                    Status = i.Status,
+                    Students = uc?.Students ?? 0,
+                    Lecturers = uc?.Lecturers ?? 0,
+                    Exams = ec?.Count ?? 0
+                };
+            })
+            .OrderByDescending(t => t.Students + t.Lecturers)
+            .ThenByDescending(t => t.Exams)
+            .Take(6)
+            .ToList();
+
+        var dto = new PlatformDashboardDto
+        {
+            TotalInstitutions = institutions.Count,
+            PendingInstitutions = institutions.Count(i => i.Status == Constants.InstitutionStatuses.Pending),
+            ApprovedInstitutions = institutions.Count(i => i.Status == Constants.InstitutionStatuses.Approved),
+            SuspendedInstitutions = institutions.Count(i => i.Status == Constants.InstitutionStatuses.Suspended),
+            TotalStudents = await _db.Users.CountAsync(u => u.Role == Constants.Roles.Student),
+            TotalLecturers = await _db.Users.CountAsync(u => u.Role == Constants.Roles.Lecturer),
+            TotalExams = await _db.Exams.CountAsync(),
+            ActiveExams = await _db.Exams.CountAsync(e => e.Status == Constants.ExamStatuses.Active),
+            TotalSubmissions = await _db.Submissions.CountAsync(),
+            TopInstitutions = top
+        };
+
+        return Ok(ApiResponse<PlatformDashboardDto>.Ok(dto));
+    }
 }

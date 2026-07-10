@@ -48,3 +48,27 @@ public class ExamSummaryDto
     public int UngradedCount { get; set; }
     public DateTime CreatedAt { get; set; }
 }
+
+public class PlatformDashboardDto
+{
+    public int TotalInstitutions { get; set; }
+    public int PendingInstitutions { get; set; }
+    public int ApprovedInstitutions { get; set; }
+    public int SuspendedInstitutions { get; set; }
+    public int TotalStudents { get; set; }
+    public int TotalLecturers { get; set; }
+    public int TotalExams { get; set; }
+    public int ActiveExams { get; set; }
+    public int TotalSubmissions { get; set; }
+    public List<TopInstitutionDto> TopInstitutions { get; set; } = [];
+}
+
+public class TopInstitutionDto
+{
+    public string Name { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public int Students { get; set; }
+    public int Lecturers { get; set; }
+    public int Exams { get; set; }
+}
