@@ -17,9 +17,45 @@ public partial class LoginView : UserControl
         KeyDown += (_, e) => { if (e.Key == Key.Enter) BtnLogin_Click(this, e); };
     }
 
+    private bool _pwVisible;
+
     // ── Password placeholder ───────────────────────────────────────────────
     private void PbPassword_PasswordChanged(object sender, RoutedEventArgs e)
-        => TogglePlaceholder((PasswordBox)sender);
+    {
+        TogglePlaceholder((PasswordBox)sender);
+        if (!_pwVisible && DataContext is ViewModels.Auth.LoginViewModel vm)
+            vm.Password = PbPassword.Password;
+    }
+
+    private void TxtPasswordVisible_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (_pwVisible && DataContext is ViewModels.Auth.LoginViewModel vm)
+            vm.Password = TxtPasswordVisible.Text;
+    }
+
+    private void BtnTogglePw_Click(object sender, RoutedEventArgs e)
+    {
+        _pwVisible = !_pwVisible;
+        if (_pwVisible)
+        {
+            TxtPasswordVisible.Text = PbPassword.Password;
+            TxtPasswordVisible.Visibility = Visibility.Visible;
+            PbPassword.Visibility = Visibility.Collapsed;
+            EyeSlash.Visibility = Visibility.Visible;
+            BtnTogglePw.ToolTip = "Hide password";
+            TxtPasswordVisible.Focus();
+            TxtPasswordVisible.CaretIndex = TxtPasswordVisible.Text.Length;
+        }
+        else
+        {
+            PbPassword.Password = TxtPasswordVisible.Text;
+            PbPassword.Visibility = Visibility.Visible;
+            TxtPasswordVisible.Visibility = Visibility.Collapsed;
+            EyeSlash.Visibility = Visibility.Collapsed;
+            BtnTogglePw.ToolTip = "Show password";
+            PbPassword.Focus();
+        }
+    }
 
     private static void TogglePlaceholder(PasswordBox pb)
     {
@@ -33,8 +69,7 @@ public partial class LoginView : UserControl
     {
         if (DataContext is ViewModels.Auth.LoginViewModel vm)
         {
-            var pb = FindName("PbPassword") as PasswordBox;
-            if (pb is not null) vm.Password = pb.Password;
+            vm.Password = _pwVisible ? TxtPasswordVisible.Text : PbPassword.Password;
 
             if (vm.LoginCommand.CanExecute(null))
                 vm.LoginCommand.Execute(null);

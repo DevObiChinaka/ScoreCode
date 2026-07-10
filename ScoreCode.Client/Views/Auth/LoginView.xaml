@@ -64,6 +64,7 @@
             <Setter Property="Padding"         Value="14,0"/>
             <Setter Property="Height"          Value="46"/>
             <Setter Property="FontSize"        Value="14"/>
+            <Setter Property="PasswordChar"    Value="•"/>
             <Setter Property="CaretBrush"      Value="{DynamicResource ThBrAccent}"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -358,12 +359,33 @@
                                  Text="{Binding IdNumber, UpdateSourceTrigger=PropertyChanged}"
                                  Margin="0,0,0,16"/>
 
-                        <!-- Password field -->
+                        <!-- Password field with visibility toggle -->
                         <TextBlock Text="Password" FontSize="12" FontWeight="Medium"
                                    Foreground="{DynamicResource ThBrTextSecondary}" Margin="0,0,0,6"/>
-                        <PasswordBox x:Name="PbPassword" Style="{StaticResource InputPw}"
-                                     PasswordChanged="PbPassword_PasswordChanged"
-                                     Margin="0,0,0,24"/>
+                        <Grid Margin="0,0,0,24">
+                            <PasswordBox x:Name="PbPassword" Style="{StaticResource InputPw}"
+                                         Padding="14,0,44,0"
+                                         PasswordChanged="PbPassword_PasswordChanged"/>
+                            <TextBox x:Name="TxtPasswordVisible" Style="{StaticResource Input}"
+                                     Padding="14,0,44,0" Visibility="Collapsed"
+                                     TextChanged="TxtPasswordVisible_TextChanged"/>
+                            <Button x:Name="BtnTogglePw" Style="{StaticResource BtnGhost}"
+                                    HorizontalAlignment="Right" VerticalAlignment="Center"
+                                    Width="34" Height="34" Margin="0,0,6,0" Cursor="Hand"
+                                    Click="BtnTogglePw_Click" ToolTip="Show password">
+                                <Viewbox Width="18" Height="18">
+                                    <Grid Width="24" Height="24">
+                                        <Path Data="M2,12 C2,12 5,6 12,6 C19,6 22,12 22,12 C22,12 19,18 12,18 C5,18 2,12 2,12 Z"
+                                              Stroke="{DynamicResource ThBrTextSecondary}" StrokeThickness="1.7" Fill="Transparent"/>
+                                        <Ellipse Width="6.4" Height="6.4" Stroke="{DynamicResource ThBrTextSecondary}"
+                                                 StrokeThickness="1.7" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        <Line x:Name="EyeSlash" X1="3" Y1="3" X2="21" Y2="21" Visibility="Collapsed"
+                                              Stroke="{DynamicResource ThBrTextSecondary}" StrokeThickness="1.7"
+                                              StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                    </Grid>
+                                </Viewbox>
+                            </Button>
+                        </Grid>
 
                         <!-- Error -->
                         <Border Background="{StaticResource ErrorBg}"

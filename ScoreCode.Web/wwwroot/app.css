@@ -61,9 +61,16 @@ select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,va
   background-position:calc(100% - 20px) 50%,calc(100% - 15px) 50%;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:38px}
 
 /* Search input with icon */
-.searchbox{position:relative;max-width:420px}
-.searchbox svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--dim);pointer-events:none}
-.searchbox input{padding-left:38px;height:42px}
+.searchbox{position:relative;flex:1;max-width:600px;min-width:260px}
+.searchbox svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--dim);pointer-events:none}
+.searchbox input{padding-left:40px;height:42px}
+
+/* Password field with visibility toggle */
+.pwfield{position:relative}
+.pwfield input{padding-right:46px;letter-spacing:.02em}
+.pwtoggle{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:0;
+  color:var(--dim);cursor:pointer;padding:8px;display:flex;align-items:center;border-radius:8px}
+.pwtoggle:hover{color:var(--text)}
 
 .error{margin-top:14px;background:var(--err-bg);color:var(--err);border:1px solid rgba(236,106,94,.3);
   border-radius:10px;padding:11px 14px;font-size:13px}

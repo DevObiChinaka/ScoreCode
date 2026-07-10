@@ -12,7 +12,19 @@
 <input @bind="_id" @bind:event="oninput" @onkeydown="OnKey" placeholder="e.g. ADMIN001 or RWP-ADMIN" />
 
 <label>Password</label>
-<input type="password" @bind="_pw" @bind:event="oninput" @onkeydown="OnKey" />
+<div class="pwfield">
+    <input type="@(_show ? "text" : "password")" @bind="_pw" @bind:event="oninput" @onkeydown="OnKey" placeholder="Enter your password" />
+    <button type="button" class="pwtoggle" @onclick="() => _show = !_show" aria-label="@(_show ? "Hide password" : "Show password")" title="@(_show ? "Hide password" : "Show password")">
+        @if (_show)
+        {
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-6 10-6 10 6 10 6-3 6-10 6-10-6-10-6z" /><circle cx="12" cy="12" r="3" /><line x1="3" y1="3" x2="21" y2="21" /></svg>
+        }
+        else
+        {
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-6 10-6 10 6 10 6-3 6-10 6-10-6-10-6z" /><circle cx="12" cy="12" r="3" /></svg>
+        }
+    </button>
+</div>
 
 @if (_error is not null) { <div class="error">@_error</div> }
 
@@ -29,6 +41,7 @@
     private string _pw = "";
     private string? _error;
     private bool _busy;
+    private bool _show;
 
     private async Task DoLogin()
     {
