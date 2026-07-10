@@ -3,8 +3,8 @@
 @font-face{font-family:'Geist Mono';src:url('/fonts/GeistMono.ttf') format('truetype');font-weight:400 600;font-display:swap}
 
 :root{
-  --bg:#0e1116; --bg-elev:#141821; --panel:#171c26; --surface:#171c26; --surface-2:#1d232f; --input:#141821;
-  --border:#232a36; --border-strong:#313a49; --hair:#1b212b;
+  --bg:#0a0d13; --bg-elev:#141821; --panel:#151a23; --surface:#151a23; --surface-2:#1d232f; --input:#11151d;
+  --border:#242c39; --border-strong:#313a49; --hair:#1b212b;
   --text:#e7eaf0; --muted:#9aa4b4; --dim:#616b7c;
   --accent:#3b74f0; --accent-strong:#5b8bff; --accent-soft:rgba(59,116,240,.15); --accent-line:rgba(59,116,240,.34);
   --teal:#3b74f0; --teal-dark:#2b5fd9; --teal-soft:rgba(59,116,240,.15); /* legacy aliases → blue */
@@ -141,6 +141,10 @@ select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,va
 
 /* Toolbar row (search + tabs) */
 .toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px;flex-wrap:wrap}
+
+/* Compact status strip (badge row) */
+.metarow{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:-10px 0 28px}
+.metarow .badge{font-size:12px;padding:5px 11px}
 
 /* ── Tables ──────────────────────────────────────────────── */
 .tablewrap{background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden}
