@@ -34,6 +34,11 @@ public partial class ExamView : Window
     // Stores full editor state per question (code + cursor + scroll)
     private readonly Dictionary<Guid, string> _questionStates = new();
 
+    // Rail item references for fast highlight updates
+    private readonly List<(Button btn, Ellipse ring, TextBlock num, TextBlock title, TextBlock sub)> _tabRefs = new();
+    private static readonly FontFamily _railFont = new("/Assets/Fonts/#Geist");
+    private static readonly FontFamily _railMono = new("/Assets/Fonts/#Geist Mono, Consolas");
+
     public ExamView(ExamStartResponse exam, ApiService api)
     {
         InitializeComponent();
@@ -49,11 +54,8 @@ public partial class ExamView : Window
         TxtExamTitle.Text = $"{exam.CourseCode} — {exam.Title}";
         Title = $"ScoreCode · {exam.CourseCode}";
 
-        // Build question tabs
+        // Build the question rail
         BuildQuestionTabs();
-
-        // Build progress dots
-        BuildProgressDots();
 
         // Timer
         _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
@@ -322,48 +324,72 @@ public partial class ExamView : Window
         catch { /* ignore if editor not ready */ }
     }
 
-    // ── Question Tabs ──────────────────────────────────────────────────────
+    // ── Question Rail ──────────────────────────────────────────────────────
     private void BuildQuestionTabs()
     {
         QuestionTabs.Children.Clear();
+        _tabRefs.Clear();
 
         for (int i = 0; i < _exam.Questions.Count; i++)
         {
             var q = _exam.Questions[i];
             var index = i;
 
-            // State indicator
-            var stateDot = new Ellipse
+            // Numbered state badge (ring + number)
+            var ring = new Ellipse
             {
-                Width = 6, Height = 6,
-                Fill = ThemeManager.GetBrush("ThTextMuted"),
-                Margin = new Thickness(0, 0, 6, 0),
-                VerticalAlignment = VerticalAlignment.Center
+                Width = 30, Height = 30, StrokeThickness = 2.5,
+                Stroke = ThemeManager.GetBrush("ThBorderStrong"),
+                Fill = Brushes.Transparent
             };
-
-            var label = new TextBlock
+            var num = new TextBlock
             {
-                Text = $"Q{q.OrderIndex + 1} · {q.Marks}pts",
-                FontSize = 12,
+                Text = (i + 1).ToString(), FontSize = 12, FontFamily = _railMono,
                 Foreground = ThemeManager.GetBrush("ThTextSecondary"),
-                VerticalAlignment = VerticalAlignment.Center
+                HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center
+            };
+            var badge = new Grid
+            {
+                Width = 30, Height = 30, VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 12, 0),
+                Children = { ring, num }
             };
 
-            var stack = new StackPanel
+            var title = new TextBlock
             {
-                Orientation = Orientation.Horizontal,
-                Children = { stateDot, label }
+                Text = $"Question {q.OrderIndex + 1}", FontSize = 13, FontWeight = FontWeights.Medium,
+                Foreground = ThemeManager.GetBrush("ThTextSecondary"), FontFamily = _railFont,
+                TextTrimming = TextTrimming.CharacterEllipsis
             };
+            var sub = new TextBlock
+            {
+                Text = $"{q.Marks} marks · not started", FontSize = 11,
+                Foreground = ThemeManager.GetBrush("ThTextMuted"), FontFamily = _railFont,
+                Margin = new Thickness(0, 1, 0, 0)
+            };
+            var textStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+            textStack.Children.Add(title);
+            textStack.Children.Add(sub);
+
+            var grid = new Grid();
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.Children.Add(badge);
+            Grid.SetColumn(textStack, 1);
+            grid.Children.Add(textStack);
 
             var tab = new Button
             {
-                Style = FindResource("TabBtn") as Style,
-                Content = stack,
+                Style = FindResource("RailItem") as Style,
+                Content = grid,
                 Tag = index
             };
             tab.Click += QuestionTab_Click;
+            tab.MouseEnter += (_, _) => { if (index != _activeQuestionIndex) tab.Background = ThemeManager.GetBrush("ThBgHover"); };
+            tab.MouseLeave += (_, _) => { if (index != _activeQuestionIndex) tab.Background = Brushes.Transparent; };
 
             QuestionTabs.Children.Add(tab);
+            _tabRefs.Add((tab, ring, num, title, sub));
         }
     }
 
@@ -388,7 +414,6 @@ public partial class ExamView : Window
         TxtQuestionLabel.Text = $"Question {q.OrderIndex + 1}";
         TxtQuestionMarks.Text = $" · {q.Marks} marks";
         TxtQuestionText.Text = q.Text;
-        TxtStatusQuestion.Text = $"Q{index + 1} of {_exam.Questions.Count}";
         TxtStatusLang.Text = q.Language;
         UpdateTabHighlights();
 
@@ -406,7 +431,6 @@ public partial class ExamView : Window
         TxtQuestionLabel.Text = $"Question {q.OrderIndex + 1}";
         TxtQuestionMarks.Text = $" · {q.Marks} marks";
         TxtQuestionText.Text = q.Text;
-        TxtStatusQuestion.Text = $"Q{index + 1} of {_exam.Questions.Count}";
         TxtStatusLang.Text = q.Language;
         UpdateTabHighlights();
 
@@ -416,71 +440,46 @@ public partial class ExamView : Window
 
     private void UpdateTabHighlights()
     {
-        var teal = ThemeManager.GetBrush("ThAccent");
-        var textPrimary = ThemeManager.GetBrush("ThTextPrimary");
-        var textSecondary = ThemeManager.GetBrush("ThTextSecondary");
-        var bgActive = ThemeManager.GetBrush("ThBgSurface");
-
-        for (int i = 0; i < QuestionTabs.Children.Count; i++)
-        {
-            if (QuestionTabs.Children[i] is not Button btn) continue;
-            bool active = i == _activeQuestionIndex;
-
-            btn.Background = active ? bgActive : Brushes.Transparent;
-
-            if (btn.Content is StackPanel sp && sp.Children.Count >= 2)
-            {
-                if (sp.Children[1] is TextBlock lbl)
-                    lbl.Foreground = active ? textPrimary : textSecondary;
-
-                if (sp.Children[0] is Ellipse dot)
-                {
-                    var qId = _exam.Questions[i].Id;
-                    if (_answers.ContainsKey(qId) && !string.IsNullOrWhiteSpace(_answers[qId]))
-                        dot.Fill = teal;
-                    else if (active)
-                        dot.Fill = teal;
-                    else
-                        dot.Fill = ThemeManager.GetBrush("ThTextMuted");
-                }
-            }
-        }
-
-        UpdateProgressDots();
-    }
-
-    // ── Progress Dots ──────────────────────────────────────────────────────
-    private void BuildProgressDots()
-    {
-        ProgressDots.Children.Clear();
-
-        for (int i = 0; i < _exam.Questions.Count; i++)
-        {
-            var dot = new Ellipse
-            {
-                Width = 8, Height = 8,
-                Fill = ThemeManager.GetBrush("ThTextMuted"),
-                Margin = new Thickness(0, 0, 4, 0),
-                VerticalAlignment = VerticalAlignment.Center
-            };
-            ProgressDots.Children.Add(dot);
-        }
-    }
-
-    private void UpdateProgressDots()
-    {
-        var teal = ThemeManager.GetBrush("ThAccent");
+        var accent = ThemeManager.GetBrush("ThAccent");
+        var accentStrong = ThemeManager.GetBrush("ThAccentStrong");
+        var accentSoft = ThemeManager.GetBrush("ThAccentSoft");
+        var success = ThemeManager.GetBrush("ThSuccess");
+        var successSoft = ThemeManager.GetBrush("ThSuccessSoft");
+        var borderStrong = ThemeManager.GetBrush("ThBorderStrong");
+        var primary = ThemeManager.GetBrush("ThTextPrimary");
+        var secondary = ThemeManager.GetBrush("ThTextSecondary");
         var muted = ThemeManager.GetBrush("ThTextMuted");
 
-        for (int i = 0; i < ProgressDots.Children.Count && i < _exam.Questions.Count; i++)
+        for (int i = 0; i < _tabRefs.Count; i++)
         {
-            if (ProgressDots.Children[i] is Ellipse dot)
-            {
-                var qId = _exam.Questions[i].Id;
-                dot.Fill = (_answers.ContainsKey(qId) && !string.IsNullOrWhiteSpace(_answers[qId]))
-                    ? teal : muted;
-            }
+            var (btn, ring, num, title, sub) = _tabRefs[i];
+            bool active = i == _activeQuestionIndex;
+            var q = _exam.Questions[i];
+            bool answered = _answers.TryGetValue(q.Id, out var a) && !string.IsNullOrWhiteSpace(a);
+
+            btn.Background = active ? accentSoft : Brushes.Transparent;
+
+            ring.Stroke = answered ? success : active ? accent : borderStrong;
+            ring.Fill = answered ? successSoft : Brushes.Transparent;
+            num.Foreground = answered ? success : active ? accentStrong : secondary;
+
+            title.Foreground = active ? primary : secondary;
+            sub.Text = $"{q.Marks} marks · {(answered ? "answered" : active ? "in progress" : "not started")}";
+            sub.Foreground = muted;
         }
+
+        UpdateProgress();
+    }
+
+    // ── Progress card ──────────────────────────────────────────────────────
+    private void UpdateProgress()
+    {
+        int total = _exam.Questions.Count;
+        int answered = _exam.Questions.Count(q => _answers.TryGetValue(q.Id, out var a) && !string.IsNullOrWhiteSpace(a));
+
+        TxtProgressCount.Text = $"{answered}/{total}";
+        ProgFill.Width = new GridLength(answered, GridUnitType.Star);
+        ProgRest.Width = new GridLength(Math.Max(total - answered, 0), GridUnitType.Star);
     }
 
     // ── Timer ──────────────────────────────────────────────────────────────
