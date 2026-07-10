@@ -10,64 +10,58 @@
             </ResourceDictionary.MergedDictionaries>
             <SolidColorBrush x:Key="BgCard"        Color="{DynamicResource ThBgPanel}"/>
             <SolidColorBrush x:Key="BorderLine"    Color="{DynamicResource ThBorder}"/>
-            <SolidColorBrush x:Key="Orange"        Color="{DynamicResource ThWarning}"/>
-            <SolidColorBrush x:Key="Purple"        Color="#A78BFA"/>
-            <SolidColorBrush x:Key="Blue"          Color="{DynamicResource ThInfo}"/>
         </ResourceDictionary>
     </UserControl.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <StackPanel Margin="40,36,40,40" MaxWidth="960" HorizontalAlignment="Left">
+        <StackPanel Margin="40,36,40,44" MaxWidth="960" HorizontalAlignment="Left">
 
-            <!-- ── Welcome banner ── -->
+            <!-- ── Header ── -->
             <TextBlock x:Name="TxtEyebrow" Text="TODAY" FontSize="12" FontWeight="SemiBold"
                        FontFamily="/Assets/Fonts/#Geist Mono, Consolas"
                        Foreground="{DynamicResource ThBrAccentStrong}" Margin="0,0,0,8"/>
             <TextBlock x:Name="TxtWelcome" Text="Welcome back." FontSize="34" FontWeight="SemiBold"
                        Foreground="{DynamicResource ThBrTextPrimary}" Margin="0,0,0,6"/>
             <TextBlock x:Name="TxtSubtitle" FontSize="15"
-                       Foreground="{DynamicResource ThBrTextSecondary}" Margin="0,0,0,28"/>
+                       Foreground="{DynamicResource ThBrTextSecondary}" Margin="0,0,0,4"/>
 
-            <!-- ── Stat cards row ── -->
-            <UniformGrid x:Name="StatCardsGrid" Rows="1" Margin="0,0,0,30">
-                <!-- Cards added in code-behind per role -->
-            </UniformGrid>
+            <!-- ── Student layout (built in code-behind) ── -->
+            <StackPanel x:Name="StudentRoot" Visibility="Collapsed" Margin="0,24,0,0"/>
 
-            <!-- ── Section: Upcoming / Active ── -->
-            <TextBlock x:Name="TxtSection1Title" Text="Upcoming Exams" FontSize="16" FontWeight="SemiBold"
-                       Foreground="{DynamicResource ThBrTextPrimary}" Margin="0,0,0,12"/>
+            <!-- ── Generic layout (lecturer / admin) ── -->
+            <StackPanel x:Name="GenericRoot" Margin="0,24,0,0">
 
-            <Border Background="{StaticResource BgCard}" CornerRadius="14"
-                    BorderBrush="{StaticResource BorderLine}" BorderThickness="1"
-                    Padding="20,16" Margin="0,0,0,24">
-                <StackPanel x:Name="Section1Content">
-                    <TextBlock Text="No exams scheduled yet."
-                               FontSize="13" Foreground="{DynamicResource ThBrTextMuted}"
-                               HorizontalAlignment="Center" Margin="0,20"/>
-                </StackPanel>
-            </Border>
+                <UniformGrid x:Name="StatCardsGrid" Rows="1" Margin="0,0,0,30"/>
 
-            <!-- ── Section: Recent Activity ── -->
-            <TextBlock Text="Recent Activity" FontSize="16" FontWeight="SemiBold"
-                       Foreground="{DynamicResource ThBrTextPrimary}" Margin="0,0,0,12"/>
+                <TextBlock x:Name="TxtSection1Title" Text="Upcoming Exams" FontSize="16" FontWeight="SemiBold"
+                           Foreground="{DynamicResource ThBrTextPrimary}" Margin="0,0,0,12"/>
+                <Border Background="{StaticResource BgCard}" CornerRadius="14"
+                        BorderBrush="{StaticResource BorderLine}" BorderThickness="1"
+                        Padding="20,16" Margin="0,0,0,24">
+                    <StackPanel x:Name="Section1Content">
+                        <TextBlock Text="No exams scheduled yet."
+                                   FontSize="13" Foreground="{DynamicResource ThBrTextMuted}"
+                                   HorizontalAlignment="Center" Margin="0,20"/>
+                    </StackPanel>
+                </Border>
 
-            <Border Background="{StaticResource BgCard}" CornerRadius="14"
-                    BorderBrush="{StaticResource BorderLine}" BorderThickness="1"
-                    Padding="20,16" Margin="0,0,0,24">
-                <StackPanel x:Name="Section2Content">
-                    <TextBlock Text="No recent activity."
-                               FontSize="13" Foreground="{DynamicResource ThBrTextMuted}"
-                               HorizontalAlignment="Center" Margin="0,20"/>
-                </StackPanel>
-            </Border>
+                <TextBlock Text="Recent Activity" FontSize="16" FontWeight="SemiBold"
+                           Foreground="{DynamicResource ThBrTextPrimary}" Margin="0,0,0,12"/>
+                <Border Background="{StaticResource BgCard}" CornerRadius="14"
+                        BorderBrush="{StaticResource BorderLine}" BorderThickness="1"
+                        Padding="20,16" Margin="0,0,0,24">
+                    <StackPanel x:Name="Section2Content">
+                        <TextBlock Text="No recent activity."
+                                   FontSize="13" Foreground="{DynamicResource ThBrTextMuted}"
+                                   HorizontalAlignment="Center" Margin="0,20"/>
+                    </StackPanel>
+                </Border>
 
-            <!-- ── Section: Quick Actions ── -->
-            <TextBlock Text="Quick Actions" FontSize="16" FontWeight="SemiBold"
-                       Foreground="{DynamicResource ThBrTextPrimary}" Margin="0,0,0,12"/>
+                <TextBlock Text="Quick Actions" FontSize="16" FontWeight="SemiBold"
+                           Foreground="{DynamicResource ThBrTextPrimary}" Margin="0,0,0,12"/>
+                <UniformGrid x:Name="QuickActionsGrid" Rows="1" Margin="0,0,0,8"/>
 
-            <UniformGrid x:Name="QuickActionsGrid" Rows="1" Margin="0,0,0,8">
-                <!-- Added per role in code-behind -->
-            </UniformGrid>
+            </StackPanel>
 
         </StackPanel>
     </ScrollViewer>

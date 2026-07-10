@@ -38,69 +38,374 @@ public partial class HomeView : UserControl
 
     private async Task LoadDashboardAsync()
     {
-        // Build quick actions (no API needed)
+        if (_role == "Student")
+        {
+            StudentRoot.Visibility = Visibility.Visible;
+            GenericRoot.Visibility = Visibility.Collapsed;
+
+            StudentDashboardDto? data = null;
+            if (_api is not null)
+            {
+                try { data = (await _api.GetAsync<StudentDashboardDto>("dashboard/student"))?.Data; }
+                catch { data = null; }
+            }
+            BuildStudentHome(data);
+            return;
+        }
+
+        // Lecturer / Admin — generic layout
         BuildQuickActions();
-
         if (_api is null) { BuildStatCards(); return; }
-
         try
         {
-            if (_role == "Student")
-                await LoadStudentDashboardAsync();
-            else if (_role == "Lecturer")
-                await LoadLecturerDashboardAsync();
-            else
-                BuildStatCards(); // Admin — just show static for now
+            if (_role == "Lecturer") await LoadLecturerDashboardAsync();
+            else BuildStatCards(); // Admin — static for now
         }
         catch
         {
-            BuildStatCards(); // Fallback to empty stats on error
+            BuildStatCards();
         }
     }
 
-    // ── Student Dashboard ─────────────────────────────────────────────────
-    private async Task LoadStudentDashboardAsync()
+    // ── Student Dashboard (mock layout) ───────────────────────────────────
+    private void BuildStudentHome(StudentDashboardDto? d)
     {
-        var response = await _api!.GetAsync<StudentDashboardDto>("dashboard/student");
-        var result = response?.Data;
-        if (result is null) { BuildStatCards(); return; }
+        StudentRoot.Children.Clear();
 
-        StatCardsGrid.Children.Clear();
-        AddStatCard("Exams Taken", result.ExamsTaken.ToString(), ThemeManager.GetBrush("ThAccent"));
-        AddStatCard("Average", result.AverageScore < 0 ? "—" : $"{result.AverageScore:F0}%", Accent("#A78BFA"));
-        AddStatCard("Next Exam", result.NextExamTitle ?? "None", ThemeManager.GetBrush("ThWarning"),
-            result.NextExamDate.HasValue ? result.NextExamDate.Value.ToLocalTime().ToString("MMM dd, HH:mm") : null);
-        AddStatCard("Exams Taken", result.TotalSubmissions.ToString(), ThemeManager.GetBrush("ThInfo"));
+        // Hero — next / available exam
+        UpcomingExamDto? next = d?.UpcomingExams.FirstOrDefault();
+        StudentRoot.Children.Add(BuildHeroCard(next));
 
-        // Upcoming exams
-        TxtSection1Title.Text = "Upcoming Exams";
-        Section1Content.Children.Clear();
-        if (result.UpcomingExams.Count == 0)
-        {
-            Section1Content.Children.Add(MakeMutedText("No upcoming exams."));
-        }
-        else
-        {
-            foreach (var exam in result.UpcomingExams)
-            {
-                Section1Content.Children.Add(BuildUpcomingExamRow(exam));
-            }
-        }
+        // Stat strip: exams completed · average · personal best
+        int taken = d?.ExamsTaken ?? 0;
+        double avg = d?.AverageScore ?? -1;
+        double best = -1;
+        if (d is not null)
+            foreach (var r in d.RecentResults)
+                if (r.MaxScore > 0) best = Math.Max(best, (double)r.Score / r.MaxScore * 100);
+
+        var strip = new System.Windows.Controls.Primitives.UniformGrid { Rows = 1, Margin = new Thickness(0, 22, 0, 0) };
+        strip.Children.Add(MakeStatCard(taken.ToString(), "Exams completed", null));
+        strip.Children.Add(MakeStatCard(avg < 0 ? "—" : $"{avg:F0}%", "Average score", ThemeManager.GetBrush("ThSuccess")));
+        strip.Children.Add(MakeStatCard(best < 0 ? "—" : $"{best:F0}%", "Personal best", null));
+        StudentRoot.Children.Add(strip);
 
         // Recent results
-        Section2Content.Children.Clear();
-        if (result.RecentResults.Count == 0)
+        StudentRoot.Children.Add(SectionLabel("RECENT RESULTS"));
+        if (d is null || d.RecentResults.Count == 0)
         {
-            Section2Content.Children.Add(MakeMutedText("No results released yet."));
+            StudentRoot.Children.Add(MakeMutedText("No results released yet."));
         }
         else
         {
-            foreach (var r in result.RecentResults)
-            {
-                Section2Content.Children.Add(BuildRecentResultRow(r));
-            }
+            foreach (var r in d.RecentResults)
+                StudentRoot.Children.Add(BuildResultCard(r));
         }
     }
+
+    private Border BuildHeroCard(UpcomingExamDto? exam)
+    {
+        var outer = new Border
+        {
+            CornerRadius = new CornerRadius(18),
+            BorderThickness = new Thickness(1),
+            BorderBrush = ThemeManager.GetBrush("ThBorder"),
+            Background = ThemeManager.GetBrush("ThBgPanel"),
+            Padding = new Thickness(30, 28, 30, 28)
+        };
+
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var left = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+
+        if (exam is null)
+        {
+            left.Children.Add(MakePill("All caught up", "ThSuccess"));
+            left.Children.Add(HeroTitle("No exams scheduled"));
+            left.Children.Add(new TextBlock
+            {
+                Text = "You have no exams available right now. This page updates when your lecturer schedules one.",
+                FontSize = 14, Foreground = ThemeManager.GetBrush("ThTextSecondary"),
+                TextWrapping = TextWrapping.Wrap, MaxWidth = 460, Margin = new Thickness(0, 10, 0, 0),
+                FontFamily = Font()
+            });
+            grid.Children.Add(left);
+
+            var browse = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+            browse.Children.Add(HeroButton("Browse exams", () => NavigateRequested?.Invoke("Exams")));
+            Grid.SetColumn(browse, 1);
+            grid.Children.Add(browse);
+
+            outer.Child = grid;
+            return outer;
+        }
+
+        bool available = exam.ScheduledAt.ToLocalTime() <= DateTime.Now;
+        outer.BorderBrush = ThemeManager.GetBrush("ThAccentLine");
+
+        left.Children.Add(available ? MakePill("Available now", "ThSuccess") : MakePill("Scheduled", "ThWarning"));
+        left.Children.Add(HeroTitle(exam.Title));
+        left.Children.Add(new TextBlock
+        {
+            Text = exam.CourseCode, FontSize = 14,
+            Foreground = ThemeManager.GetBrush("ThTextSecondary"),
+            Margin = new Thickness(0, 6, 0, 0), FontFamily = MonoFont()
+        });
+
+        var stats = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 20, 0, 0) };
+        stats.Children.Add(HeroStat(exam.DurationMinutes.ToString(), "min", "Duration"));
+        stats.Children.Add(HeroStat(
+            exam.ScheduledAt.ToLocalTime().ToString("MMM dd"), "",
+            (available ? "Opened " : "Opens ") + exam.ScheduledAt.ToLocalTime().ToString("HH:mm")));
+        left.Children.Add(stats);
+        grid.Children.Add(left);
+
+        var col = new StackPanel { VerticalAlignment = VerticalAlignment.Center, MinWidth = 190 };
+        col.Children.Add(HeroButton(available ? "Begin exam" : "View exam", () => NavigateRequested?.Invoke("Exams")));
+        col.Children.Add(new TextBlock
+        {
+            Text = available ? "Opens in locked-down mode" : "Not yet open",
+            FontSize = 11.5, Foreground = ThemeManager.GetBrush("ThTextMuted"),
+            HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 9, 0, 0),
+            FontFamily = Font()
+        });
+        Grid.SetColumn(col, 1);
+        grid.Children.Add(col);
+
+        outer.Child = grid;
+        return outer;
+    }
+
+    private Border MakeStatCard(string value, string label, Brush? valueColor)
+    {
+        var card = new Border
+        {
+            Background = ThemeManager.GetBrush("ThBgPanel"),
+            CornerRadius = new CornerRadius(13),
+            BorderBrush = ThemeManager.GetBrush("ThBorder"),
+            BorderThickness = new Thickness(1),
+            Padding = new Thickness(20, 18, 20, 18),
+            Margin = new Thickness(0, 0, 14, 0)
+        };
+        var sp = new StackPanel();
+        sp.Children.Add(new TextBlock
+        {
+            Text = value, FontSize = 27, FontWeight = FontWeights.SemiBold,
+            Foreground = valueColor ?? ThemeManager.GetBrush("ThTextPrimary"),
+            FontFamily = MonoFont()
+        });
+        sp.Children.Add(new TextBlock
+        {
+            Text = label, FontSize = 12.5,
+            Foreground = ThemeManager.GetBrush("ThTextMuted"),
+            Margin = new Thickness(0, 4, 0, 0), FontFamily = Font()
+        });
+        card.Child = sp;
+        return card;
+    }
+
+    private Border BuildResultCard(RecentResultDto r)
+    {
+        double pct = r.MaxScore > 0 ? (double)r.Score / r.MaxScore * 100 : 0;
+        var color = pct >= 70 ? ThemeManager.GetColor("ThSuccess")
+                  : pct >= 50 ? ThemeManager.GetColor("ThAccentStrong")
+                  : ThemeManager.GetColor("ThWarning");
+        var grade = pct >= 70 ? "Excellent" : pct >= 60 ? "Good" : pct >= 50 ? "Pass" : "Needs work";
+
+        var card = new Border
+        {
+            Background = ThemeManager.GetBrush("ThBgSurface"),
+            BorderBrush = ThemeManager.GetBrush("ThBorder"),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(13),
+            Padding = new Thickness(16, 14, 18, 14),
+            Margin = new Thickness(0, 0, 0, 11),
+            Cursor = System.Windows.Input.Cursors.Hand
+        };
+
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var ring = MakeRing(pct, color, 46);
+        Grid.SetColumn(ring, 0);
+        grid.Children.Add(ring);
+
+        var mid = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(16, 0, 0, 0) };
+        mid.Children.Add(new TextBlock
+        {
+            Text = r.ExamTitle, FontSize = 14.5, FontWeight = FontWeights.SemiBold,
+            Foreground = ThemeManager.GetBrush("ThTextPrimary"), FontFamily = Font(),
+            TextTrimming = TextTrimming.CharacterEllipsis
+        });
+        mid.Children.Add(new TextBlock
+        {
+            Text = $"{r.CourseCode}  ·  {r.SubmittedAt.ToLocalTime():MMM dd, yyyy}",
+            FontSize = 12, Foreground = ThemeManager.GetBrush("ThTextMuted"),
+            Margin = new Thickness(0, 3, 0, 0), FontFamily = MonoFont()
+        });
+        Grid.SetColumn(mid, 1);
+        grid.Children.Add(mid);
+
+        var right = new StackPanel { VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right };
+        var score = new TextBlock { FontSize = 15, FontWeight = FontWeights.SemiBold, FontFamily = Font(), HorizontalAlignment = HorizontalAlignment.Right };
+        score.Inlines.Add(new System.Windows.Documents.Run(r.Score.ToString()) { Foreground = ThemeManager.GetBrush("ThTextPrimary") });
+        score.Inlines.Add(new System.Windows.Documents.Run($"/{r.MaxScore}") { Foreground = ThemeManager.GetBrush("ThTextMuted") });
+        right.Children.Add(score);
+        right.Children.Add(new TextBlock
+        {
+            Text = grade, FontSize = 12, FontWeight = FontWeights.Medium,
+            Foreground = new SolidColorBrush(color), Margin = new Thickness(0, 2, 0, 0),
+            HorizontalAlignment = HorizontalAlignment.Right, FontFamily = Font()
+        });
+        Grid.SetColumn(right, 2);
+        grid.Children.Add(right);
+
+        card.Child = grid;
+        card.MouseLeftButtonUp += (_, _) => NavigateRequested?.Invoke("Results");
+        return card;
+    }
+
+    // Circular progress ring with centred percentage.
+    private Grid MakeRing(double pct, Color color, double size)
+    {
+        double frac = Math.Max(0, Math.Min(1, pct / 100));
+        double stroke = 4;
+        double r = size / 2 - stroke / 2 - 1;
+        double cx = size / 2, cy = size / 2;
+
+        var g = new Grid { Width = size, Height = size };
+
+        g.Children.Add(new System.Windows.Shapes.Ellipse
+        {
+            Width = r * 2, Height = r * 2, StrokeThickness = stroke,
+            Stroke = ThemeManager.GetBrush("ThBorderStrong"),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        });
+
+        if (frac >= 0.999)
+        {
+            g.Children.Add(new System.Windows.Shapes.Ellipse
+            {
+                Width = r * 2, Height = r * 2, StrokeThickness = stroke,
+                Stroke = new SolidColorBrush(color),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+        }
+        else if (frac > 0)
+        {
+            double angle = 360 * frac;
+            double endRad = (-90 + angle) * Math.PI / 180;
+            var start = new Point(cx, cy - r);
+            var end = new Point(cx + r * Math.Cos(endRad), cy + r * Math.Sin(endRad));
+            var fig = new PathFigure { StartPoint = start, IsClosed = false };
+            fig.Segments.Add(new ArcSegment
+            {
+                Point = end, Size = new Size(r, r),
+                IsLargeArc = angle > 180, SweepDirection = SweepDirection.Clockwise
+            });
+            var geo = new PathGeometry();
+            geo.Figures.Add(fig);
+            g.Children.Add(new System.Windows.Shapes.Path
+            {
+                Data = geo, Stroke = new SolidColorBrush(color), StrokeThickness = stroke,
+                StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round
+            });
+        }
+
+        g.Children.Add(new TextBlock
+        {
+            Text = $"{pct:F0}", FontSize = 11.5, FontWeight = FontWeights.Bold,
+            FontFamily = MonoFont(), Foreground = ThemeManager.GetBrush("ThTextPrimary"),
+            HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center
+        });
+        return g;
+    }
+
+    // ── Hero helpers ──────────────────────────────────────────────────────
+    private TextBlock HeroTitle(string text) => new()
+    {
+        Text = text, FontSize = 26, FontWeight = FontWeights.SemiBold,
+        Foreground = ThemeManager.GetBrush("ThTextPrimary"),
+        TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 14, 0, 0),
+        FontFamily = Font()
+    };
+
+    private Border MakePill(string text, string colorKey)
+    {
+        var c = ThemeManager.GetColor(colorKey);
+        return new Border
+        {
+            Background = new SolidColorBrush(Color.FromArgb(0x24, c.R, c.G, c.B)),
+            CornerRadius = new CornerRadius(999),
+            Padding = new Thickness(11, 4, 11, 4),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Child = new TextBlock
+            {
+                Text = text, FontSize = 12, FontWeight = FontWeights.SemiBold,
+                Foreground = new SolidColorBrush(c), FontFamily = Font()
+            }
+        };
+    }
+
+    private Border HeroButton(string text, Action onClick)
+    {
+        var b = new Border
+        {
+            Background = ThemeManager.GetBrush("ThAccent"),
+            CornerRadius = new CornerRadius(12),
+            Padding = new Thickness(22, 14, 22, 14),
+            Cursor = System.Windows.Input.Cursors.Hand,
+            MinWidth = 180
+        };
+        b.Child = new TextBlock
+        {
+            Text = text, FontSize = 15, FontWeight = FontWeights.SemiBold,
+            Foreground = ThemeManager.GetBrush("ThTextOnAccent"),
+            HorizontalAlignment = HorizontalAlignment.Center, FontFamily = Font()
+        };
+        b.MouseLeftButtonUp += (_, _) => onClick();
+        b.MouseEnter += (_, _) => b.Background = ThemeManager.GetBrush("ThAccentStrong");
+        b.MouseLeave += (_, _) => b.Background = ThemeManager.GetBrush("ThAccent");
+        return b;
+    }
+
+    private StackPanel HeroStat(string value, string unit, string label)
+    {
+        var sp = new StackPanel { Margin = new Thickness(0, 0, 26, 0) };
+        var line = new StackPanel { Orientation = Orientation.Horizontal };
+        line.Children.Add(new TextBlock
+        {
+            Text = value, FontSize = 20, FontWeight = FontWeights.SemiBold,
+            Foreground = ThemeManager.GetBrush("ThTextPrimary"), FontFamily = Font()
+        });
+        if (!string.IsNullOrEmpty(unit))
+            line.Children.Add(new TextBlock
+            {
+                Text = " " + unit, FontSize = 12, Foreground = ThemeManager.GetBrush("ThTextMuted"),
+                VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(2, 0, 0, 3),
+                FontFamily = Font()
+            });
+        sp.Children.Add(line);
+        sp.Children.Add(new TextBlock
+        {
+            Text = label, FontSize = 12, Foreground = ThemeManager.GetBrush("ThTextMuted"),
+            Margin = new Thickness(0, 2, 0, 0), FontFamily = Font()
+        });
+        return sp;
+    }
+
+    private TextBlock SectionLabel(string text) => new()
+    {
+        Text = text, FontSize = 12.5, FontWeight = FontWeights.SemiBold,
+        Foreground = ThemeManager.GetBrush("ThTextMuted"),
+        Margin = new Thickness(0, 30, 0, 14), FontFamily = Font()
+    };
 
     // ── Lecturer Dashboard ────────────────────────────────────────────────
     private async Task LoadLecturerDashboardAsync()
@@ -157,86 +462,6 @@ public partial class HomeView : UserControl
     }
 
     // ── Row Builders ──────────────────────────────────────────────────────
-    private Border BuildUpcomingExamRow(UpcomingExamDto exam)
-    {
-        var row = MakeRow();
-        var grid = new Grid();
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-        var left = new StackPanel();
-        left.Children.Add(new TextBlock
-        {
-            Text = $"{exam.CourseCode} — {exam.Title}",
-            FontSize = 13, FontWeight = FontWeights.SemiBold,
-            Foreground = ThemeManager.GetBrush("ThTextPrimary"),
-            FontFamily = Font()
-        });
-        left.Children.Add(new TextBlock
-        {
-            Text = $"{exam.ScheduledAt.ToLocalTime():MMM dd, HH:mm}  ·  {exam.DurationMinutes} min",
-            FontSize = 11,
-            Foreground = ThemeManager.GetBrush("ThTextSecondary"),
-            FontFamily = Font(),
-            Margin = new Thickness(0, 2, 0, 0)
-        });
-        grid.Children.Add(left);
-
-        var badge = MakeTag("UPCOMING", ThemeManager.GetColor("ThAccent"));
-        Grid.SetColumn(badge, 1);
-        grid.Children.Add(badge);
-
-        row.Child = grid;
-        return row;
-    }
-
-    private Border BuildRecentResultRow(RecentResultDto result)
-    {
-        var row = MakeRow();
-        var grid = new Grid();
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-        var pct = result.MaxScore > 0 ? (double)result.Score / result.MaxScore * 100 : 0;
-        var color = pct >= 70 ? ThemeManager.GetColor("ThSuccess")
-                  : pct >= 50 ? ThemeManager.GetColor("ThWarning")
-                  : ThemeManager.GetColor("ThError");
-
-        var left = new StackPanel();
-        left.Children.Add(new TextBlock
-        {
-            Text = $"{result.CourseCode} — {result.ExamTitle}",
-            FontSize = 13, FontWeight = FontWeights.SemiBold,
-            Foreground = ThemeManager.GetBrush("ThTextPrimary"),
-            FontFamily = Font()
-        });
-        left.Children.Add(new TextBlock
-        {
-            Text = result.SubmittedAt.ToLocalTime().ToString("MMM dd, yyyy"),
-            FontSize = 11,
-            Foreground = ThemeManager.GetBrush("ThTextSecondary"),
-            FontFamily = Font(),
-            Margin = new Thickness(0, 2, 0, 0)
-        });
-        grid.Children.Add(left);
-
-        var score = new TextBlock
-        {
-            Text = $"{result.Score}/{result.MaxScore} ({pct:F0}%)",
-            FontSize = 13, FontWeight = FontWeights.Bold,
-            Foreground = new SolidColorBrush(color),
-            VerticalAlignment = VerticalAlignment.Center,
-            FontFamily = Font()
-        };
-        Grid.SetColumn(score, 1);
-        grid.Children.Add(score);
-
-        row.Child = grid;
-        row.Cursor = System.Windows.Input.Cursors.Hand;
-        row.MouseLeftButtonDown += (_, _) => NavigateRequested?.Invoke("Results");
-        return row;
-    }
-
     private Border BuildLecturerExamRow(ExamSummaryDto exam)
     {
         var row = MakeRow();
