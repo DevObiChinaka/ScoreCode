@@ -188,6 +188,7 @@ public partial class DashboardShell : Window
     {
         var examList = new ExamListView(_api);
         examList.ExamStartRequested += ShowPreflight;
+        examList.NavigateRequested += NavigateTo;
         return examList;
     }
 
@@ -209,11 +210,13 @@ public partial class DashboardShell : Window
 
             if (response is null || !response.Success || response.Data is null)
             {
-                // Surface the server's reason (e.g. exam not open yet / window closed).
+                // Surface the server's reason (e.g. exam not open yet / window closed),
+                // then return to the exam list rather than stranding the pre-flight screen.
                 var message = response?.Message ?? "Failed to start exam. Please try again.";
                 System.Windows.MessageBox.Show(
                     message,
                     "Cannot Start Exam", MessageBoxButton.OK, MessageBoxImage.Warning);
+                NavigateTo("Exams");
                 return;
             }
 
@@ -234,6 +237,7 @@ public partial class DashboardShell : Window
             System.Windows.MessageBox.Show(
                 $"Error starting exam: {ex.Message}",
                 "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            NavigateTo("Exams");
         }
     }
 
