@@ -40,10 +40,13 @@ public class DashboardController : ControllerBase
         // Count exams (distinct) the student has submitted to
         var examsTaken = submissions.Select(s => s.ExamId).Distinct().Count();
 
-        // Average score across graded exams (per-exam aggregate)
+        // Average score across released, fully-graded exams (per-exam aggregate).
+        // Gated on release so a score is never surfaced before the lecturer
+        // releases it — keeping the summary coherent with the results below.
         var examGroups = submissions
             .GroupBy(s => s.ExamId)
-            .Where(g => g.All(s => s.Grade != null)) // only fully graded exams
+            .Where(g => g.All(s => s.Grade != null)
+                     && g.First().Question?.Exam?.ResultsReleased == true)
             .ToList();
 
         double avgScore = -1; // -1 indicates "no data" so client shows "—"
@@ -58,13 +61,16 @@ public class DashboardController : ControllerBase
             avgScore = Math.Round(examPercentages.Average(), 1);
         }
 
-        // Upcoming exams (assigned, Active, scheduled in future)
-        var upcoming = await _db.ExamStudents
+        // Available / upcoming exams: any assigned Active exam the student hasn't
+        // completed yet — including ones already open (ScheduledAt in the past).
+        // Currently-available exams are surfaced first, then future ones.
+        var completedExamIds = submissions.Select(s => s.ExamId).Distinct().ToHashSet();
+        var now = DateTime.UtcNow;
+
+        var assignedActive = await _db.ExamStudents
             .Where(es => es.StudentId == studentId)
             .Select(es => es.Exam)
-            .Where(e => e.Status == Constants.ExamStatuses.Active && e.ScheduledAt > DateTime.UtcNow)
-            .OrderBy(e => e.ScheduledAt)
-            .Take(5)
+            .Where(e => e.Status == Constants.ExamStatuses.Active)
             .Select(e => new UpcomingExamDto
             {
                 Id = e.Id,
@@ -74,6 +80,13 @@ public class DashboardController : ControllerBase
                 DurationMinutes = e.DurationMinutes
             })
             .ToListAsync();
+
+        var upcoming = assignedActive
+            .Where(e => !completedExamIds.Contains(e.Id))
+            .OrderBy(e => e.ScheduledAt <= now ? 0 : 1) // available now first
+            .ThenBy(e => e.ScheduledAt)
+            .Take(5)
+            .ToList();
 
         // Recent results (released exams, aggregated per exam — client-side)
         var recentResults = submissions
