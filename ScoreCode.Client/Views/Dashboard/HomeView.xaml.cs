@@ -192,14 +192,14 @@ public partial class HomeView : UserControl
         var sp = new StackPanel();
         sp.Children.Add(new TextBlock
         {
-            Text = value, FontSize = 27, FontWeight = FontWeights.SemiBold,
+            Text = value, FontSize = 27, FontWeight = FontWeights.Medium,
             Foreground = valueColor ?? ThemeManager.GetBrush("ThTextPrimary"),
             FontFamily = MonoFont()
         });
         sp.Children.Add(new TextBlock
         {
             Text = label, FontSize = 12.5,
-            Foreground = ThemeManager.GetBrush("ThTextMuted"),
+            Foreground = ThemeManager.GetBrush("ThTextSecondary"),
             Margin = new Thickness(0, 4, 0, 0), FontFamily = Font()
         });
         card.Child = sp;
@@ -237,7 +237,7 @@ public partial class HomeView : UserControl
         var mid = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(16, 0, 0, 0) };
         mid.Children.Add(new TextBlock
         {
-            Text = r.ExamTitle, FontSize = 14.5, FontWeight = FontWeights.SemiBold,
+            Text = r.ExamTitle, FontSize = 14.5, FontWeight = FontWeights.Medium,
             Foreground = ThemeManager.GetBrush("ThTextPrimary"), FontFamily = Font(),
             TextTrimming = TextTrimming.CharacterEllipsis
         });
@@ -251,7 +251,7 @@ public partial class HomeView : UserControl
         grid.Children.Add(mid);
 
         var right = new StackPanel { VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right };
-        var score = new TextBlock { FontSize = 15, FontWeight = FontWeights.SemiBold, FontFamily = Font(), HorizontalAlignment = HorizontalAlignment.Right };
+        var score = new TextBlock { FontSize = 15, FontWeight = FontWeights.Medium, FontFamily = Font(), HorizontalAlignment = HorizontalAlignment.Right };
         score.Inlines.Add(new System.Windows.Documents.Run(r.Score.ToString()) { Foreground = ThemeManager.GetBrush("ThTextPrimary") });
         score.Inlines.Add(new System.Windows.Documents.Run($"/{r.MaxScore}") { Foreground = ThemeManager.GetBrush("ThTextMuted") });
         right.Children.Add(score);
@@ -320,7 +320,7 @@ public partial class HomeView : UserControl
 
         g.Children.Add(new TextBlock
         {
-            Text = $"{pct:F0}", FontSize = 11.5, FontWeight = FontWeights.Bold,
+            Text = $"{pct:F0}", FontSize = 11.5, FontWeight = FontWeights.SemiBold,
             FontFamily = MonoFont(), Foreground = ThemeManager.GetBrush("ThTextPrimary"),
             HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center
         });
@@ -330,7 +330,7 @@ public partial class HomeView : UserControl
     // ── Hero helpers ──────────────────────────────────────────────────────
     private TextBlock HeroTitle(string text) => new()
     {
-        Text = text, FontSize = 26, FontWeight = FontWeights.SemiBold,
+        Text = text, FontSize = 26, FontWeight = FontWeights.Medium,
         Foreground = ThemeManager.GetBrush("ThTextPrimary"),
         TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 14, 0, 0),
         FontFamily = Font()
@@ -347,7 +347,7 @@ public partial class HomeView : UserControl
             HorizontalAlignment = HorizontalAlignment.Left,
             Child = new TextBlock
             {
-                Text = text, FontSize = 12, FontWeight = FontWeights.SemiBold,
+                Text = text, FontSize = 12, FontWeight = FontWeights.Medium,
                 Foreground = new SolidColorBrush(c), FontFamily = Font()
             }
         };
@@ -365,7 +365,7 @@ public partial class HomeView : UserControl
         };
         b.Child = new TextBlock
         {
-            Text = text, FontSize = 15, FontWeight = FontWeights.SemiBold,
+            Text = text, FontSize = 15, FontWeight = FontWeights.Medium,
             Foreground = ThemeManager.GetBrush("ThTextOnAccent"),
             HorizontalAlignment = HorizontalAlignment.Center, FontFamily = Font()
         };
@@ -381,7 +381,7 @@ public partial class HomeView : UserControl
         var line = new StackPanel { Orientation = Orientation.Horizontal };
         line.Children.Add(new TextBlock
         {
-            Text = value, FontSize = 20, FontWeight = FontWeights.SemiBold,
+            Text = value, FontSize = 20, FontWeight = FontWeights.Medium,
             Foreground = ThemeManager.GetBrush("ThTextPrimary"), FontFamily = Font()
         });
         if (!string.IsNullOrEmpty(unit))
@@ -402,8 +402,8 @@ public partial class HomeView : UserControl
 
     private TextBlock SectionLabel(string text) => new()
     {
-        Text = text, FontSize = 12.5, FontWeight = FontWeights.SemiBold,
-        Foreground = ThemeManager.GetBrush("ThTextMuted"),
+        Text = text, FontSize = 12.5, FontWeight = FontWeights.Medium,
+        Foreground = ThemeManager.GetBrush("ThTextSecondary"),
         Margin = new Thickness(0, 30, 0, 14), FontFamily = Font()
     };
 
@@ -474,7 +474,7 @@ public partial class HomeView : UserControl
         left.Children.Add(new TextBlock
         {
             Text = $"{exam.CourseCode} — {exam.Title}",
-            FontSize = 13, FontWeight = FontWeights.SemiBold,
+            FontSize = 13, FontWeight = FontWeights.Medium,
             Foreground = ThemeManager.GetBrush("ThTextPrimary"),
             FontFamily = Font()
         });
@@ -558,7 +558,7 @@ public partial class HomeView : UserControl
         {
             Text = value,
             FontSize = 27,
-            FontWeight = FontWeights.SemiBold,
+            FontWeight = FontWeights.Medium,
             Foreground = ThemeManager.GetBrush("ThTextPrimary"),
             FontFamily = MonoFont()
         });
@@ -629,7 +629,7 @@ public partial class HomeView : UserControl
         {
             Text = title,
             FontSize = 14,
-            FontWeight = FontWeights.SemiBold,
+            FontWeight = FontWeights.Medium,
             Foreground = accent,
             FontFamily = Font()
         });
@@ -677,7 +677,7 @@ public partial class HomeView : UserControl
         VerticalAlignment = VerticalAlignment.Center,
         Child = new TextBlock
         {
-            Text = text, FontSize = 11, FontWeight = FontWeights.SemiBold,
+            Text = text, FontSize = 11, FontWeight = FontWeights.Medium,
             Foreground = new SolidColorBrush(color),
             FontFamily = new FontFamily("/Assets/Fonts/#Geist")
         }
