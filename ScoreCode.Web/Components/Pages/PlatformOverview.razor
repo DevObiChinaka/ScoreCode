@@ -15,6 +15,17 @@
     <div class="stat"><div class="n">@Count("Suspended")</div><div class="l">Suspended</div></div>
 </div>
 
+@if (!_loading && _all.Any())
+{
+    <div class="section-title">By type</div>
+    <div class="stats">
+        @foreach (var g in _all.GroupBy(i => string.IsNullOrWhiteSpace(i.Type) ? "Other" : i.Type).OrderByDescending(g => g.Count()))
+        {
+            <div class="stat"><div class="n">@g.Count()</div><div class="l">@g.Key</div></div>
+        }
+    </div>
+}
+
 <div class="section-title">Awaiting approval</div>
 @if (_loading)
 {
@@ -28,14 +39,15 @@ else
 {
     <div class="tablewrap">
         <table>
-            <thead><tr><th>Name</th><th>Type</th><th>Contact</th><th></th></tr></thead>
+            <thead><tr><th>Institution</th><th>Type</th><th>Contact</th><th>Submitted</th><th></th></tr></thead>
             <tbody>
-                @foreach (var i in Pending)
+                @foreach (var i in Pending.OrderBy(i => i.CreatedAt))
                 {
                     <tr>
-                        <td>@i.Name</td>
+                        <td><div class="primary">@i.Name</div><div class="mono">@i.Prefix</div></td>
                         <td>@i.Type</td>
-                        <td>@i.ContactEmail</td>
+                        <td>@(string.IsNullOrWhiteSpace(i.ContactPerson) ? "" : i.ContactPerson)<div class="mono">@i.ContactEmail</div></td>
+                        <td class="mono">@i.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")</td>
                         <td class="row-actions"><a class="btn btn-sm btn-ghost" href="/platform/institutions">Review</a></td>
                     </tr>
                 }

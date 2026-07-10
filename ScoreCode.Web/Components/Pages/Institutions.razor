@@ -8,12 +8,18 @@
     <div><h1>Institutions</h1><div class="sub">Approve, reject, suspend or reactivate schools</div></div>
 </div>
 
-<div class="tabs">
-    <button class="@Cls("Pending")" @onclick='() => _status = "Pending"'>Pending</button>
-    <button class="@Cls("Approved")" @onclick='() => _status = "Approved"'>Approved</button>
-    <button class="@Cls("Suspended")" @onclick='() => _status = "Suspended"'>Suspended</button>
-    <button class="@Cls("Rejected")" @onclick='() => _status = "Rejected"'>Rejected</button>
-    <button class="@(_status == null ? "active" : "")" @onclick="() => _status = null">All</button>
+<div class="toolbar">
+    <div class="searchbox">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+        <input placeholder="Search by name, prefix or contact…" @bind="_search" @bind:event="oninput" />
+    </div>
+    <div class="tabs">
+        <button class="@Cls("Pending")" @onclick='() => _status = "Pending"'>Pending <span class="cnt">@Count("Pending")</span></button>
+        <button class="@Cls("Approved")" @onclick='() => _status = "Approved"'>Approved <span class="cnt">@Count("Approved")</span></button>
+        <button class="@Cls("Suspended")" @onclick='() => _status = "Suspended"'>Suspended <span class="cnt">@Count("Suspended")</span></button>
+        <button class="@Cls("Rejected")" @onclick='() => _status = "Rejected"'>Rejected <span class="cnt">@Count("Rejected")</span></button>
+        <button class="@(_status == null ? "active" : "")" @onclick="() => _status = null">All <span class="cnt">@_all.Count</span></button>
+    </div>
 </div>
 
 @if (_loading)
@@ -83,7 +89,17 @@ else
     private bool _loading = true;
     private ApproveInstitutionResponse? _cred;
 
-    private IEnumerable<InstitutionDto> Filtered => _status is null ? _all : _all.Where(i => i.Status == _status);
+    private string _search = "";
+
+    private IEnumerable<InstitutionDto> Filtered => _all
+        .Where(i => _status is null || i.Status == _status)
+        .Where(i => _search.Length == 0
+            || (i.Name ?? "").Contains(_search, StringComparison.OrdinalIgnoreCase)
+            || (i.Prefix ?? "").Contains(_search, StringComparison.OrdinalIgnoreCase)
+            || (i.ContactPerson ?? "").Contains(_search, StringComparison.OrdinalIgnoreCase)
+            || (i.ContactEmail ?? "").Contains(_search, StringComparison.OrdinalIgnoreCase));
+
+    private int Count(string s) => _all.Count(i => i.Status == s);
     private string Cls(string s) => _status == s ? "active" : "";
 
     protected override async Task OnInitializedAsync()

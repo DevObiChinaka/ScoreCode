@@ -18,13 +18,31 @@ else if (_students.Count == 0)
 }
 else
 {
+    <div class="toolbar">
+        <div class="searchbox">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+            <input placeholder="Search by matric number or programme…" @bind="_search" @bind:event="oninput" />
+        </div>
+        <div class="tabs">
+            <button class="@(_filter=="all"?"active":"")" @onclick='() => _filter="all"'>All <span class="cnt">@_students.Count</span></button>
+            <button class="@(_filter=="active"?"active":"")" @onclick='() => _filter="active"'>Active <span class="cnt">@_students.Count(s => s.IsActive)</span></button>
+            <button class="@(_filter=="inactive"?"active":"")" @onclick='() => _filter="inactive"'>Inactive <span class="cnt">@_students.Count(s => !s.IsActive)</span></button>
+        </div>
+    </div>
+
+    @if (!Filtered.Any())
+    {
+        <div class="empty"><div class="big">No matching students</div>Try a different search or filter.</div>
+    }
+    else
+    {
     <div class="tablewrap">
         <table>
             <thead>
                 <tr><th>Matric Number</th><th>Programme</th><th>Level</th><th>Status</th><th></th></tr>
             </thead>
             <tbody>
-                @foreach (var s in _students)
+                @foreach (var s in Filtered)
                 {
                     <tr>
                         <td>@s.IdNumber</td>
@@ -46,11 +64,20 @@ else
             </tbody>
         </table>
     </div>
+    }
 }
 
 @code {
     private List<UserDto> _students = new();
     private bool _loading = true;
+    private string _search = "";
+    private string _filter = "all";
+
+    private IEnumerable<UserDto> Filtered => _students
+        .Where(s => _filter == "all" || (_filter == "active" ? s.IsActive : !s.IsActive))
+        .Where(s => _search.Length == 0
+            || (s.IdNumber ?? "").Contains(_search, StringComparison.OrdinalIgnoreCase)
+            || (s.ProgrammeOfStudy ?? "").Contains(_search, StringComparison.OrdinalIgnoreCase));
 
     protected override async Task OnInitializedAsync()
     {

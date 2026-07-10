@@ -9,30 +9,83 @@
 </div>
 
 <div class="stats">
-    <div class="stat"><div class="n teal">@_lecturers</div><div class="l">Lecturers</div></div>
-    <div class="stat"><div class="n">@_students</div><div class="l">Students</div></div>
+    <div class="stat"><div class="n teal">@_lecturers.Count</div><div class="l">Lecturers</div></div>
+    <div class="stat"><div class="n">@_students.Count</div><div class="l">Students</div></div>
+    <div class="stat"><div class="n ok">@ActiveCount</div><div class="l">Active accounts</div></div>
+    <div class="stat"><div class="n warn">@InactiveCount</div><div class="l">Deactivated</div></div>
 </div>
 
-<div class="section-title">Quick actions</div>
-<div class="quick">
-    <a href="/institution/lecturers">
-        <div class="t">Manage lecturers</div>
-        <div class="d">Add lecturers for your school and control their access.</div>
-    </a>
-    <a href="/institution/students">
-        <div class="t">View students</div>
-        <div class="d">See who has registered under your institution.</div>
-    </a>
+<div class="grid-2">
+    <div>
+        <div class="section-title" style="margin-top:8px">Recent lecturers</div>
+        @if (!_lecturers.Any())
+        {
+            <div class="empty" style="padding:36px"><div class="big">No lecturers yet</div>Add your first lecturer.</div>
+        }
+        else
+        {
+            <div class="listcard">
+                @foreach (var l in _lecturers.Take(5))
+                {
+                    <div class="listrow">
+                        <div class="avatar">@Init(l.Name, l.IdNumber)</div>
+                        <div class="rmain">
+                            <div class="rtitle">@(string.IsNullOrWhiteSpace(l.Name) ? l.IdNumber : l.Name)</div>
+                            <div class="rmeta mono">@l.IdNumber@(string.IsNullOrWhiteSpace(l.Department) ? "" : $" · {l.Department}")</div>
+                        </div>
+                        <span class="badge @(l.IsActive ? "active" : "inactive")">@(l.IsActive ? "Active" : "Inactive")</span>
+                    </div>
+                }
+            </div>
+            <a class="linkbtn" style="display:inline-block;margin-top:10px" href="/institution/lecturers">Manage lecturers →</a>
+        }
+    </div>
+    <div>
+        <div class="section-title" style="margin-top:8px">Recent students</div>
+        @if (!_students.Any())
+        {
+            <div class="empty" style="padding:36px"><div class="big">No students yet</div>Students who register will appear here.</div>
+        }
+        else
+        {
+            <div class="listcard">
+                @foreach (var s in _students.Take(5))
+                {
+                    <div class="listrow">
+                        <div class="avatar">@Init(s.Name, s.IdNumber)</div>
+                        <div class="rmain">
+                            <div class="rtitle mono">@s.IdNumber</div>
+                            <div class="rmeta">@(string.IsNullOrWhiteSpace(s.ProgrammeOfStudy) ? "—" : s.ProgrammeOfStudy)@(string.IsNullOrWhiteSpace(s.Level) ? "" : $" · Level {s.Level}")</div>
+                        </div>
+                        <span class="badge @(s.IsActive ? "active" : "inactive")">@(s.IsActive ? "Active" : "Inactive")</span>
+                    </div>
+                }
+            </div>
+            <a class="linkbtn" style="display:inline-block;margin-top:10px" href="/institution/students">View all students →</a>
+        }
+    </div>
 </div>
 
 @code {
-    private int _lecturers;
-    private int _students;
+    private List<UserDto> _lecturers = new();
+    private List<UserDto> _students = new();
+
+    private int ActiveCount => _lecturers.Count(u => u.IsActive) + _students.Count(u => u.IsActive);
+    private int InactiveCount => _lecturers.Count(u => !u.IsActive) + _students.Count(u => !u.IsActive);
 
     protected override async Task OnInitializedAsync()
     {
         if (!Auth.IsInstitutionAdmin) { Nav.NavigateTo("/login"); return; }
-        _lecturers = (await Api.GetUsersAsync("Lecturer")).Count;
-        _students = (await Api.GetUsersAsync("Student")).Count;
+        _lecturers = await Api.GetUsersAsync("Lecturer");
+        _students = await Api.GetUsersAsync("Student");
+    }
+
+    private static string Init(string? name, string id)
+    {
+        var basis = string.IsNullOrWhiteSpace(name) ? id : name;
+        var parts = basis.Split(new[] { ' ', '/', '-' }, StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length >= 2
+            ? $"{char.ToUpperInvariant(parts[0][0])}{char.ToUpperInvariant(parts[1][0])}"
+            : basis.Length >= 2 ? basis[..2].ToUpperInvariant() : basis.ToUpperInvariant();
     }
 }

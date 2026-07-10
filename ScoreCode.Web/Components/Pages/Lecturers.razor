@@ -40,13 +40,31 @@ else if (_lecturers.Count == 0)
 }
 else
 {
+    <div class="toolbar">
+        <div class="searchbox">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+            <input placeholder="Search by name, staff ID or department…" @bind="_search" @bind:event="oninput" />
+        </div>
+        <div class="tabs">
+            <button class="@(_filter=="all"?"active":"")" @onclick='() => _filter="all"'>All <span class="cnt">@_lecturers.Count</span></button>
+            <button class="@(_filter=="active"?"active":"")" @onclick='() => _filter="active"'>Active <span class="cnt">@_lecturers.Count(l => l.IsActive)</span></button>
+            <button class="@(_filter=="inactive"?"active":"")" @onclick='() => _filter="inactive"'>Inactive <span class="cnt">@_lecturers.Count(l => !l.IsActive)</span></button>
+        </div>
+    </div>
+
+    @if (!Filtered.Any())
+    {
+        <div class="empty"><div class="big">No matching lecturers</div>Try a different search or filter.</div>
+    }
+    else
+    {
     <div class="tablewrap">
         <table>
             <thead>
                 <tr><th>Name</th><th>Staff ID</th><th>Department</th><th>Status</th><th></th></tr>
             </thead>
             <tbody>
-                @foreach (var l in _lecturers)
+                @foreach (var l in Filtered)
                 {
                     <tr>
                         <td>@l.Name</td>
@@ -68,6 +86,7 @@ else
             </tbody>
         </table>
     </div>
+    }
 }
 
 @code {
@@ -78,6 +97,15 @@ else
     private CreateLecturerRequest _req = new();
     private string? _error;
     private string? _created;
+    private string _search = "";
+    private string _filter = "all";
+
+    private IEnumerable<UserDto> Filtered => _lecturers
+        .Where(l => _filter == "all" || (_filter == "active" ? l.IsActive : !l.IsActive))
+        .Where(l => _search.Length == 0
+            || (l.Name ?? "").Contains(_search, StringComparison.OrdinalIgnoreCase)
+            || (l.IdNumber ?? "").Contains(_search, StringComparison.OrdinalIgnoreCase)
+            || (l.Department ?? "").Contains(_search, StringComparison.OrdinalIgnoreCase));
 
     protected override async Task OnInitializedAsync()
     {
