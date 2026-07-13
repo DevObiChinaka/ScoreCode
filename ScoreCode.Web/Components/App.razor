@@ -5,7 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ScoreCode Portal</title>
     <base href="/" />
-    <link rel="stylesheet" href="app.css?v=4" />
+    <script>
+        (function () {
+            try { var t = localStorage.getItem('sc-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) { }
+        })();
+        window.scToggleTheme = function () {
+            var next = (document.documentElement.getAttribute('data-theme') === 'light') ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', next);
+            try { localStorage.setItem('sc-theme', next); } catch (e) { }
+            return next;
+        };
+        window.scGetTheme = function () { return document.documentElement.getAttribute('data-theme') || 'dark'; };
+    </script>
+    <link rel="stylesheet" href="app.css?v=5" />
     <HeadOutlet />
 </head>
 <body>

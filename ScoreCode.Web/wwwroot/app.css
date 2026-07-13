@@ -15,6 +15,18 @@
   --radius:14px;
   --logo-tile:#151c2a; --logo-stroke:rgba(255,255,255,.08);
 }
+:root[data-theme="light"]{
+  --bg:#f5f6f9; --bg-elev:#ffffff; --panel:#ffffff; --surface:#ffffff; --surface-2:#f3f5f8; --input:#ffffff;
+  --border:#e6e9ef; --border-strong:#d5dae3; --hair:#eef0f4;
+  --text:#161a22; --muted:#59626f; --dim:#8b93a2;
+  --accent:#1f5fe0; --accent-strong:#1a52c8; --accent-soft:rgba(31,95,224,.09); --accent-line:rgba(31,95,224,.24);
+  --teal:#1f5fe0; --teal-dark:#1a52c8; --teal-soft:rgba(31,95,224,.09);
+  --ok:#1f9d57; --ok-bg:rgba(31,157,87,.11);
+  --warn:#b9793a; --warn-bg:rgba(185,121,58,.12);
+  --err:#cf4436; --err-bg:rgba(207,68,54,.09);
+  --shadow:0 22px 50px -24px rgba(20,24,40,.22),0 6px 16px -10px rgba(20,24,40,.14);
+  --logo-tile:#eef1f6; --logo-stroke:rgba(20,26,40,.08);
+}
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--text);
   font-family:'Geist',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:14.5px;line-height:1.5;
@@ -49,6 +61,8 @@ h2{font-size:16px;font-weight:500;margin:0}
 .btn-ok:hover{filter:brightness(1.08)}
 .linkbtn{background:none;border:0;color:var(--muted);cursor:pointer;font-size:13.5px;font-family:inherit}
 .linkbtn:hover{color:var(--text)}
+.iconbtn{background:none;border:0;color:var(--muted);cursor:pointer;padding:7px;border-radius:8px;display:inline-flex;align-items:center}
+.iconbtn:hover{color:var(--text);background:var(--surface-2)}
 
 /* ── Forms ───────────────────────────────────────────────── */
 label{display:block;font-size:12.5px;color:var(--muted);margin:16px 0 7px;font-weight:500}
