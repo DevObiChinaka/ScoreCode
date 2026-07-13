@@ -29,7 +29,7 @@ public partial class DashboardViewModel : ObservableObject
         UserInitials = session.IdNumber.Length >= 2
             ? session.IdNumber[..2].ToUpperInvariant()
             : session.IdNumber.ToUpperInvariant();
-        WindowTitle = $"ScoreCode · {session.Role}";
+        WindowTitle = "ScoreCode";
 
         BuildNavItems(session.Role);
     }
