@@ -8,5 +8,6 @@ public interface IUserService
     Task<List<UserDto>> GetUsersAsync(string? roleFilter);
     Task DeactivateUserAsync(Guid id);
     Task ReactivateUserAsync(Guid id);
+    Task<string> ResetPasswordAsync(Guid id);
     Task UpdateStudentProfileAsync(Guid id, UpdateStudentProfileRequest request);
 }

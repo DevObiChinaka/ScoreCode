@@ -94,6 +94,22 @@ public class UsersController : ControllerBase
         }
     }
 
+    // POST /api/v1/users/{id}/reset-password  — admin resets a user's password
+    [HttpPost("{id:guid}/reset-password")]
+    public async Task<IActionResult> ResetPassword(Guid id)
+    {
+        try
+        {
+            var temp = await _users.ResetPasswordAsync(id);
+            return Ok(ApiResponse<ResetPasswordResponse>.Ok(new ResetPasswordResponse { TemporaryPassword = temp }));
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound(ApiResponse<object>.Fail(
+                Constants.ErrorCodes.UserNotFound, "User not found."));
+        }
+    }
+
     // PATCH /api/v1/users/{id}/profile  — update student immutable fields (admin only)
     [HttpPatch("{id:guid}/profile")]
     public async Task<IActionResult> UpdateProfile(Guid id, [FromBody] UpdateStudentProfileRequest request)

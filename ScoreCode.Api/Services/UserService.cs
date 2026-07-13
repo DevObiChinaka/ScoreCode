@@ -76,6 +76,30 @@ public class UserService : IUserService
         await _db.SaveChangesAsync();
     }
 
+    public async Task<string> ResetPasswordAsync(Guid id)
+    {
+        // Tenant filter applies — an institution admin can only reset users in
+        // their own institution; a platform admin (no tenant) can reset anyone.
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id)
+            ?? throw new KeyNotFoundException(Constants.ErrorCodes.UserNotFound);
+
+        var temp = GenerateTempPassword();
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(temp);
+        await _db.SaveChangesAsync();
+        return temp;
+    }
+
+    // Readable temp password that satisfies the app's change-password rules
+    // (upper, lower, digit, special). Ambiguous characters are excluded.
+    private static string GenerateTempPassword()
+    {
+        const string chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+        var buf = new char[8];
+        for (int i = 0; i < buf.Length; i++)
+            buf[i] = chars[Random.Shared.Next(chars.Length)];
+        return new string(buf) + Random.Shared.Next(10) + "!";
+    }
+
     public async Task UpdateStudentProfileAsync(Guid id, UpdateStudentProfileRequest request)
     {
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id)

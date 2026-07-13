@@ -95,6 +95,15 @@ public class ApiClient
         return resp.IsSuccessStatusCode;
     }
 
+    /// <summary>Reset a user's password; returns the one-time temporary password.</summary>
+    public async Task<string?> ResetUserPasswordAsync(Guid id)
+    {
+        Authorize();
+        var resp = await _http.PostAsync($"/api/v1/users/{id}/reset-password", null);
+        var body = await Read<ResetPasswordResponse>(resp);
+        return body?.Data?.TemporaryPassword;
+    }
+
     // ── Users (institution admin) ─────────────────────────────────────────────
     public async Task<List<UserDto>> GetUsersAsync(string? role)
     {

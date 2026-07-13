@@ -50,6 +50,7 @@ else
                         <td>@s.Level</td>
                         <td><span class="badge @(s.IsActive ? "active" : "inactive")">@(s.IsActive ? "Active" : "Inactive")</span></td>
                         <td class="row-actions">
+                            <button class="btn btn-sm btn-outline" @onclick="() => ResetPassword(s)">Reset password</button>
                             @if (s.IsActive)
                             {
                                 <button class="btn btn-sm btn-danger" @onclick="() => SetActive(s, false)">Deactivate</button>
@@ -67,11 +68,26 @@ else
     }
 }
 
+@if (_resetPwd is not null)
+{
+    <div class="modal-backdrop">
+        <div class="modal">
+            <h2>Password reset</h2>
+            <p class="muted small" style="margin:6px 0 12px">New temporary password for <b>@_resetName</b>. Share it securely — it's shown only once, and they'll be asked to change it.</p>
+            <label>Temporary password</label>
+            <div class="cred">@_resetPwd</div>
+            <button class="btn block" style="margin-top:18px" @onclick="() => _resetPwd = null">Done</button>
+        </div>
+    </div>
+}
+
 @code {
     private List<UserDto> _students = new();
     private bool _loading = true;
     private string _search = "";
     private string _filter = "all";
+    private string? _resetPwd;
+    private string? _resetName;
 
     private IEnumerable<UserDto> Filtered => _students
         .Where(s => _filter == "all" || (_filter == "active" ? s.IsActive : !s.IsActive))
@@ -96,5 +112,15 @@ else
     {
         await Api.SetUserActiveAsync(u.Id, active);
         await Load();
+    }
+
+    private async Task ResetPassword(UserDto u)
+    {
+        var temp = await Api.ResetUserPasswordAsync(u.Id);
+        if (temp is not null)
+        {
+            _resetName = u.IdNumber;
+            _resetPwd = temp;
+        }
     }
 }
