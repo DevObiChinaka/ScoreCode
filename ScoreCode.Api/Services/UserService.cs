@@ -42,12 +42,17 @@ public class UserService : IUserService
         return MapToDto(user);
     }
 
-    public async Task<List<UserDto>> GetUsersAsync(string? roleFilter)
+    public async Task<List<UserDto>> GetUsersAsync(string? roleFilter, Guid? institutionId = null)
     {
-        var query = _db.Users.AsQueryable();
+        var query = _db.Users.Include(u => u.Institution).AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(roleFilter))
             query = query.Where(u => u.Role == roleFilter);
+
+        // Platform admins (no tenant) can scope to one institution; the tenant
+        // query filter already restricts an institution admin to their own.
+        if (institutionId.HasValue)
+            query = query.Where(u => u.InstitutionId == institutionId);
 
         var users = await query
             .OrderBy(u => u.Name)
@@ -136,6 +141,7 @@ public class UserService : IUserService
         ProgrammeOfStudy = u.ProgrammeOfStudy,
         Level = u.Level,
         IsActive = u.IsActive,
-        CreatedAt = u.CreatedAt
+        CreatedAt = u.CreatedAt,
+        InstitutionName = u.Institution?.Name ?? string.Empty
     };
 }

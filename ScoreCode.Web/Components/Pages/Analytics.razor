@@ -1,0 +1,179 @@
+@page "/platform/analytics"
+@layout DashboardLayout
+@inject ApiClient Api
+@inject WebAuthState Auth
+@inject NavigationManager Nav
+
+<div class="pagehead">
+    <div><h1>Analytics</h1><div class="sub">Platform-wide activity across every institution</div></div>
+</div>
+
+@if (_loading)
+{
+    <p class="muted">Loading…</p>
+}
+else
+{
+    <div class="stats">
+        <div class="stat"><div class="n teal">@_all.Count</div><div class="l">Institutions</div></div>
+        <div class="stat"><div class="n">@(_dash?.TotalStudents ?? 0)</div><div class="l">Students</div></div>
+        <div class="stat"><div class="n">@(_dash?.TotalLecturers ?? 0)</div><div class="l">Lecturers</div></div>
+        <div class="stat"><div class="n">@(_dash?.TotalExams ?? 0)</div><div class="l">Exams</div></div>
+        <div class="stat"><div class="n ok">@(_dash?.ActiveExams ?? 0)</div><div class="l">Active exams</div></div>
+        <div class="stat"><div class="n">@(_dash?.TotalSubmissions ?? 0)</div><div class="l">Submissions</div></div>
+    </div>
+
+    <div class="charts-grid">
+        <!-- People composition -->
+        <div class="chartcard">
+            <h3>People on the platform</h3>
+            <div class="csub">Students vs lecturers across all institutions</div>
+            <div class="donutwrap">
+                @{ var people = Donut(("var(--accent)", _dash?.TotalStudents ?? 0), ("var(--ok)", _dash?.TotalLecturers ?? 0)); }
+                <svg class="donut" viewBox="0 0 42 42">
+                    <circle cx="21" cy="21" r="15.915" fill="none" stroke="var(--surface-2)" stroke-width="5" />
+                    <g transform="rotate(-90 21 21)">
+                        @foreach (var s in people)
+                        {
+                            <circle cx="21" cy="21" r="15.915" fill="none" stroke="@s.Color" stroke-width="5"
+                                    stroke-dasharray="@F(s.Len) @F(100 - s.Len)" stroke-dashoffset="@F(s.Offset)" />
+                        }
+                    </g>
+                    <text x="21" y="20.5" text-anchor="middle" class="center" font-size="7" font-weight="600" fill="var(--text)">@((_dash?.TotalStudents ?? 0) + (_dash?.TotalLecturers ?? 0))</text>
+                    <text x="21" y="26" text-anchor="middle" font-size="3" fill="var(--muted)">people</text>
+                </svg>
+                <div class="legend">
+                    <div class="legenditem"><span class="legenddot" style="background:var(--accent)"></span>Students<span class="legendval">@(_dash?.TotalStudents ?? 0)</span></div>
+                    <div class="legenditem"><span class="legenddot" style="background:var(--ok)"></span>Lecturers<span class="legendval">@(_dash?.TotalLecturers ?? 0)</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Institution status -->
+        <div class="chartcard">
+            <h3>Institution status</h3>
+            <div class="csub">Where institutions sit in the approval workflow</div>
+            <div class="donutwrap">
+                @{
+                    var status = Donut(
+                        ("var(--ok)", Count("Approved")),
+                        ("var(--warn)", Count("Pending")),
+                        ("var(--muted)", Count("Suspended")),
+                        ("var(--err)", Count("Rejected")));
+                }
+                <svg class="donut" viewBox="0 0 42 42">
+                    <circle cx="21" cy="21" r="15.915" fill="none" stroke="var(--surface-2)" stroke-width="5" />
+                    <g transform="rotate(-90 21 21)">
+                        @foreach (var s in status)
+                        {
+                            <circle cx="21" cy="21" r="15.915" fill="none" stroke="@s.Color" stroke-width="5"
+                                    stroke-dasharray="@F(s.Len) @F(100 - s.Len)" stroke-dashoffset="@F(s.Offset)" />
+                        }
+                    </g>
+                    <text x="21" y="20.5" text-anchor="middle" class="center" font-size="7" font-weight="600" fill="var(--text)">@_all.Count</text>
+                    <text x="21" y="26" text-anchor="middle" font-size="3" fill="var(--muted)">total</text>
+                </svg>
+                <div class="legend">
+                    <div class="legenditem"><span class="legenddot" style="background:var(--ok)"></span>Approved<span class="legendval">@Count("Approved")</span></div>
+                    <div class="legenditem"><span class="legenddot" style="background:var(--warn)"></span>Pending<span class="legendval">@Count("Pending")</span></div>
+                    <div class="legenditem"><span class="legenddot" style="background:var(--muted)"></span>Suspended<span class="legendval">@Count("Suspended")</span></div>
+                    <div class="legenditem"><span class="legenddot" style="background:var(--err)"></span>Rejected<span class="legendval">@Count("Rejected")</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Institutions by type -->
+        <div class="chartcard">
+            <h3>Institutions by type</h3>
+            <div class="csub">Breakdown of registered institution types</div>
+            @{ var types = _all.GroupBy(i => string.IsNullOrWhiteSpace(i.Type) ? "Other" : i.Type).Select(g => (g.Key, g.Count())).OrderByDescending(x => x.Item2).ToList(); var typeMax = types.Count > 0 ? types.Max(x => x.Item2) : 1; }
+            @foreach (var t in types)
+            {
+                <div class="barrow">
+                    <div class="barlabel">@t.Key</div>
+                    <div class="bartrack"><div class="barfill" style="width:@(Pct(t.Item2, typeMax))%;background:var(--accent)"></div></div>
+                    <div class="barval">@t.Item2</div>
+                </div>
+            }
+        </div>
+
+        <!-- Students per institution -->
+        <div class="chartcard">
+            <h3>Students per institution</h3>
+            <div class="csub">Enrolment across the most active institutions</div>
+            @{ var insts = (_dash?.TopInstitutions ?? new()).OrderByDescending(i => i.Students).Take(6).ToList(); var sMax = insts.Count > 0 ? Math.Max(1, insts.Max(i => i.Students)) : 1; }
+            @if (insts.All(i => i.Students == 0))
+            {
+                <p class="muted small">No enrolment yet.</p>
+            }
+            @foreach (var i in insts)
+            {
+                <div class="barrow">
+                    <div class="barlabel">@i.Name</div>
+                    <div class="bartrack"><div class="barfill" style="width:@(Pct(i.Students, sMax))%;background:var(--accent-strong)"></div></div>
+                    <div class="barval">@i.Students</div>
+                </div>
+            }
+        </div>
+    </div>
+
+    @if (_dash is not null && _dash.TopInstitutions.Any())
+    {
+        <div class="section-title">Most active institutions</div>
+        <div class="tablewrap">
+            <table>
+                <thead><tr><th>Institution</th><th>Type</th><th style="text-align:right">Students</th><th style="text-align:right">Lecturers</th><th style="text-align:right">Exams</th><th>Status</th></tr></thead>
+                <tbody>
+                    @foreach (var t in _dash.TopInstitutions)
+                    {
+                        <tr>
+                            <td><a href="/platform/institutions/@t.Id">@t.Name</a></td>
+                            <td class="muted">@t.Type</td>
+                            <td class="mono" style="text-align:right">@t.Students</td>
+                            <td class="mono" style="text-align:right">@t.Lecturers</td>
+                            <td class="mono" style="text-align:right">@t.Exams</td>
+                            <td><span class="badge @t.Status.ToLowerInvariant()">@t.Status</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+
+@code {
+    private List<InstitutionDto> _all = new();
+    private PlatformDashboardDto? _dash;
+    private bool _loading = true;
+
+    private int Count(string s) => _all.Count(i => i.Status == s);
+    private static double Pct(int v, int max) => max == 0 ? 0 : Math.Round((double)v / max * 100, 1);
+    private static string F(double d) => d.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Auth.IsPlatformAdmin) { Nav.NavigateTo("/login"); return; }
+        _all = await Api.GetInstitutionsAsync(null);
+        _dash = await Api.GetPlatformDashboardAsync();
+        _loading = false;
+    }
+
+    // Build donut segments (circumference = 100). Offset shifts each segment to
+    // start where the previous ended; the <g> is rotated -90° to begin at top.
+    private record Seg(string Color, double Len, double Offset);
+
+    private List<Seg> Donut(params (string Color, int Val)[] parts)
+    {
+        int total = parts.Sum(p => p.Val);
+        var list = new List<Seg>();
+        double cumulative = 0;
+        foreach (var p in parts)
+        {
+            if (p.Val <= 0) continue;
+            double len = total == 0 ? 0 : (double)p.Val / total * 100;
+            list.Add(new Seg(p.Color, len, -cumulative));
+            cumulative += len;
+        }
+        return list;
+    }
+}

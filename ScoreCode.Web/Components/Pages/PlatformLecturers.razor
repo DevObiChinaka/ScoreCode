@@ -1,0 +1,106 @@
+@page "/platform/lecturers"
+@layout DashboardLayout
+@inject ApiClient Api
+@inject WebAuthState Auth
+@inject NavigationManager Nav
+
+<div class="pagehead">
+    <div><h1>Lecturers</h1><div class="sub">@_all.Count lecturer(s) across all institutions</div></div>
+</div>
+
+@if (_loading)
+{
+    <p class="muted">Loading…</p>
+}
+else if (_all.Count == 0)
+{
+    <div class="empty"><div class="big">No lecturers yet</div>Lecturers created by institutions will appear here.</div>
+}
+else
+{
+    <div class="toolbar">
+        <div class="searchbox">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+            <input placeholder="Search by name, staff ID or department…" @bind="_search" @bind:event="oninput" />
+        </div>
+        <select style="width:auto;min-width:220px" @bind="_inst">
+            <option value="">All institutions</option>
+            @foreach (var name in _all.Select(u => u.InstitutionName).Where(n => !string.IsNullOrWhiteSpace(n)).Distinct().OrderBy(n => n))
+            {
+                <option value="@name">@name</option>
+            }
+        </select>
+    </div>
+
+    @if (!Filtered.Any())
+    {
+        <div class="empty"><div class="big">No matching lecturers</div>Try a different search or institution.</div>
+    }
+    else
+    {
+        <div class="tablewrap">
+            <table>
+                <thead><tr><th>Name</th><th>Staff ID</th><th>Institution</th><th>Department</th><th>Status</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var l in Filtered)
+                    {
+                        <tr>
+                            <td class="primary">@(string.IsNullOrWhiteSpace(l.Name) ? "—" : l.Name)</td>
+                            <td class="mono">@l.IdNumber</td>
+                            <td>@l.InstitutionName</td>
+                            <td>@(string.IsNullOrWhiteSpace(l.Department) ? "—" : l.Department)</td>
+                            <td><span class="badge @(l.IsActive ? "active" : "inactive")">@(l.IsActive ? "Active" : "Inactive")</span></td>
+                            <td class="row-actions"><button class="btn btn-sm btn-outline" @onclick="() => ResetPassword(l)">Reset password</button></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+
+@if (_resetPwd is not null)
+{
+    <div class="modal-backdrop">
+        <div class="modal">
+            <h2>Password reset</h2>
+            <p class="muted small" style="margin:6px 0 12px">New temporary password for <b>@_resetName</b>. Share it securely — shown only once.</p>
+            <label>Temporary password</label>
+            <div class="cred">@_resetPwd</div>
+            <button class="btn block" style="margin-top:18px" @onclick="() => _resetPwd = null">Done</button>
+        </div>
+    </div>
+}
+
+@code {
+    private List<UserDto> _all = new();
+    private bool _loading = true;
+    private string _search = "";
+    private string _inst = "";
+    private string? _resetPwd;
+    private string? _resetName;
+
+    private IEnumerable<UserDto> Filtered => _all
+        .Where(u => _inst.Length == 0 || u.InstitutionName == _inst)
+        .Where(u => _search.Length == 0
+            || (u.Name ?? "").Contains(_search, StringComparison.OrdinalIgnoreCase)
+            || (u.IdNumber ?? "").Contains(_search, StringComparison.OrdinalIgnoreCase)
+            || (u.Department ?? "").Contains(_search, StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Auth.IsPlatformAdmin) { Nav.NavigateTo("/login"); return; }
+        _all = await Api.GetUsersAsync("Lecturer");
+        _loading = false;
+    }
+
+    private async Task ResetPassword(UserDto u)
+    {
+        var temp = await Api.ResetUserPasswordAsync(u.Id);
+        if (temp is not null)
+        {
+            _resetName = string.IsNullOrWhiteSpace(u.Name) ? u.IdNumber : u.Name;
+            _resetPwd = temp;
+        }
+    }
+}

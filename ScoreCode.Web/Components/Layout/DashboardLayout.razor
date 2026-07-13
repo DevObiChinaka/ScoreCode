@@ -18,7 +18,10 @@
             @if (Auth.IsPlatformAdmin)
             {
                 <NavLink class="navitem" href="/platform" Match="NavLinkMatch.All"><span class="dot"></span>Overview</NavLink>
+                <NavLink class="navitem" href="/platform/analytics"><span class="dot"></span>Analytics</NavLink>
                 <NavLink class="navitem" href="/platform/institutions"><span class="dot"></span>Institutions</NavLink>
+                <NavLink class="navitem" href="/platform/lecturers"><span class="dot"></span>Lecturers</NavLink>
+                <NavLink class="navitem" href="/platform/students"><span class="dot"></span>Students</NavLink>
             }
             @if (Auth.IsInstitutionAdmin)
             {

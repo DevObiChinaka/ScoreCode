@@ -53,11 +53,11 @@ public class UsersController : ControllerBase
         }
     }
 
-    // GET /api/v1/users?role=Lecturer
+    // GET /api/v1/users?role=Lecturer&institutionId=...  (institutionId: platform admin only)
     [HttpGet]
-    public async Task<IActionResult> GetUsers([FromQuery] string? role)
+    public async Task<IActionResult> GetUsers([FromQuery] string? role, [FromQuery] Guid? institutionId)
     {
-        var result = await _users.GetUsersAsync(role);
+        var result = await _users.GetUsersAsync(role, institutionId);
         return Ok(ApiResponse<List<UserDto>>.Ok(result));
     }
 

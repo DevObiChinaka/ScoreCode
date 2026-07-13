@@ -119,10 +119,13 @@ public class ApiClient
     }
 
     // ── Users (institution admin) ─────────────────────────────────────────────
-    public async Task<List<UserDto>> GetUsersAsync(string? role)
+    public async Task<List<UserDto>> GetUsersAsync(string? role, Guid? institutionId = null)
     {
         Authorize();
-        var url = string.IsNullOrEmpty(role) ? "/api/v1/users" : $"/api/v1/users?role={role}";
+        var qs = new List<string>();
+        if (!string.IsNullOrEmpty(role)) qs.Add($"role={role}");
+        if (institutionId.HasValue) qs.Add($"institutionId={institutionId}");
+        var url = "/api/v1/users" + (qs.Count > 0 ? "?" + string.Join("&", qs) : "");
         var body = await _http.GetFromJsonAsync<ApiResponse<List<UserDto>>>(url);
         return body?.Data ?? [];
     }

@@ -10,18 +10,9 @@
 
 <div class="stats">
     <div class="stat"><div class="n teal">@_all.Count</div><div class="l">Institutions</div></div>
+    <div class="stat"><div class="n warn">@Count("Pending")</div><div class="l">Pending review</div></div>
     <div class="stat"><div class="n">@(_dash?.TotalStudents ?? 0)</div><div class="l">Students</div></div>
     <div class="stat"><div class="n">@(_dash?.TotalLecturers ?? 0)</div><div class="l">Lecturers</div></div>
-    <div class="stat"><div class="n">@(_dash?.TotalExams ?? 0)</div><div class="l">Exams</div></div>
-    <div class="stat"><div class="n ok">@(_dash?.ActiveExams ?? 0)</div><div class="l">Active exams</div></div>
-    <div class="stat"><div class="n">@(_dash?.TotalSubmissions ?? 0)</div><div class="l">Submissions</div></div>
-</div>
-
-<div class="metarow">
-    <span class="badge pending">@Count("Pending") pending</span>
-    <span class="badge approved">@Count("Approved") approved</span>
-    @if (Count("Suspended") > 0) { <span class="badge suspended">@Count("Suspended") suspended</span> }
-    @if (!string.IsNullOrEmpty(TypeSummary)) { <span class="muted small" style="margin-left:4px">@TypeSummary</span> }
 </div>
 
 <div class="section-title">Awaiting approval</div>
@@ -54,28 +45,25 @@ else
     </div>
 }
 
-@if (_dash is not null && _dash.TopInstitutions.Any())
-{
-    <div class="section-title">Most active institutions</div>
-    <div class="tablewrap">
-        <table>
-            <thead><tr><th>Institution</th><th>Type</th><th style="text-align:right">Students</th><th style="text-align:right">Lecturers</th><th style="text-align:right">Exams</th><th>Status</th></tr></thead>
-            <tbody>
-                @foreach (var t in _dash.TopInstitutions)
-                {
-                    <tr>
-                        <td><a href="/platform/institutions/@t.Id">@t.Name</a></td>
-                        <td class="muted">@t.Type</td>
-                        <td class="mono" style="text-align:right">@t.Students</td>
-                        <td class="mono" style="text-align:right">@t.Lecturers</td>
-                        <td class="mono" style="text-align:right">@t.Exams</td>
-                        <td><span class="badge @t.Status.ToLowerInvariant()">@t.Status</span></td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-}
+<div class="section-title">Explore</div>
+<div class="quick">
+    <a href="/platform/analytics">
+        <div class="t">Analytics</div>
+        <div class="d">Platform-wide charts: people, institution status, enrolment and activity.</div>
+    </a>
+    <a href="/platform/institutions">
+        <div class="t">Institutions</div>
+        <div class="d">Approve, suspend or drill into any registered school.</div>
+    </a>
+    <a href="/platform/lecturers">
+        <div class="t">Lecturers</div>
+        <div class="d">Every lecturer across institutions, with password resets.</div>
+    </a>
+    <a href="/platform/students">
+        <div class="t">Students</div>
+        <div class="d">Every student across institutions, filterable by school.</div>
+    </a>
+</div>
 
 @code {
     private List<InstitutionDto> _all = new();
@@ -84,11 +72,6 @@ else
 
     private IEnumerable<InstitutionDto> Pending => _all.Where(i => i.Status == "Pending");
     private int Count(string s) => _all.Count(i => i.Status == s);
-
-    private string TypeSummary => string.Join("  ·  ", _all
-        .GroupBy(i => string.IsNullOrWhiteSpace(i.Type) ? "Other" : i.Type)
-        .OrderByDescending(g => g.Count())
-        .Select(g => $"{g.Count()} {g.Key}"));
 
     protected override async Task OnInitializedAsync()
     {
