@@ -129,7 +129,7 @@ public partial class HomeView : UserControl
                 Text = "You have no exams available right now. This page updates when your lecturer schedules one.",
                 FontSize = 14, Foreground = ThemeManager.GetBrush("ThTextSecondary"),
                 TextWrapping = TextWrapping.Wrap, MaxWidth = 460, Margin = new Thickness(0, 10, 0, 0),
-                FontFamily = Font()
+                HorizontalAlignment = HorizontalAlignment.Left, FontFamily = Font()
             });
             grid.Children.Add(left);
 

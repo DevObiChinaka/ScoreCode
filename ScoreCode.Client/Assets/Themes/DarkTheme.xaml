@@ -4,14 +4,14 @@
     <!-- ══════ DARK THEME (design-system palette) ══════ -->
 
     <!-- Surfaces -->
-    <Color x:Key="ThBgBase">#0D1015</Color>
-    <Color x:Key="ThBgElev">#12161E</Color>
-    <Color x:Key="ThBgSidebar">#161B24</Color>
-    <Color x:Key="ThBgPanel">#161B24</Color>
-    <Color x:Key="ThBgSurface">#1C222D</Color>
-    <Color x:Key="ThBgSurface2">#1C222D</Color>
-    <Color x:Key="ThBgInput">#12161E</Color>
-    <Color x:Key="ThBgHover">#1C222D</Color>
+    <Color x:Key="ThBgBase">#090B10</Color>
+    <Color x:Key="ThBgElev">#11151D</Color>
+    <Color x:Key="ThBgSidebar">#12161F</Color>
+    <Color x:Key="ThBgPanel">#141922</Color>
+    <Color x:Key="ThBgSurface">#1B212C</Color>
+    <Color x:Key="ThBgSurface2">#1B212C</Color>
+    <Color x:Key="ThBgInput">#11151D</Color>
+    <Color x:Key="ThBgHover">#1B212C</Color>
 
     <!-- Accent -->
     <Color x:Key="ThAccent">#3B74F0</Color>
