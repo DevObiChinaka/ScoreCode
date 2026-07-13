@@ -1,0 +1,97 @@
+@page "/institution/exams"
+@layout DashboardLayout
+@inject ApiClient Api
+@inject WebAuthState Auth
+@inject NavigationManager Nav
+
+<div class="pagehead">
+    <div><h1>Exams</h1><div class="sub">Exams created by your lecturers</div></div>
+</div>
+
+@if (_loading)
+{
+    <p class="muted">Loading…</p>
+}
+else if (_exams.Count == 0)
+{
+    <div class="empty"><div class="big">No exams yet</div>Exams your lecturers create will appear here.</div>
+}
+else
+{
+    <div class="stats">
+        <div class="stat"><div class="n teal">@_exams.Count</div><div class="l">Total exams</div></div>
+        <div class="stat"><div class="n ok">@_exams.Count(e => e.Status == "Active")</div><div class="l">Active</div></div>
+        <div class="stat"><div class="n">@_exams.Sum(e => e.StudentCount)</div><div class="l">Assigned seats</div></div>
+        <div class="stat"><div class="n">@_exams.Sum(e => e.SubmissionCount)</div><div class="l">Submissions</div></div>
+    </div>
+
+    <div class="toolbar">
+        <div class="searchbox">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+            <input placeholder="Search by exam, course or lecturer…" @bind="_search" @bind:event="oninput" />
+        </div>
+        <div class="tabs">
+            <button class="@(_filter=="all"?"active":"")" @onclick='() => _filter="all"'>All <span class="cnt">@_exams.Count</span></button>
+            <button class="@(_filter=="Active"?"active":"")" @onclick='() => _filter="Active"'>Active <span class="cnt">@_exams.Count(e => e.Status=="Active")</span></button>
+            <button class="@(_filter=="Draft"?"active":"")" @onclick='() => _filter="Draft"'>Draft <span class="cnt">@_exams.Count(e => e.Status=="Draft")</span></button>
+            <button class="@(_filter=="Closed"?"active":"")" @onclick='() => _filter="Closed"'>Closed <span class="cnt">@_exams.Count(e => e.Status=="Closed")</span></button>
+        </div>
+    </div>
+
+    @if (!Filtered.Any())
+    {
+        <div class="empty"><div class="big">No matching exams</div>Try a different search or filter.</div>
+    }
+    else
+    {
+        <div class="tablewrap">
+            <table>
+                <thead>
+                    <tr><th>Exam</th><th>Lecturer</th><th style="text-align:right">Students</th><th style="text-align:right">Submitted</th><th>Scheduled</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var e in Filtered)
+                    {
+                        <tr>
+                            <td><div class="primary">@e.Title</div><div class="mono">@e.CourseCode</div></td>
+                            <td>@e.LecturerName</td>
+                            <td class="mono" style="text-align:right">@e.StudentCount</td>
+                            <td class="mono" style="text-align:right">@e.SubmissionCount</td>
+                            <td class="mono">@e.ScheduledAt.ToLocalTime().ToString("dd MMM yyyy · HH:mm")</td>
+                            <td><span class="badge @StatusClass(e.Status)">@e.Status</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+
+@code {
+    private List<InstitutionExamDto> _exams = new();
+    private bool _loading = true;
+    private string _search = "";
+    private string _filter = "all";
+
+    private IEnumerable<InstitutionExamDto> Filtered => _exams
+        .Where(e => _filter == "all" || e.Status == _filter)
+        .Where(e => _search.Length == 0
+            || e.Title.Contains(_search, StringComparison.OrdinalIgnoreCase)
+            || e.CourseCode.Contains(_search, StringComparison.OrdinalIgnoreCase)
+            || (e.LecturerName ?? "").Contains(_search, StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Auth.IsInstitutionAdmin) { Nav.NavigateTo("/login"); return; }
+        _exams = await Api.GetInstitutionExamsAsync();
+        _loading = false;
+    }
+
+    private static string StatusClass(string s) => s switch
+    {
+        "Active" => "approved",
+        "Draft" => "pending",
+        "Closed" => "suspended",
+        _ => "inactive"
+    };
+}

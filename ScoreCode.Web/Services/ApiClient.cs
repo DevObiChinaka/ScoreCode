@@ -56,6 +56,13 @@ public class ApiClient
         return body?.Data;
     }
 
+    public async Task<List<InstitutionExamDto>> GetInstitutionExamsAsync()
+    {
+        Authorize();
+        var body = await _http.GetFromJsonAsync<ApiResponse<List<InstitutionExamDto>>>("/api/v1/dashboard/institution/exams");
+        return body?.Data ?? [];
+    }
+
     public async Task<InstitutionDetailDto?> GetInstitutionDetailAsync(Guid id)
     {
         Authorize();

@@ -42,7 +42,7 @@ else
                 @foreach (var i in Pending.OrderBy(i => i.CreatedAt))
                 {
                     <tr>
-                        <td><div class="primary">@i.Name</div><div class="mono">@i.Prefix</div></td>
+                        <td><a href="/platform/institutions/@i.Id" class="primary">@i.Name</a><div class="mono">@i.Prefix</div></td>
                         <td>@i.Type</td>
                         <td>@(string.IsNullOrWhiteSpace(i.ContactPerson) ? "" : i.ContactPerson)<div class="mono">@i.ContactEmail</div></td>
                         <td class="mono">@i.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")</td>
@@ -64,7 +64,7 @@ else
                 @foreach (var t in _dash.TopInstitutions)
                 {
                     <tr>
-                        <td class="primary">@t.Name</td>
+                        <td><a href="/platform/institutions/@t.Id">@t.Name</a></td>
                         <td class="muted">@t.Type</td>
                         <td class="mono" style="text-align:right">@t.Students</td>
                         <td class="mono" style="text-align:right">@t.Lecturers</td>

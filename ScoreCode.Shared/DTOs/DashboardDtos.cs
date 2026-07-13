@@ -65,10 +65,24 @@ public class PlatformDashboardDto
 
 public class TopInstitutionDto
 {
+    public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Type { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public int Students { get; set; }
     public int Lecturers { get; set; }
     public int Exams { get; set; }
+}
+
+/// <summary>Institution-admin oversight of an exam created by one of its lecturers.</summary>
+public class InstitutionExamDto
+{
+    public Guid Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string CourseCode { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public string LecturerName { get; set; } = string.Empty;
+    public int StudentCount { get; set; }
+    public int SubmissionCount { get; set; }
+    public DateTime ScheduledAt { get; set; }
 }

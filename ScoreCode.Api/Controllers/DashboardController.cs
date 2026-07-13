@@ -223,6 +223,7 @@ public class DashboardController : ControllerBase
                 var ec = examCounts.FirstOrDefault(x => x.InstitutionId == i.Id);
                 return new TopInstitutionDto
                 {
+                    Id = i.Id,
                     Name = i.Name,
                     Type = i.Type,
                     Status = i.Status,
@@ -251,5 +252,52 @@ public class DashboardController : ControllerBase
         };
 
         return Ok(ApiResponse<PlatformDashboardDto>.Ok(dto));
+    }
+
+    // GET /api/v1/dashboard/institution/exams
+    // Institution admin oversight: exams created by their lecturers + counts.
+    [HttpGet("institution/exams")]
+    [Authorize(Roles = Constants.Roles.InstitutionAdmin)]
+    public async Task<IActionResult> GetInstitutionExams()
+    {
+        // Tenant filter scopes every query below to the admin's own institution.
+        var exams = await _db.Exams.OrderByDescending(e => e.ScheduledAt).ToListAsync();
+        if (exams.Count == 0)
+            return Ok(ApiResponse<List<InstitutionExamDto>>.Ok(new()));
+
+        var examIds = exams.Select(e => e.Id).ToList();
+        var lecturerIds = exams.Select(e => e.LecturerId).Distinct().ToList();
+
+        var lecturers = await _db.Users
+            .Where(u => lecturerIds.Contains(u.Id))
+            .ToDictionaryAsync(u => u.Id, u => u.Name);
+
+        var studentCounts = (await _db.ExamStudents
+            .Where(es => examIds.Contains(es.ExamId))
+            .Select(es => es.ExamId)
+            .ToListAsync())
+            .GroupBy(x => x).ToDictionary(g => g.Key, g => g.Count());
+
+        var submissions = await _db.Submissions
+            .Where(s => examIds.Contains(s.ExamId))
+            .Select(s => new { s.ExamId, s.StudentId })
+            .ToListAsync();
+        var submissionCounts = submissions
+            .GroupBy(s => s.ExamId)
+            .ToDictionary(g => g.Key, g => g.Select(x => x.StudentId).Distinct().Count());
+
+        var dto = exams.Select(e => new InstitutionExamDto
+        {
+            Id = e.Id,
+            Title = e.Title,
+            CourseCode = e.CourseCode,
+            Status = e.Status,
+            LecturerName = lecturers.TryGetValue(e.LecturerId, out var n) && !string.IsNullOrWhiteSpace(n) ? n : "—",
+            StudentCount = studentCounts.GetValueOrDefault(e.Id),
+            SubmissionCount = submissionCounts.GetValueOrDefault(e.Id),
+            ScheduledAt = e.ScheduledAt
+        }).ToList();
+
+        return Ok(ApiResponse<List<InstitutionExamDto>>.Ok(dto));
     }
 }
