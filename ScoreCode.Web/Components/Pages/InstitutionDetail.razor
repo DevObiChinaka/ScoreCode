@@ -1,0 +1,171 @@
+@page "/platform/institutions/{Id:guid}"
+@layout DashboardLayout
+@inject ApiClient Api
+@inject WebAuthState Auth
+@inject NavigationManager Nav
+
+@if (_loading)
+{
+    <p class="muted">Loading…</p>
+}
+else if (_detail is null)
+{
+    <div class="empty"><div class="big">Institution not found</div><a href="/platform/institutions">Back to institutions</a></div>
+}
+else
+{
+    var i = _detail.Institution;
+
+    <div style="margin-bottom:6px"><a class="linkbtn" href="/platform/institutions">← Institutions</a></div>
+    <div class="pagehead">
+        <div>
+            <h1>@i.Name</h1>
+            <div class="sub">@i.Type · <span class="mono">@i.Prefix</span> · @i.ContactEmail</div>
+        </div>
+        <div class="row-actions">
+            <span class="badge @i.Status.ToLowerInvariant()">@i.Status</span>
+            @if (i.Status == "Approved")
+            {
+                <button class="btn btn-sm btn-ghost" @onclick="Suspend">Suspend</button>
+            }
+            else if (i.Status == "Suspended")
+            {
+                <button class="btn btn-sm" @onclick="Reactivate">Reactivate</button>
+            }
+        </div>
+    </div>
+
+    <div class="stats">
+        <div class="stat"><div class="n teal">@_detail.Lecturers</div><div class="l">Lecturers</div></div>
+        <div class="stat"><div class="n">@_detail.Students</div><div class="l">Students</div></div>
+        <div class="stat"><div class="n">@_detail.Exams</div><div class="l">Exams</div></div>
+        <div class="stat"><div class="n">@i.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")</div><div class="l">Registered</div></div>
+    </div>
+
+    <div class="section-title">Institution admin</div>
+    @if (_detail.Admin is null)
+    {
+        <div class="empty" style="padding:36px"><div class="big">No admin account</div>This institution has no admin yet.</div>
+    }
+    else
+    {
+        <div class="listcard">
+            <div class="listrow">
+                <div class="avatar">@Init(_detail.Admin.Name, _detail.Admin.IdNumber)</div>
+                <div class="rmain">
+                    <div class="rtitle">@(string.IsNullOrWhiteSpace(_detail.Admin.Name) ? "Institution Admin" : _detail.Admin.Name)</div>
+                    <div class="rmeta mono">@_detail.Admin.IdNumber</div>
+                </div>
+                <span class="badge @(_detail.Admin.IsActive ? "active" : "inactive")">@(_detail.Admin.IsActive ? "Active" : "Inactive")</span>
+                <button class="btn btn-sm btn-outline" @onclick="() => ResetAdmin()">Reset password</button>
+            </div>
+        </div>
+    }
+
+    <div class="grid-2" style="margin-top:8px">
+        <div>
+            <div class="section-title">Recent lecturers</div>
+            @if (!_detail.RecentLecturers.Any())
+            {
+                <div class="empty" style="padding:32px"><div class="big">No lecturers</div></div>
+            }
+            else
+            {
+                <div class="listcard">
+                    @foreach (var l in _detail.RecentLecturers)
+                    {
+                        <div class="listrow">
+                            <div class="avatar">@Init(l.Name, l.IdNumber)</div>
+                            <div class="rmain">
+                                <div class="rtitle">@(string.IsNullOrWhiteSpace(l.Name) ? l.IdNumber : l.Name)</div>
+                                <div class="rmeta mono">@l.IdNumber@(string.IsNullOrWhiteSpace(l.Department) ? "" : $" · {l.Department}")</div>
+                            </div>
+                            <span class="badge @(l.IsActive ? "active" : "inactive")">@(l.IsActive ? "Active" : "Inactive")</span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+        <div>
+            <div class="section-title">Recent students</div>
+            @if (!_detail.RecentStudents.Any())
+            {
+                <div class="empty" style="padding:32px"><div class="big">No students</div></div>
+            }
+            else
+            {
+                <div class="listcard">
+                    @foreach (var s in _detail.RecentStudents)
+                    {
+                        <div class="listrow">
+                            <div class="avatar">@Init(s.Name, s.IdNumber)</div>
+                            <div class="rmain">
+                                <div class="rtitle mono">@s.IdNumber</div>
+                                <div class="rmeta">@(string.IsNullOrWhiteSpace(s.ProgrammeOfStudy) ? "—" : s.ProgrammeOfStudy)@(string.IsNullOrWhiteSpace(s.Level) ? "" : $" · Level {s.Level}")</div>
+                            </div>
+                            <span class="badge @(s.IsActive ? "active" : "inactive")">@(s.IsActive ? "Active" : "Inactive")</span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@if (_resetPwd is not null)
+{
+    <div class="modal-backdrop">
+        <div class="modal">
+            <h2>Admin password reset</h2>
+            <p class="muted small" style="margin:6px 0 12px">New temporary password for <b>@_resetName</b>. Share it securely — it's shown only once.</p>
+            <label>Temporary password</label>
+            <div class="cred">@_resetPwd</div>
+            <button class="btn block" style="margin-top:18px" @onclick="() => _resetPwd = null">Done</button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private InstitutionDetailDto? _detail;
+    private bool _loading = true;
+    private string? _resetPwd;
+    private string? _resetName;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Auth.IsPlatformAdmin) { Nav.NavigateTo("/login"); return; }
+        await Load();
+    }
+
+    private async Task Load()
+    {
+        _loading = true;
+        _detail = await Api.GetInstitutionDetailAsync(Id);
+        _loading = false;
+    }
+
+    private async Task Suspend() { await Api.SuspendInstitutionAsync(Id); await Load(); }
+    private async Task Reactivate() { await Api.ReactivateInstitutionAsync(Id); await Load(); }
+
+    private async Task ResetAdmin()
+    {
+        if (_detail?.Admin is null) return;
+        var temp = await Api.ResetUserPasswordAsync(_detail.Admin.Id);
+        if (temp is not null)
+        {
+            _resetName = _detail.Admin.IdNumber;
+            _resetPwd = temp;
+        }
+    }
+
+    private static string Init(string? name, string id)
+    {
+        var basis = string.IsNullOrWhiteSpace(name) ? id : name;
+        var parts = basis.Split(new[] { ' ', '/', '-' }, StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length >= 2
+            ? $"{char.ToUpperInvariant(parts[0][0])}{char.ToUpperInvariant(parts[1][0])}"
+            : basis.Length >= 2 ? basis[..2].ToUpperInvariant() : basis.ToUpperInvariant();
+    }
+}

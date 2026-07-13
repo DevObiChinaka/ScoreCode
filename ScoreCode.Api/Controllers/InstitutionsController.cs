@@ -46,6 +46,17 @@ public class InstitutionsController : ControllerBase
         return Ok(ApiResponse<List<InstitutionDto>>.Ok(list));
     }
 
+    // GET /api/v1/institutions/{id}/detail — platform admin drill-down
+    [HttpGet("{id:guid}/detail")]
+    [Authorize(Roles = Constants.Roles.PlatformOrAdmin)]
+    public async Task<IActionResult> Detail(Guid id)
+    {
+        var detail = await _svc.GetDetailAsync(id);
+        return detail is null
+            ? NotFound(ApiResponse<object>.Fail("not_found", "Institution not found."))
+            : Ok(ApiResponse<InstitutionDetailDto>.Ok(detail));
+    }
+
     // POST /api/v1/institutions/{id}/approve — platform admin
     [HttpPost("{id:guid}/approve")]
     [Authorize(Roles = Constants.Roles.PlatformOrAdmin)]

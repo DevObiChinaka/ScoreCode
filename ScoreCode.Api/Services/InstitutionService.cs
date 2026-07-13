@@ -5,6 +5,7 @@ using ScoreCode.Database;
 using ScoreCode.Database.Entities;
 using ScoreCode.Shared;
 using ScoreCode.Shared.DTOs.Institutions;
+using ScoreCode.Shared.DTOs.Users;
 
 namespace ScoreCode.Api.Services;
 
@@ -176,5 +177,43 @@ public class InstitutionService : IInstitutionService
         ContactEmail = i.ContactEmail, ContactPerson = i.ContactPerson,
         Status = i.Status, CreatedAt = i.CreatedAt,
         ApprovedAt = i.ApprovedAt, RejectionReason = i.RejectionReason
+    };
+
+    // Platform-admin drill-down. IgnoreQueryFilters so we read the target
+    // institution's data regardless of the caller's (absent) tenant scope.
+    public async Task<InstitutionDetailDto?> GetDetailAsync(Guid institutionId)
+    {
+        var inst = await _db.Institutions.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(i => i.Id == institutionId);
+        if (inst is null) return null;
+
+        var users = await _db.Users.IgnoreQueryFilters()
+            .Where(u => u.InstitutionId == institutionId)
+            .ToListAsync();
+
+        var examCount = await _db.Exams.IgnoreQueryFilters()
+            .CountAsync(e => e.InstitutionId == institutionId);
+
+        var admin = users.FirstOrDefault(u => u.Role == Constants.Roles.InstitutionAdmin);
+        var lecturers = users.Where(u => u.Role == Constants.Roles.Lecturer).ToList();
+        var students = users.Where(u => u.Role == Constants.Roles.Student).ToList();
+
+        return new InstitutionDetailDto
+        {
+            Institution = ToDto(inst),
+            Admin = admin is null ? null : ToUserDto(admin),
+            Lecturers = lecturers.Count,
+            Students = students.Count,
+            Exams = examCount,
+            RecentLecturers = lecturers.OrderByDescending(u => u.CreatedAt).Take(6).Select(ToUserDto).ToList(),
+            RecentStudents = students.OrderByDescending(u => u.CreatedAt).Take(6).Select(ToUserDto).ToList()
+        };
+    }
+
+    private static UserDto ToUserDto(User u) => new()
+    {
+        Id = u.Id, Name = u.Name, IdNumber = u.IdNumber, Role = u.Role,
+        Department = u.Department, ProgrammeOfStudy = u.ProgrammeOfStudy,
+        Level = u.Level, IsActive = u.IsActive, CreatedAt = u.CreatedAt
     };
 }

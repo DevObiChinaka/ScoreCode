@@ -13,6 +13,9 @@ public interface IInstitutionService
     /// <summary>Platform admin: list institutions, optionally filtered by status.</summary>
     Task<List<InstitutionDto>> GetAllAsync(string? status);
 
+    /// <summary>Platform admin: full drill-down for one institution (admin, counts, recent users).</summary>
+    Task<InstitutionDetailDto?> GetDetailAsync(Guid institutionId);
+
     /// <summary>
     /// Platform admin: approve a pending institution, provisioning its first
     /// institution-admin account. Returns the credentials once, or null if the

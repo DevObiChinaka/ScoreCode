@@ -41,7 +41,7 @@ else
                 @foreach (var i in Filtered)
                 {
                     <tr>
-                        <td>@i.Name</td>
+                        <td><a href="/platform/institutions/@i.Id">@i.Name</a></td>
                         <td>@i.Type</td>
                         <td>@i.Prefix</td>
                         <td>@i.ContactPerson<br /><span class="muted small">@i.ContactEmail</span></td>
