@@ -5,7 +5,7 @@
 @inject NavigationManager Nav
 
 <div class="pagehead">
-    <div><h1>Students</h1><div class="sub">@_all.Count student(s) across all institutions</div></div>
+    <div><h1>Students</h1><div class="sub">@_all.Count student(s) across @InstitutionCount institution(s)</div></div>
 </div>
 
 @if (_loading)
@@ -25,7 +25,7 @@ else
         </div>
         <select style="width:auto;min-width:220px" @bind="_inst">
             <option value="">All institutions</option>
-            @foreach (var name in _all.Select(u => u.InstitutionName).Where(n => !string.IsNullOrWhiteSpace(n)).Distinct().OrderBy(n => n))
+            @foreach (var name in _all.Select(u => Inst(u)).Distinct().OrderBy(n => n))
             {
                 <option value="@name">@name</option>
             }
@@ -38,24 +38,41 @@ else
     }
     else
     {
-        <div class="tablewrap">
-            <table>
-                <thead><tr><th>Matric Number</th><th>Institution</th><th>Programme</th><th>Level</th><th>Status</th><th></th></tr></thead>
-                <tbody>
-                    @foreach (var s in Filtered)
-                    {
-                        <tr>
-                            <td class="mono primary">@s.IdNumber</td>
-                            <td>@s.InstitutionName</td>
-                            <td>@(string.IsNullOrWhiteSpace(s.ProgrammeOfStudy) ? "—" : s.ProgrammeOfStudy)</td>
-                            <td>@(string.IsNullOrWhiteSpace(s.Level) ? "—" : s.Level)</td>
-                            <td><span class="badge @(s.IsActive ? "active" : "inactive")">@(s.IsActive ? "Active" : "Inactive")</span></td>
-                            <td class="row-actions"><button class="btn btn-sm btn-outline" @onclick="() => ResetPassword(s)">Reset password</button></td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+        @foreach (var inst in Filtered.GroupBy(Inst).OrderBy(g => g.Key))
+        {
+            var open = IsOpen(inst.Key);
+            <div class="group">
+                <button class="group-head @(open ? "open" : "")" @onclick="() => Toggle(inst.Key)">
+                    <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+                    <span class="gtitle">@inst.Key</span>
+                    <span class="gmeta">· @inst.Select(s => Prog(s)).Distinct().Count() programme(s)</span>
+                    <span class="gcount">@inst.Count()</span>
+                </button>
+                @if (open)
+                {
+                    <div class="group-body">
+                        @foreach (var sub in inst.GroupBy(s => (Programme: Prog(s), Level: Lvl(s)))
+                                                  .OrderBy(g => g.Key.Programme).ThenBy(g => g.Key.Level))
+                        {
+                            <div class="subgroup">
+                                <div class="subgroup-head">
+                                    <span>@sub.Key.Programme · @sub.Key.Level</span>
+                                    <span class="sgcount">@sub.Count()</span>
+                                </div>
+                                @foreach (var s in sub.OrderBy(x => x.IdNumber))
+                                {
+                                    <div class="prow">
+                                        <div class="pmain"><div class="pid">@s.IdNumber</div></div>
+                                        <span class="badge @(s.IsActive ? "active" : "inactive")">@(s.IsActive ? "Active" : "Inactive")</span>
+                                        <button class="btn btn-sm btn-outline" @onclick="() => ResetPassword(s)">Reset password</button>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
     }
 }
 
@@ -79,9 +96,23 @@ else
     private string _inst = "";
     private string? _resetPwd;
     private string? _resetName;
+    private readonly HashSet<string> _collapsed = new();
+
+    private static string Inst(UserDto u) => string.IsNullOrWhiteSpace(u.InstitutionName) ? "Unassigned" : u.InstitutionName;
+    private static string Prog(UserDto u) => string.IsNullOrWhiteSpace(u.ProgrammeOfStudy) ? "Unspecified programme" : u.ProgrammeOfStudy;
+    private static string Lvl(UserDto u) => string.IsNullOrWhiteSpace(u.Level) ? "No level" : $"Level {u.Level}";
+
+    private int InstitutionCount => _all.Select(Inst).Distinct().Count();
+
+    // Groups are open by default; searching keeps everything open so matches show.
+    private bool IsOpen(string key) => _search.Length > 0 || !_collapsed.Contains(key);
+    private void Toggle(string key)
+    {
+        if (!_collapsed.Remove(key)) _collapsed.Add(key);
+    }
 
     private IEnumerable<UserDto> Filtered => _all
-        .Where(u => _inst.Length == 0 || u.InstitutionName == _inst)
+        .Where(u => _inst.Length == 0 || Inst(u) == _inst)
         .Where(u => _search.Length == 0
             || (u.IdNumber ?? "").Contains(_search, StringComparison.OrdinalIgnoreCase)
             || (u.ProgrammeOfStudy ?? "").Contains(_search, StringComparison.OrdinalIgnoreCase));

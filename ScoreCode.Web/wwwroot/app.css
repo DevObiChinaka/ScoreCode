@@ -140,8 +140,8 @@ select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,va
 .sidebar-signout svg{width:14px;height:14px;flex-shrink:0}
 
 .main{display:flex;flex-direction:column;min-width:0;height:100vh;overflow:hidden}
-.topbar{height:58px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;
-  padding:0 32px;border-bottom:1px solid var(--border);gap:16px}
+.topbar{height:58px;flex-shrink:0;display:flex;align-items:center;justify-content:flex-end;
+  padding:0 32px;border-bottom:1px solid var(--border);gap:14px}
 .topbar .crumb{font-size:13px;color:var(--muted)}
 .scrollarea{flex:1;min-height:0;overflow-y:auto}
 .content{padding:36px 32px 48px;max-width:1120px;width:100%;margin:0 auto}
@@ -239,6 +239,30 @@ td .primary{font-weight:500}
 .legenditem{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text)}
 .legenddot{width:11px;height:11px;border-radius:3px;flex-shrink:0}
 .legendval{margin-left:auto;font-family:'Geist Mono',monospace;color:var(--muted)}
+
+/* ── Grouped directory (institution → programme/level → people) ── */
+.group{border:1px solid var(--border);border-radius:14px;background:var(--panel);margin-bottom:12px;overflow:hidden}
+.group-head{display:flex;align-items:center;gap:11px;width:100%;padding:14px 18px;background:none;border:0;
+  cursor:pointer;font-family:inherit;text-align:left;color:var(--text)}
+.group-head:hover{background:var(--surface-2)}
+.group-head .chev{width:13px;height:13px;color:var(--dim);flex-shrink:0;transition:transform .15s}
+.group-head.open .chev{transform:rotate(90deg)}
+.group-head .gtitle{font-size:14.5px;font-weight:500}
+.group-head .gmeta{font-size:12px;color:var(--muted)}
+.group-head .gcount{margin-left:auto;font-size:12.5px;color:var(--muted);font-family:'Geist Mono',monospace}
+.group-body{border-top:1px solid var(--border)}
+.subgroup{padding:0 18px}
+.subgroup + .subgroup{border-top:1px solid var(--hair)}
+.subgroup-head{display:flex;align-items:center;gap:8px;font-size:11px;font-family:'Geist Mono',monospace;
+  color:var(--dim);text-transform:uppercase;letter-spacing:.05em;padding:13px 0 6px}
+.subgroup-head .sgcount{margin-left:auto;letter-spacing:0}
+.prow{display:flex;align-items:center;gap:12px;padding:9px 0}
+.prow + .prow{border-top:1px solid var(--hair)}
+.subgroup .prow:last-child{padding-bottom:14px}
+.prow .pmain{flex:1;min-width:0}
+.prow .pid{font-family:'Geist Mono',monospace;font-size:13px;color:var(--text)}
+.prow .pname{font-size:13.5px;font-weight:500;color:var(--text)}
+.prow .psub{font-size:11.5px;color:var(--muted);margin-top:2px}
 
 /* List panel (rows inside a card) */
 .listcard{background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden}
