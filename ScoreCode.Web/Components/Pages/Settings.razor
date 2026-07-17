@@ -29,10 +29,23 @@
         {
             <div class="listrow"><div class="rmain"><div class="rmeta">Institution</div></div><span>@_me!.InstitutionName</span></div>
         }
-        @if (!string.IsNullOrWhiteSpace(_me?.Email))
-        {
-            <div class="listrow"><div class="rmain"><div class="rmeta">Recovery email</div></div><span>@_me!.Email</span></div>
-        }
+    </div>
+
+    <div class="section-title">Recovery email</div>
+    <div class="card">
+        <p class="muted small" style="margin:0 0 12px">
+            Used to send you a password-reset code if you ever forget your password.
+            Leave it blank to remove it and reset through an administrator instead.
+        </p>
+        <label>Email address</label>
+        <input type="email" @bind="_email" @bind:event="oninput" placeholder="name@example.com" />
+
+        @if (_emailError is not null) { <div class="error">@_emailError</div> }
+        @if (_emailOk) { <div class="success">Recovery email updated.</div> }
+
+        <button class="btn" style="margin-top:16px" @onclick="SaveEmail" disabled="@(_emailBusy || !EmailChanged)">
+            @(_emailBusy ? "Saving…" : "Save email")
+        </button>
     </div>
 
     <div class="section-title">Security</div>
@@ -93,6 +106,13 @@
     private string? _error;
     private string _theme = "dark";
 
+    private string _email = "";
+    private bool _emailBusy, _emailOk;
+    private string? _emailError;
+
+    // Trailing spaces shouldn't count as a change; compare trimmed against stored.
+    private bool EmailChanged => _email.Trim() != (_me?.Email ?? "");
+
     private string RoleLabel =>
         Auth.IsPlatformAdmin ? "Platform Admin"
         : Auth.IsInstitutionAdmin ? "Institution Admin"
@@ -112,6 +132,21 @@
     {
         if (!Auth.IsAuthenticated) { Nav.NavigateTo("/login"); return; }
         _me = await Api.GetMeAsync();
+        _email = _me?.Email ?? "";
+    }
+
+    private async Task SaveEmail()
+    {
+        _emailError = null; _emailOk = false; _emailBusy = true;
+        var (ok, error) = await Api.UpdateMyEmailAsync(_email.Trim());
+        _emailBusy = false;
+
+        if (ok)
+        {
+            _emailOk = true;
+            if (_me is not null) _me.Email = _email.Trim().Length == 0 ? null : _email.Trim();
+        }
+        else _emailError = error;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

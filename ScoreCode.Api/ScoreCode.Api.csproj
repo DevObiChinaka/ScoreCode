@@ -6,7 +6,8 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<PublishAot>false</PublishAot>
 		<EnableConfigurationBindingGenerator>false</EnableConfigurationBindingGenerator>
-	</PropertyGroup>
+	  <UserSecretsId>5c7d73ed-4144-4273-bcd7-1fd055a738fd</UserSecretsId>
+  </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />

@@ -278,6 +278,27 @@ public class AuthService : IAuthService
             .FirstOrDefaultAsync();
     }
 
+    /// <summary>
+    /// Update the caller's own recovery email. The id comes from the token, so a
+    /// user can only ever change their own. Returns false if the value isn't a
+    /// valid address; a blank value clears it (back to admin-only resets).
+    /// </summary>
+    public async Task<bool> UpdateOwnEmailAsync(Guid userId, string? email)
+    {
+        var normalized = Normalize(email);
+        if (normalized is not null && !IsValidEmail(normalized)) return false;
+
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return false;
+
+        user.Email = normalized;
+        await _db.SaveChangesAsync();
+        return true;
+    }
+
+    private static bool IsValidEmail(string email) =>
+        System.Net.Mail.MailAddress.TryCreate(email, out _);
+
     // ── Private helpers ───────────────────────────────────────────────────────
 
     private async Task<LoginResponse> IssueTokensAsync(User user)

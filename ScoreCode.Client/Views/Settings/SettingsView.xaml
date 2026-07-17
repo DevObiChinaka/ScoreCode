@@ -23,6 +23,9 @@
             <!-- ── Section: Profile ── -->
             <StackPanel x:Name="ProfileSection"/>
 
+            <!-- ── Section: Recovery Email ── -->
+            <StackPanel x:Name="RecoveryEmailSection" Margin="0,26,0,0"/>
+
             <!-- ── Section: Appearance ── -->
             <StackPanel x:Name="AppearanceSection" Margin="0,26,0,0"/>
 

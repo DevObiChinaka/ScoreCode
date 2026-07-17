@@ -24,4 +24,7 @@ public interface IAuthService
 
     /// <summary>The authenticated user's own profile.</summary>
     Task<UserDto?> GetProfileAsync(Guid userId);
+
+    /// <summary>Change the caller's own recovery email. False if it isn't valid.</summary>
+    Task<bool> UpdateOwnEmailAsync(Guid userId, string? email);
 }

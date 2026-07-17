@@ -30,6 +30,7 @@ public partial class SettingsView : UserControl
         _mustChangePassword = mustChangePassword;
 
         BuildProfileSection();
+        BuildRecoveryEmailSection();
         BuildAppearanceSection();
         BuildPasswordSection();
 
@@ -43,11 +44,13 @@ public partial class SettingsView : UserControl
     private void RefreshAllSections()
     {
         ProfileSection.Children.Clear();
+        RecoveryEmailSection.Children.Clear();
         AppearanceSection.Children.Clear();
         PasswordSection.Children.Clear();
         ExamDefaultsSection.Children.Clear();
 
         BuildProfileSection();
+        BuildRecoveryEmailSection();
         BuildAppearanceSection();
         BuildPasswordSection();
         if (_role == "Lecturer") BuildExamDefaultsSection();
@@ -210,6 +213,83 @@ public partial class SettingsView : UserControl
     }
 
     private static string Dash(string? value) => string.IsNullOrWhiteSpace(value) ? "—" : value;
+
+    // ── Recovery Email Section ───────────────────────────────────────────
+    private TextBox? _emailInput;
+    private TextBlock? _emailStatus;
+    private string _currentEmail = string.Empty;
+
+    private void BuildRecoveryEmailSection()
+    {
+        var content = new StackPanel();
+
+        var note = new TextBlock
+        {
+            Text = _role == "Student"
+                ? "Used only to send you a password-reset code. Never shown to lecturers — you stay anonymous. Leave blank to remove it."
+                : "Used to send you a password-reset code if you forget your password. Leave blank to remove it.",
+            TextWrapping = TextWrapping.Wrap, FontSize = 12.5, FontFamily = _font,
+            Foreground = ThemeManager.GetBrush("ThTextSecondary"), Margin = new Thickness(0, 0, 0, 14)
+        };
+        content.Children.Add(note);
+
+        content.Children.Add(MakeLabel("Email Address"));
+        _emailInput = MakeInput("name@example.com");
+        content.Children.Add(_emailInput);
+
+        var btn = MakeButton("Save Email");
+        btn.Click += BtnSaveEmail_Click;
+        content.Children.Add(btn);
+
+        _emailStatus = new TextBlock
+        {
+            FontSize = 12, FontFamily = _font, Margin = new Thickness(0, 10, 0, 0),
+            Visibility = Visibility.Collapsed
+        };
+        content.Children.Add(_emailStatus);
+
+        RecoveryEmailSection.Children.Add(SectionLabel("Recovery Email"));
+        RecoveryEmailSection.Children.Add(MakeCard(content, new Thickness(22, 18, 22, 18)));
+
+        _ = LoadCurrentEmailAsync();
+    }
+
+    private async Task LoadCurrentEmailAsync()
+    {
+        try
+        {
+            var me = (await _api.GetAsync<UserDto>("auth/me"))?.Data;
+            _currentEmail = me?.Email ?? string.Empty;
+            if (_emailInput is not null) _emailInput.Text = _currentEmail;
+        }
+        catch { /* leave blank; the field still saves */ }
+    }
+
+    private async void BtnSaveEmail_Click(object sender, RoutedEventArgs e)
+    {
+        if (_emailInput is null || _emailStatus is null) return;
+
+        var value = _emailInput.Text.Trim();
+        var btn = sender as Button;
+        if (btn is not null) { btn.IsEnabled = false; btn.Content = "Saving…"; }
+
+        var resp = await _api.PatchAsync<object>("auth/me/email", new { Email = value });
+
+        if (resp?.Success == true)
+        {
+            _currentEmail = value;
+            _emailStatus.Foreground = ThemeManager.GetBrush("ThSuccess");
+            _emailStatus.Text = value.Length == 0 ? "✓ Recovery email removed." : "✓ Recovery email updated.";
+        }
+        else
+        {
+            _emailStatus.Foreground = ThemeManager.GetBrush("ThError");
+            _emailStatus.Text = resp?.Message ?? "Could not update your email.";
+        }
+        _emailStatus.Visibility = Visibility.Visible;
+
+        if (btn is not null) { btn.IsEnabled = true; btn.Content = "Save Email"; }
+    }
 
     // ── Appearance Section ───────────────────────────────────────────────
     private void BuildAppearanceSection()

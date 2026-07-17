@@ -41,6 +41,15 @@ public class ApiClient
     public async Task ForgotPasswordAsync(string idNumber) =>
         await _http.PostAsJsonAsync("/api/v1/auth/forgot-password", new ForgotPasswordRequest { IdNumber = idNumber });
 
+    /// <summary>Change the signed-in user's own recovery email.</summary>
+    public async Task<(bool Ok, string? Error)> UpdateMyEmailAsync(string? email)
+    {
+        Authorize();
+        var resp = await _http.PatchAsJsonAsync("/api/v1/auth/me/email", new UpdateEmailRequest { Email = email });
+        var body = await Read<object>(resp);
+        return body?.Success == true ? (true, null) : (false, body?.Message ?? "Could not update your email.");
+    }
+
     /// <summary>Finish a reset with the emailed code.</summary>
     public async Task<(bool Ok, string? Error)> ResetWithCodeAsync(string idNumber, string code, string newPassword)
     {
