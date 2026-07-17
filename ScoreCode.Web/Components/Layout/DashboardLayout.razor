@@ -31,6 +31,10 @@
                 <NavLink class="navitem" href="/institution/students">@Ico.Cap Students</NavLink>
                 <NavLink class="navitem" href="/institution/exams">@Ico.File Exams</NavLink>
             }
+            @if (Auth.IsAuthenticated)
+            {
+                <NavLink class="navitem" href="/settings">@Ico.Cog Settings</NavLink>
+            }
         </nav>
         <div class="sidebar-user">
             <div class="urow">

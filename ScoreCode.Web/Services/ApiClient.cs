@@ -33,6 +33,24 @@ public class ApiClient
             : (false, body?.Message ?? "Invalid ID number or password.", null);
     }
 
+    public async Task<UserDto?> GetMeAsync()
+    {
+        Authorize();
+        var body = await _http.GetFromJsonAsync<ApiResponse<UserDto>>("/api/v1/auth/me");
+        return body?.Data;
+    }
+
+    public async Task<(bool Ok, string? Error)> ChangePasswordAsync(string current, string next)
+    {
+        Authorize();
+        var resp = await _http.PostAsJsonAsync("/api/v1/auth/change-password",
+            new ChangePasswordRequest { CurrentPassword = current, NewPassword = next });
+        var body = await Read<object>(resp);
+        return body?.Success == true
+            ? (true, null)
+            : (false, body?.Message ?? "Could not change password.");
+    }
+
     // ── Institutions ─────────────────────────────────────────────────────────
     public async Task<(bool Ok, string? Error)> ApplyInstitutionAsync(InstitutionApplicationRequest req)
     {

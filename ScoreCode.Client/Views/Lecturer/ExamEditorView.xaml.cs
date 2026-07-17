@@ -169,7 +169,7 @@ public partial class ExamEditorView : UserControl
             {
                 card.Cursor = System.Windows.Input.Cursors.Hand;
                 card.MouseLeftButtonDown += (_, _) => ShowEditQuestionDialog(q);
-                card.MouseEnter += (_, _) => card.Background = new SolidColorBrush(Color.FromRgb(0x24, 0x2D, 0x44));
+                card.MouseEnter += (_, _) => card.Background = ThemeManager.GetBrush("ThBgHover");
                 card.MouseLeave += (_, _) => card.Background = ThemeManager.GetBrush("ThBgSurface");
             }
 
