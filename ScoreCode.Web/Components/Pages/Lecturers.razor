@@ -18,6 +18,8 @@
         <input @bind="_req.StaffId" />
         <label>Department</label>
         <input @bind="_req.Department" />
+        <label>Email <span class="muted small">(optional — lets them reset their own password)</span></label>
+        <input type="email" @bind="_req.Email" placeholder="name@school.edu" />
         <label>Temporary password</label>
         <input type="password" @bind="_req.Password" />
 

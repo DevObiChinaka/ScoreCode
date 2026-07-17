@@ -29,6 +29,10 @@
         {
             <div class="listrow"><div class="rmain"><div class="rmeta">Institution</div></div><span>@_me!.InstitutionName</span></div>
         }
+        @if (!string.IsNullOrWhiteSpace(_me?.Email))
+        {
+            <div class="listrow"><div class="rmain"><div class="rmeta">Recovery email</div></div><span>@_me!.Email</span></div>
+        }
     </div>
 
     <div class="section-title">Security</div>

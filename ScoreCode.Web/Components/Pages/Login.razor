@@ -39,23 +39,53 @@
 @if (_forgot)
 {
     <div class="card" style="margin-top:6px;padding:18px">
-        @if (_forgotSent)
+        @if (!_forgotSent)
         {
-            <div style="font-size:13px">Request sent.</div>
-            <p class="muted small" style="margin-top:6px">
-                If that ID exists, your administrator will see the request and issue you a new
-                temporary password. Contact them if you don't hear back.
+            <p class="muted small" style="margin:0 0 8px">
+                Enter your ID number. If an email is on file we'll send a reset code;
+                otherwise your administrator will be asked to reset it for you.
             </p>
+            <input placeholder="e.g. ADUN/FS/SEN/22/003" @bind="_forgotId" @onkeydown="ForgotKey" />
+            <button class="btn block" style="margin-top:12px" @onclick="SendForgot" disabled="@_forgotBusy">
+                @(_forgotBusy ? "Sending…" : "Continue")
+            </button>
+        }
+        else if (_resetDone)
+        {
+            <div style="font-size:13px;font-weight:500">Password updated.</div>
+            <p class="muted small" style="margin-top:6px">You can sign in with your new password.</p>
         }
         else
         {
-            <p class="muted small" style="margin:0 0 8px">
-                Enter your ID number. Your administrator will be asked to reset it for you.
+            <p class="muted small" style="margin:0 0 10px">
+                If <b>@_forgotId</b> has an email on file, a 6-digit code is on its way — enter it
+                below with a new password. No email? Your administrator will reset it instead.
             </p>
-            <input placeholder="e.g. ADUN/FS/SEN/22/003" @bind="_forgotId" />
-            <button class="btn block" style="margin-top:12px" @onclick="SendForgot" disabled="@_forgotBusy">
-                @(_forgotBusy ? "Sending…" : "Request reset")
+
+            <label>Reset code</label>
+            <input placeholder="6-digit code" @bind="_code" maxlength="6" inputmode="numeric" />
+
+            <label>New password</label>
+            <div class="pwfield">
+                <input type="@(_showReset ? "text" : "password")" @bind="_newPw" @bind:event="oninput" placeholder="Choose a new password" />
+                <button type="button" class="pwtoggle" @onclick="() => _showReset = !_showReset">@(_showReset ? "Hide" : "Show")</button>
+            </div>
+
+            <div style="margin:10px 0 2px;display:flex;flex-direction:column;gap:5px">
+                @foreach (var (met, text) in ResetRules)
+                {
+                    <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:@(met ? "var(--ok)" : "var(--dim)")">
+                        <span style="width:6px;height:6px;border-radius:50%;background:currentColor"></span>@text
+                    </div>
+                }
+            </div>
+
+            @if (_resetError is not null) { <div class="error">@_resetError</div> }
+
+            <button class="btn block" style="margin-top:14px" @onclick="CompleteReset" disabled="@(_resetBusy || !CanReset)">
+                @(_resetBusy ? "Updating…" : "Reset password")
             </button>
+            <button class="linkbtn" style="margin-top:10px" @onclick="SendForgot" disabled="@_forgotBusy">Resend code</button>
         }
     </div>
 }
@@ -73,13 +103,40 @@
     private bool _forgot, _forgotSent, _forgotBusy;
     private string _forgotId = "";
 
+    private string _code = "", _newPw = "";
+    private bool _resetBusy, _resetDone, _showReset;
+    private string? _resetError;
+
+    private (bool, string)[] ResetRules => new[]
+    {
+        (_newPw.Length >= 8, "At least 8 characters"),
+        (_newPw.Any(char.IsUpper), "An uppercase letter"),
+        (_newPw.Any(char.IsDigit), "A number"),
+        (_newPw.Any(c => !char.IsLetterOrDigit(c)), "A special character")
+    };
+
+    private bool CanReset => _code.Trim().Length > 0 && ResetRules.All(r => r.Item1);
+
+    private void ForgotKey(KeyboardEventArgs e) { if (e.Key == "Enter") _ = SendForgot(); }
+
     private async Task SendForgot()
     {
         if (string.IsNullOrWhiteSpace(_forgotId)) return;
         _forgotBusy = true;
         await Api.ForgotPasswordAsync(_forgotId.Trim());
         _forgotBusy = false;
-        _forgotSent = true;   // same answer whether or not the ID exists
+        _forgotSent = true;   // same answer whether the ID exists or has an email
+    }
+
+    private async Task CompleteReset()
+    {
+        _resetError = null;
+        _resetBusy = true;
+        var (ok, error) = await Api.ResetWithCodeAsync(_forgotId.Trim(), _code.Trim(), _newPw);
+        _resetBusy = false;
+
+        if (ok) _resetDone = true;
+        else _resetError = error;
     }
 
     private async Task DoLogin()

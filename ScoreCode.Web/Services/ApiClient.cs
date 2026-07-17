@@ -34,9 +34,23 @@ public class ApiClient
             : (false, body?.Message ?? "Invalid ID number or password.", null);
     }
 
-    /// <summary>Raise a reset request. Always reports success (IDs are never probed).</summary>
+    /// <summary>
+    /// Start a reset: emails a code if the account has an address, else queues an
+    /// admin reset. Always reports success (IDs are never probed).
+    /// </summary>
     public async Task ForgotPasswordAsync(string idNumber) =>
         await _http.PostAsJsonAsync("/api/v1/auth/forgot-password", new ForgotPasswordRequest { IdNumber = idNumber });
+
+    /// <summary>Finish a reset with the emailed code.</summary>
+    public async Task<(bool Ok, string? Error)> ResetWithCodeAsync(string idNumber, string code, string newPassword)
+    {
+        var resp = await _http.PostAsJsonAsync("/api/v1/auth/reset-with-code",
+            new ResetWithOtpRequest { IdNumber = idNumber, Code = code, NewPassword = newPassword });
+        var body = await Read<object>(resp);
+        return body?.Success == true
+            ? (true, null)
+            : (false, body?.Message ?? "Could not reset your password.");
+    }
 
     public async Task<List<ResetRequestDto>> GetResetRequestsAsync()
     {
