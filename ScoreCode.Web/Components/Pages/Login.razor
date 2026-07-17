@@ -32,6 +32,34 @@
     @(_busy ? "Signing in…" : "Sign in")
 </button>
 
+<p class="muted small" style="margin-top:16px">
+    <button class="linkbtn" @onclick="() => _forgot = !_forgot">Forgot your password?</button>
+</p>
+
+@if (_forgot)
+{
+    <div class="card" style="margin-top:6px;padding:18px">
+        @if (_forgotSent)
+        {
+            <div style="font-size:13px">Request sent.</div>
+            <p class="muted small" style="margin-top:6px">
+                If that ID exists, your administrator will see the request and issue you a new
+                temporary password. Contact them if you don't hear back.
+            </p>
+        }
+        else
+        {
+            <p class="muted small" style="margin:0 0 8px">
+                Enter your ID number. Your administrator will be asked to reset it for you.
+            </p>
+            <input placeholder="e.g. ADUN/FS/SEN/22/003" @bind="_forgotId" />
+            <button class="btn block" style="margin-top:12px" @onclick="SendForgot" disabled="@_forgotBusy">
+                @(_forgotBusy ? "Sending…" : "Request reset")
+            </button>
+        }
+    </div>
+}
+
 <p class="muted small" style="margin-top:20px">
     Registering a school? <a href="/apply">Apply here</a>
 </p>
@@ -42,6 +70,17 @@
     private string? _error;
     private bool _busy;
     private bool _show;
+    private bool _forgot, _forgotSent, _forgotBusy;
+    private string _forgotId = "";
+
+    private async Task SendForgot()
+    {
+        if (string.IsNullOrWhiteSpace(_forgotId)) return;
+        _forgotBusy = true;
+        await Api.ForgotPasswordAsync(_forgotId.Trim());
+        _forgotBusy = false;
+        _forgotSent = true;   // same answer whether or not the ID exists
+    }
 
     private async Task DoLogin()
     {
@@ -52,8 +91,10 @@
 
         if (!ok || data is null) { _error = error; return; }
 
-        Auth.Set(data.AccessToken, data.User.Role, data.User.IdNumber);
-        Nav.NavigateTo(Landing(data.User.Role));
+        Auth.Set(data.AccessToken, data.User.Role, data.User.IdNumber, data.User.MustChangePassword);
+
+        // Temporary credentials must be replaced before anything else.
+        Nav.NavigateTo(data.User.MustChangePassword ? "/settings" : Landing(data.User.Role));
     }
 
     private void OnKey(KeyboardEventArgs e)

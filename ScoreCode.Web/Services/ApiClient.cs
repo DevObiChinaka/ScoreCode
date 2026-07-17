@@ -33,6 +33,26 @@ public class ApiClient
             : (false, body?.Message ?? "Invalid ID number or password.", null);
     }
 
+    /// <summary>Raise a reset request. Always reports success (IDs are never probed).</summary>
+    public async Task ForgotPasswordAsync(string idNumber) =>
+        await _http.PostAsJsonAsync("/api/v1/auth/forgot-password", new ForgotPasswordRequest { IdNumber = idNumber });
+
+    public async Task<List<ResetRequestDto>> GetResetRequestsAsync()
+    {
+        Authorize();
+        var body = await _http.GetFromJsonAsync<ApiResponse<List<ResetRequestDto>>>("/api/v1/users/reset-requests");
+        return body?.Data ?? [];
+    }
+
+    /// <summary>Reset the requester's password and close the request; returns the temp password.</summary>
+    public async Task<string?> ResolveResetRequestAsync(Guid id)
+    {
+        Authorize();
+        var resp = await _http.PostAsync($"/api/v1/users/reset-requests/{id}/resolve", null);
+        var body = await Read<ResetPasswordResponse>(resp);
+        return body?.Data?.TemporaryPassword;
+    }
+
     public async Task<UserDto?> GetMeAsync()
     {
         Authorize();

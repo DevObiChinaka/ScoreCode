@@ -45,6 +45,41 @@ else
     </div>
 }
 
+@if (_requests.Any())
+{
+    <div class="section-title">Password reset requests</div>
+    <div class="tablewrap">
+        <table>
+            <thead><tr><th>User</th><th>Role</th><th>Institution</th><th>Requested</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var r in _requests)
+                {
+                    <tr>
+                        <td><div class="primary">@(string.IsNullOrWhiteSpace(r.Name) ? r.IdNumber : r.Name)</div><div class="mono">@r.IdNumber</div></td>
+                        <td class="muted">@r.Role</td>
+                        <td>@(string.IsNullOrWhiteSpace(r.InstitutionName) ? "—" : r.InstitutionName)</td>
+                        <td class="mono">@r.RequestedAt.ToLocalTime().ToString("dd MMM, HH:mm")</td>
+                        <td class="row-actions"><button class="btn btn-sm" @onclick="() => Resolve(r)">Reset password</button></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@if (_resetPwd is not null)
+{
+    <div class="modal-backdrop">
+        <div class="modal">
+            <h2>Password reset</h2>
+            <p class="muted small" style="margin:6px 0 12px">New temporary password for <b>@_resetName</b>. Share it securely — shown only once.</p>
+            <label>Temporary password</label>
+            <div class="cred">@_resetPwd</div>
+            <button class="btn block" style="margin-top:18px" @onclick="() => _resetPwd = null">Done</button>
+        </div>
+    </div>
+}
+
 <div class="section-title">Explore</div>
 <div class="quick">
     <a href="/platform/analytics">
@@ -68,7 +103,9 @@ else
 @code {
     private List<InstitutionDto> _all = new();
     private PlatformDashboardDto? _dash;
+    private List<ResetRequestDto> _requests = new();
     private bool _loading = true;
+    private string? _resetPwd, _resetName;
 
     private IEnumerable<InstitutionDto> Pending => _all.Where(i => i.Status == "Pending");
     private int Count(string s) => _all.Count(i => i.Status == s);
@@ -78,6 +115,18 @@ else
         if (!Auth.IsPlatformAdmin) { Nav.NavigateTo("/login"); return; }
         _all = await Api.GetInstitutionsAsync(null);
         _dash = await Api.GetPlatformDashboardAsync();
+        _requests = await Api.GetResetRequestsAsync();
         _loading = false;
+    }
+
+    private async Task Resolve(ResetRequestDto r)
+    {
+        var temp = await Api.ResolveResetRequestAsync(r.Id);
+        if (temp is not null)
+        {
+            _resetName = r.IdNumber;
+            _resetPwd = temp;
+            _requests = await Api.GetResetRequestsAsync();
+        }
     }
 }

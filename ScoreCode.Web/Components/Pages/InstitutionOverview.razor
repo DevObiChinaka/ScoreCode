@@ -15,6 +15,40 @@
     <div class="stat"><div class="n warn">@InactiveCount</div><div class="l">Deactivated</div></div>
 </div>
 
+@if (_requests.Any())
+{
+    <div class="section-title">Password reset requests</div>
+    <div class="tablewrap">
+        <table>
+            <thead><tr><th>User</th><th>Role</th><th>Requested</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var r in _requests)
+                {
+                    <tr>
+                        <td><div class="primary">@(string.IsNullOrWhiteSpace(r.Name) ? r.IdNumber : r.Name)</div><div class="mono">@r.IdNumber</div></td>
+                        <td class="muted">@r.Role</td>
+                        <td class="mono">@r.RequestedAt.ToLocalTime().ToString("dd MMM, HH:mm")</td>
+                        <td class="row-actions"><button class="btn btn-sm" @onclick="() => Resolve(r)">Reset password</button></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@if (_resetPwd is not null)
+{
+    <div class="modal-backdrop">
+        <div class="modal">
+            <h2>Password reset</h2>
+            <p class="muted small" style="margin:6px 0 12px">New temporary password for <b>@_resetName</b>. Share it securely — shown only once.</p>
+            <label>Temporary password</label>
+            <div class="cred">@_resetPwd</div>
+            <button class="btn block" style="margin-top:18px" @onclick="() => _resetPwd = null">Done</button>
+        </div>
+    </div>
+}
+
 <div class="grid-2">
     <div>
         <div class="section-title" style="margin-top:8px">Recent lecturers</div>
@@ -69,6 +103,8 @@
 @code {
     private List<UserDto> _lecturers = new();
     private List<UserDto> _students = new();
+    private List<ResetRequestDto> _requests = new();
+    private string? _resetPwd, _resetName;
 
     private int ActiveCount => _lecturers.Count(u => u.IsActive) + _students.Count(u => u.IsActive);
     private int InactiveCount => _lecturers.Count(u => !u.IsActive) + _students.Count(u => !u.IsActive);
@@ -78,6 +114,18 @@
         if (!Auth.IsInstitutionAdmin) { Nav.NavigateTo("/login"); return; }
         _lecturers = await Api.GetUsersAsync("Lecturer");
         _students = await Api.GetUsersAsync("Student");
+        _requests = await Api.GetResetRequestsAsync();
+    }
+
+    private async Task Resolve(ResetRequestDto r)
+    {
+        var temp = await Api.ResolveResetRequestAsync(r.Id);
+        if (temp is not null)
+        {
+            _resetName = r.IdNumber;
+            _resetPwd = temp;
+            _requests = await Api.GetResetRequestsAsync();
+        }
     }
 
     private static string Init(string? name, string id)

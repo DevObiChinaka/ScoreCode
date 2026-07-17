@@ -10,6 +10,13 @@
 </div>
 
 <div style="max-width:640px">
+    @if (Auth.MustChangePassword)
+    {
+        <div class="error" style="margin:0 0 18px">
+            You're signed in with a temporary password. Please set your own password below.
+        </div>
+    }
+
     <div class="section-title" style="margin-top:0">Account</div>
     <div class="listcard">
         <div class="listrow"><div class="rmain"><div class="rmeta">ID number</div></div><span class="mono">@(_me?.IdNumber ?? Auth.Name)</span></div>
@@ -120,7 +127,12 @@
         var (ok, error) = await Api.ChangePasswordAsync(_cur, _new);
         _busy = false;
 
-        if (ok) { _ok = true; _cur = _new = _confirm = ""; }
+        if (ok)
+        {
+            _ok = true;
+            _cur = _new = _confirm = "";
+            Auth.PasswordChanged();   // clears the temporary-password banner
+        }
         else _error = error;
     }
 
