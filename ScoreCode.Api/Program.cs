@@ -58,7 +58,20 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IExamService, ExamService>();
 builder.Services.AddScoped<ILecturerExamService, LecturerExamService>();
 builder.Services.AddScoped<IInstitutionService, InstitutionService>();
-builder.Services.AddSingleton<IEmailService, LoggingEmailService>();
+// Email is opt-in: without Email:Enabled and SMTP credentials we keep the
+// logging stub, so a dev machine never tries to reach a mail server.
+var emailOptions = builder.Configuration.GetSection(EmailOptions.Section).Get<EmailOptions>() ?? new EmailOptions();
+if (emailOptions.Enabled
+    && !string.IsNullOrWhiteSpace(emailOptions.Host)
+    && !string.IsNullOrWhiteSpace(emailOptions.User))
+{
+    builder.Services.AddSingleton(emailOptions);
+    builder.Services.AddSingleton<IEmailService, SmtpEmailService>();
+}
+else
+{
+    builder.Services.AddSingleton<IEmailService, LoggingEmailService>();
+}
 // AI grading provider is config-driven (Ai:Provider): "Gemini" or any
 // OpenAI-compatible endpoint (Groq/OpenRouter/OpenAI/Ollama) via "OpenAiCompatible".
 var aiProvider = builder.Configuration["Ai:Provider"] ?? "Gemini";

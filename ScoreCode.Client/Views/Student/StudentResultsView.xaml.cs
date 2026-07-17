@@ -352,9 +352,13 @@ public partial class StudentResultsView : UserControl
         row.Child = grid;
 
         // Detail
+        // The panel holds prose as well as code, so it follows the theme. Only the
+        // code and output boxes keep the dark ThCodeBg/ThCodeText pair.
         var detailPanel = new Border
         {
-            Background = ThemeManager.GetBrush("ThCodeBg"),
+            Background = ThemeManager.GetBrush("ThBgSurface"),
+            BorderBrush = ThemeManager.GetBrush("ThBorder"),
+            BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(9),
             Padding = new Thickness(15, 13, 15, 13),
             Margin = new Thickness(0, 0, 0, 6),
@@ -374,7 +378,7 @@ public partial class StudentResultsView : UserControl
             var codeBox = new TextBox
             {
                 Text = q.Code, IsReadOnly = true, FontFamily = _mono, FontSize = 12.5,
-                Background = System.Windows.Media.Brushes.Transparent,
+                Background = ThemeManager.GetBrush("ThCodeBg"),
                 Foreground = ThemeManager.GetBrush("ThCodeText"),
                 BorderBrush = ThemeManager.GetBrush("ThBorder"), BorderThickness = new Thickness(1),
                 Padding = new Thickness(12, 10, 12, 10), TextWrapping = TextWrapping.NoWrap,
@@ -437,7 +441,7 @@ public partial class StudentResultsView : UserControl
                 var outputBox = new TextBox
                 {
                     IsReadOnly = true, FontFamily = _mono, FontSize = 12,
-                    Background = System.Windows.Media.Brushes.Transparent,
+                    Background = ThemeManager.GetBrush("ThCodeBg"),
                     Foreground = ThemeManager.GetBrush("ThCodeText"),
                     BorderBrush = ThemeManager.GetBrush("ThBorder"), BorderThickness = new Thickness(1),
                     Padding = new Thickness(11, 9, 11, 9), AcceptsReturn = true, TextWrapping = TextWrapping.Wrap,
