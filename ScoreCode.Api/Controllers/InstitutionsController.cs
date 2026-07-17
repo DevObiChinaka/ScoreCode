@@ -57,6 +57,17 @@ public class InstitutionsController : ControllerBase
             : Ok(ApiResponse<InstitutionDetailDto>.Ok(detail));
     }
 
+    // PUT /api/v1/institutions/{id} — platform admin: edit details
+    [HttpPut("{id:guid}")]
+    [Authorize(Roles = Constants.Roles.PlatformOrAdmin)]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateInstitutionRequest req)
+    {
+        var (inst, error) = await _svc.UpdateAsync(id, req);
+        return inst is null
+            ? BadRequest(ApiResponse<object>.Fail("validation_failed", error ?? "Could not update institution."))
+            : Ok(ApiResponse<InstitutionDto>.Ok(inst));
+    }
+
     // POST /api/v1/institutions/{id}/approve — platform admin
     [HttpPost("{id:guid}/approve")]
     [Authorize(Roles = Constants.Roles.PlatformOrAdmin)]

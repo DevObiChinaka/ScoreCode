@@ -10,6 +10,21 @@ public class InstitutionApplicationRequest
     public string ContactPerson { get; set; } = string.Empty;
 }
 
+/// <summary>Platform admin: edit an institution's details.</summary>
+public class UpdateInstitutionRequest
+{
+    public string Name { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty;
+    public string ContactEmail { get; set; } = string.Empty;
+    public string ContactPerson { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Only applied while the institution still has no users — existing matric
+    /// and staff numbers are derived from the prefix and cannot be rewritten.
+    /// </summary>
+    public string Prefix { get; set; } = string.Empty;
+}
+
 /// <summary>Full institution record (platform-admin views).</summary>
 public class InstitutionDto
 {

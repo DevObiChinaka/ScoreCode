@@ -1,0 +1,92 @@
+@inject ApiClient Api
+
+@* Admin edit of one lecturer or student. Students have no name field —
+   they are identified by matric number alone and stay anonymous. *@
+
+<div class="modal-backdrop">
+    <div class="modal">
+        <h2>Edit @(IsStudent ? "student" : "lecturer")</h2>
+
+        @if (!IsStudent)
+        {
+            <label>Name</label>
+            <input @bind="_name" />
+        }
+
+        <label>@(IsStudent ? "Matric number" : "Staff ID")</label>
+        <input @bind="_idNumber" />
+
+        @if (IsStudent)
+        {
+            <label>Programme of study</label>
+            <input @bind="_programme" />
+
+            <label>Level</label>
+            <input @bind="_level" placeholder="e.g. 300" />
+        }
+        else
+        {
+            <label>Department</label>
+            <input @bind="_department" />
+        }
+
+        @if (_error is not null) { <div class="error">@_error</div> }
+
+        <div class="row-actions" style="margin-top:20px;justify-content:flex-end">
+            <button class="btn btn-ghost" @onclick="Cancel" disabled="@_saving">Cancel</button>
+            <button class="btn" @onclick="Save" disabled="@_saving">@(_saving ? "Saving…" : "Save changes")</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public UserDto User { get; set; } = default!;
+
+    /// <summary>Raised after a successful save, so the caller can reload its list.</summary>
+    [Parameter] public EventCallback OnSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private string _name = "", _idNumber = "", _programme = "", _level = "", _department = "";
+    private string? _error;
+    private bool _saving;
+
+    private bool IsStudent => User.Role == "Student";
+
+    protected override void OnParametersSet()
+    {
+        _name = User.Name ?? "";
+        _idNumber = User.IdNumber ?? "";
+        _programme = User.ProgrammeOfStudy ?? "";
+        _level = User.Level ?? "";
+        _department = User.Department ?? "";
+    }
+
+    private Task Cancel() => OnCancel.InvokeAsync();
+
+    private async Task Save()
+    {
+        _error = null;
+
+        if (string.IsNullOrWhiteSpace(_idNumber))
+        {
+            _error = IsStudent ? "A matric number is required." : "A staff ID is required.";
+            return;
+        }
+
+        var req = new UpdateStudentProfileRequest
+        {
+            MatricNumber = _idNumber.Trim(),
+            Name = IsStudent ? null : _name.Trim(),
+            ProgrammeOfStudy = IsStudent ? _programme.Trim() : null,
+            Level = IsStudent ? _level.Trim() : null,
+            Department = IsStudent ? null : _department.Trim()
+        };
+
+        _saving = true;
+        var (ok, error) = await Api.UpdateUserProfileAsync(User.Id, req);
+        _saving = false;
+
+        if (!ok) { _error = error; return; }
+        await OnSaved.InvokeAsync();
+    }
+}

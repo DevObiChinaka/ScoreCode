@@ -103,6 +103,45 @@ public class InstitutionService : IInstitutionService
         };
     }
 
+    public async Task<(InstitutionDto? Institution, string? Error)> UpdateAsync(
+        Guid institutionId, UpdateInstitutionRequest req)
+    {
+        var inst = await _db.Institutions.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(i => i.Id == institutionId);
+        if (inst is null) return (null, "Institution not found.");
+
+        var name = req.Name.Trim();
+        var email = req.ContactEmail.Trim();
+        if (name.Length == 0) return (null, "Institution name is required.");
+        if (email.Length == 0) return (null, "A contact email is required.");
+
+        inst.Name = name;
+        inst.ContactEmail = email;
+        inst.ContactPerson = req.ContactPerson.Trim();
+        if (!string.IsNullOrWhiteSpace(req.Type)) inst.Type = req.Type.Trim();
+
+        var prefix = req.Prefix.Trim().ToUpperInvariant();
+        if (prefix.Length > 0 && prefix != inst.Prefix)
+        {
+            // Matric and staff numbers already issued embed the old prefix, so
+            // changing it would orphan them from their institution's identity.
+            var hasUsers = await _db.Users.IgnoreQueryFilters()
+                .AnyAsync(u => u.InstitutionId == institutionId);
+            if (hasUsers)
+                return (null, "The prefix cannot be changed once accounts have been issued under it.");
+
+            var taken = await _db.Institutions.IgnoreQueryFilters()
+                .AnyAsync(i => i.Id != institutionId && i.Prefix == prefix);
+            if (taken)
+                return (null, "That prefix is already used by another institution.");
+
+            inst.Prefix = prefix;
+        }
+
+        await _db.SaveChangesAsync();
+        return (ToDto(inst), null);
+    }
+
     public async Task<bool> RejectAsync(Guid institutionId, string reason)
     {
         var inst = await _db.Institutions.FirstOrDefaultAsync(i => i.Id == institutionId);

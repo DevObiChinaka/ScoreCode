@@ -137,6 +137,16 @@ public class ApiClient
         return resp.IsSuccessStatusCode;
     }
 
+    public async Task<(bool Ok, string? Error)> UpdateInstitutionAsync(Guid id, UpdateInstitutionRequest req)
+    {
+        Authorize();
+        var resp = await _http.PutAsJsonAsync($"/api/v1/institutions/{id}", req);
+        var body = await Read<InstitutionDto>(resp);
+        return body?.Success == true
+            ? (true, null)
+            : (false, body?.Message ?? "Could not save changes.");
+    }
+
     public async Task<bool> SuspendInstitutionAsync(Guid id)
     {
         Authorize();
@@ -167,6 +177,17 @@ public class ApiClient
         var resp = await _http.PostAsync($"/api/v1/users/{id}/reset-password", null);
         var body = await Read<ResetPasswordResponse>(resp);
         return body?.Data?.TemporaryPassword;
+    }
+
+    /// <summary>Admin edit of a lecturer's or student's profile fields.</summary>
+    public async Task<(bool Ok, string? Error)> UpdateUserProfileAsync(Guid id, UpdateStudentProfileRequest req)
+    {
+        Authorize();
+        var resp = await _http.PatchAsJsonAsync($"/api/v1/users/{id}/profile", req);
+        var body = await Read<object>(resp);
+        return body?.Success == true
+            ? (true, null)
+            : (false, body?.Message ?? "Could not save changes.");
     }
 
     // ── Users (institution admin) ─────────────────────────────────────────────

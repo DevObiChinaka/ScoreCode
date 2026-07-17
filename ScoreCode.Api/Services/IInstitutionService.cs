@@ -23,6 +23,13 @@ public interface IInstitutionService
     /// </summary>
     Task<ApproveInstitutionResponse?> ApproveAsync(Guid institutionId);
 
+    /// <summary>
+    /// Platform admin: edit an institution's details. The prefix is only applied
+    /// while the institution has no users, since IDs are derived from it.
+    /// Returns the updated record, or an error message if it could not be saved.
+    /// </summary>
+    Task<(InstitutionDto? Institution, string? Error)> UpdateAsync(Guid institutionId, UpdateInstitutionRequest req);
+
     /// <summary>Platform admin: reject a pending institution with a reason.</summary>
     Task<bool> RejectAsync(Guid institutionId, string reason);
 

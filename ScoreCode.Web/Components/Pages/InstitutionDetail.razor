@@ -24,6 +24,7 @@ else
         </div>
         <div class="row-actions">
             <span class="badge @i.Status.ToLowerInvariant()">@i.Status</span>
+            <button class="btn btn-sm btn-outline" @onclick="StartEdit">Edit details</button>
             @if (i.Status == "Approved")
             {
                 <button class="btn btn-sm btn-ghost" @onclick="Suspend">Suspend</button>
@@ -112,6 +113,48 @@ else
     </div>
 }
 
+@if (_edit is not null)
+{
+    <div class="modal-backdrop">
+        <div class="modal">
+            <h2>Edit institution</h2>
+
+            <label>Name</label>
+            <input @bind="_edit.Name" />
+
+            <label>Type</label>
+            <select @bind="_edit.Type">
+                <option value="University">University</option>
+                <option value="Polytechnic">Polytechnic</option>
+                <option value="College">College</option>
+                <option value="Learning Centre">Learning Centre</option>
+            </select>
+
+            <label>Contact person</label>
+            <input @bind="_edit.ContactPerson" />
+
+            <label>Contact email</label>
+            <input type="email" @bind="_edit.ContactEmail" />
+
+            <label>ID prefix</label>
+            <input @bind="_edit.Prefix" disabled="@PrefixLocked" />
+            @if (PrefixLocked)
+            {
+                <div class="muted small" style="margin-top:6px">
+                    Locked — accounts have already been issued under <span class="mono">@_detail!.Institution.Prefix</span>.
+                </div>
+            }
+
+            @if (_editError is not null) { <div class="error">@_editError</div> }
+
+            <div class="row-actions" style="margin-top:20px;justify-content:flex-end">
+                <button class="btn btn-ghost" @onclick="() => _edit = null" disabled="@_saving">Cancel</button>
+                <button class="btn" @onclick="SaveEdit" disabled="@_saving">@(_saving ? "Saving…" : "Save changes")</button>
+            </div>
+        </div>
+    </div>
+}
+
 @if (_resetPwd is not null)
 {
     <div class="modal-backdrop">
@@ -132,6 +175,42 @@ else
     private bool _loading = true;
     private string? _resetPwd;
     private string? _resetName;
+
+    private UpdateInstitutionRequest? _edit;
+    private string? _editError;
+    private bool _saving;
+
+    // The prefix is baked into every matric and staff number already issued.
+    private bool PrefixLocked => _detail is not null && (_detail.Lecturers > 0 || _detail.Students > 0 || _detail.Admin is not null);
+
+    private void StartEdit()
+    {
+        if (_detail is null) return;
+        var i = _detail.Institution;
+        _editError = null;
+        _edit = new UpdateInstitutionRequest
+        {
+            Name = i.Name,
+            Type = i.Type,
+            ContactEmail = i.ContactEmail,
+            ContactPerson = i.ContactPerson,
+            Prefix = i.Prefix
+        };
+    }
+
+    private async Task SaveEdit()
+    {
+        if (_edit is null) return;
+        _editError = null;
+        _saving = true;
+        var (ok, error) = await Api.UpdateInstitutionAsync(Id, _edit);
+        _saving = false;
+
+        if (!ok) { _editError = error; return; }
+
+        _edit = null;
+        await Load();
+    }
 
     protected override async Task OnInitializedAsync()
     {

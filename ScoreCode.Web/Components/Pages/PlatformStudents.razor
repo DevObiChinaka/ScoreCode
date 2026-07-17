@@ -64,6 +64,7 @@ else
                                     <div class="prow">
                                         <div class="pmain"><div class="pid">@s.IdNumber</div></div>
                                         <span class="badge @(s.IsActive ? "active" : "inactive")">@(s.IsActive ? "Active" : "Inactive")</span>
+                                        <button class="btn btn-sm btn-outline" @onclick="() => _editing = s">Edit</button>
                                         <button class="btn btn-sm btn-outline" @onclick="() => ResetPassword(s)">Reset password</button>
                                     </div>
                                 }
@@ -74,6 +75,11 @@ else
             </div>
         }
     }
+}
+
+@if (_editing is not null)
+{
+    <EditUserDialog User="_editing" OnCancel="() => _editing = null" OnSaved="ReloadAfterEdit" />
 }
 
 @if (_resetPwd is not null)
@@ -96,7 +102,14 @@ else
     private string _inst = "";
     private string? _resetPwd;
     private string? _resetName;
+    private UserDto? _editing;
     private readonly HashSet<string> _collapsed = new();
+
+    private async Task ReloadAfterEdit()
+    {
+        _editing = null;
+        _all = await Api.GetUsersAsync("Student");
+    }
 
     private static string Inst(UserDto u) => string.IsNullOrWhiteSpace(u.InstitutionName) ? "Unassigned" : u.InstitutionName;
     private static string Prog(UserDto u) => string.IsNullOrWhiteSpace(u.ProgrammeOfStudy) ? "Unspecified programme" : u.ProgrammeOfStudy;

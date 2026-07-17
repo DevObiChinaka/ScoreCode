@@ -50,6 +50,7 @@ else
                         <td>@s.Level</td>
                         <td><span class="badge @(s.IsActive ? "active" : "inactive")">@(s.IsActive ? "Active" : "Inactive")</span></td>
                         <td class="row-actions">
+                            <button class="btn btn-sm btn-outline" @onclick="() => _editing = s">Edit</button>
                             <button class="btn btn-sm btn-outline" @onclick="() => ResetPassword(s)">Reset password</button>
                             @if (s.IsActive)
                             {
@@ -66,6 +67,11 @@ else
         </table>
     </div>
     }
+}
+
+@if (_editing is not null)
+{
+    <EditUserDialog User="_editing" OnCancel="() => _editing = null" OnSaved="ReloadAfterEdit" />
 }
 
 @if (_resetPwd is not null)
@@ -88,6 +94,13 @@ else
     private string _filter = "all";
     private string? _resetPwd;
     private string? _resetName;
+    private UserDto? _editing;
+
+    private async Task ReloadAfterEdit()
+    {
+        _editing = null;
+        await Load();
+    }
 
     private IEnumerable<UserDto> Filtered => _students
         .Where(s => _filter == "all" || (_filter == "active" ? s.IsActive : !s.IsActive))

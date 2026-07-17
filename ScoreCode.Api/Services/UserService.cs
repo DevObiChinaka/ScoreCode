@@ -148,6 +148,11 @@ public class UserService : IUserService
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id)
             ?? throw new KeyNotFoundException(Constants.ErrorCodes.UserNotFound);
 
+        // Students are identified by matric number only, so a name is never
+        // stored against them — no matter what the caller sends.
+        if (request.Name is not null && user.Role != Constants.Roles.Student)
+            user.Name = request.Name.Trim();
+
         if (request.MatricNumber is not null)
         {
             var taken = await _db.Users.IgnoreQueryFilters()
