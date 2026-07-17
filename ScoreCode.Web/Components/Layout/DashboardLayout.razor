@@ -22,6 +22,7 @@
                 <NavLink class="navitem" href="/platform/institutions">@Ico.Building Institutions</NavLink>
                 <NavLink class="navitem" href="/platform/lecturers">@Ico.Users Lecturers</NavLink>
                 <NavLink class="navitem" href="/platform/students">@Ico.Cap Students</NavLink>
+                <NavLink class="navitem" href="/platform/activity">@Ico.Shield Exam activity</NavLink>
             }
             @if (Auth.IsInstitutionAdmin)
             {
@@ -30,6 +31,7 @@
                 <NavLink class="navitem" href="/institution/lecturers">@Ico.Users Lecturers</NavLink>
                 <NavLink class="navitem" href="/institution/students">@Ico.Cap Students</NavLink>
                 <NavLink class="navitem" href="/institution/exams">@Ico.File Exams</NavLink>
+                <NavLink class="navitem" href="/institution/activity">@Ico.Shield Exam activity</NavLink>
             }
             @if (Auth.IsAuthenticated)
             {

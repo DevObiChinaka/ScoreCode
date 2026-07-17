@@ -92,6 +92,12 @@ public static class Constants
         public const string BlockedKey = "blocked_key";
         public const string ExamStarted = "exam_started";
         public const string ExamSubmitted = "exam_submitted";
+
+        /// <summary>
+        /// The subset that represents a possible integrity breach. Started/submitted
+        /// are ordinary lifecycle events and must never be counted as violations.
+        /// </summary>
+        public static readonly string[] Violations = [FocusLost, BlockedKey];
     }
 
     public static class SignalR

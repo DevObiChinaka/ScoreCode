@@ -75,7 +75,7 @@ public partial class LoginViewModel : ObservableObject
         var session = Helpers.SecureStorage.LoadSession();
         if (session is null) return;
 
-        var dashboard = new Views.DashboardShell(session);
+        var dashboard = new Views.DashboardShell(session, session.MustChangePassword);
         Helpers.NavigationService.NavigateFrom(dashboard);
     }
 

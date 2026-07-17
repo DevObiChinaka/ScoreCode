@@ -15,12 +15,19 @@ public partial class SettingsView : UserControl
     private readonly string _userId;
     private readonly ApiService _api;
 
-    public SettingsView(string role, string userId, ApiService api)
+    /// <summary>True while the user is still on an admin-issued temporary password.</summary>
+    private bool _mustChangePassword;
+
+    /// <summary>Raised once the user has replaced a temporary password with their own.</summary>
+    public event Action? PasswordChanged;
+
+    public SettingsView(string role, string userId, ApiService api, bool mustChangePassword = false)
     {
         InitializeComponent();
         _role = role;
         _userId = userId;
         _api = api;
+        _mustChangePassword = mustChangePassword;
 
         BuildProfileSection();
         BuildAppearanceSection();
@@ -273,6 +280,9 @@ public partial class SettingsView : UserControl
     {
         var content = new StackPanel();
 
+        if (_mustChangePassword)
+            content.Children.Add(MakeTempPasswordNotice());
+
         content.Children.Add(MakeLabel("Current Password"));
         _pwdCurrent = MakePasswordInput();
         content.Children.Add(MakePasswordFieldWithToggle(_pwdCurrent));
@@ -462,6 +472,26 @@ public partial class SettingsView : UserControl
         return grid;
     }
 
+    /// <summary>Warning strip shown above the password fields on a temporary credential.</summary>
+    private Border MakeTempPasswordNotice() => new()
+    {
+        Background = ThemeManager.GetBrush("ThWarningSoft"),
+        BorderBrush = ThemeManager.GetBrush("ThWarning"),
+        BorderThickness = new Thickness(1),
+        CornerRadius = new CornerRadius(10),
+        Padding = new Thickness(14, 11, 14, 11),
+        Margin = new Thickness(0, 0, 0, 16),
+        Child = new TextBlock
+        {
+            Text = "You're signed in with a temporary password issued by your administrator. "
+                 + "Please set your own password now.",
+            TextWrapping = TextWrapping.Wrap,
+            FontSize = 12.5,
+            FontFamily = _font,
+            Foreground = ThemeManager.GetBrush("ThWarning")
+        }
+    };
+
     private async void BtnChangePassword_Click(object sender, RoutedEventArgs e)
     {
         if (_pwdCurrent is null || _pwdNew is null || _pwdConfirm is null || _pwdStatus is null) return;
@@ -505,6 +535,8 @@ public partial class SettingsView : UserControl
             _pwdCurrent.Password = "";
             _pwdNew.Password = "";
             _pwdConfirm.Password = "";
+            _mustChangePassword = false;   // the temporary-password notice no longer applies
+            PasswordChanged?.Invoke();
         }
         else
         {

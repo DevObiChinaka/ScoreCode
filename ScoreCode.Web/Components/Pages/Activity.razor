@@ -1,0 +1,152 @@
+@page "/platform/activity"
+@page "/institution/activity"
+@layout DashboardLayout
+@using ScoreCode.Shared.DTOs.Monitoring
+@inject ApiClient Api
+@inject WebAuthState Auth
+@inject NavigationManager Nav
+
+<div class="pagehead">
+    <div><h1>Exam activity</h1><div class="sub">Integrity events recorded during exam sessions</div></div>
+</div>
+
+<div class="stats">
+    <div class="stat"><div class="n">@(_log?.Total ?? 0)</div><div class="l">Events logged</div></div>
+    <div class="stat"><div class="n @(Violations > 0 ? "err" : "")">@Violations</div><div class="l">Violations</div></div>
+    <div class="stat"><div class="n warn">@(_log?.FlaggedStudentCount ?? 0)</div><div class="l">Students flagged</div></div>
+    <div class="stat"><div class="n teal">@(_log?.Exams.Count ?? 0)</div><div class="l">Exams with activity</div></div>
+</div>
+
+<div class="toolbar">
+    <select style="flex:1;max-width:600px" @bind="_examId" @bind:after="Reload">
+        <option value="">All exams</option>
+        @foreach (var e in _log?.Exams ?? new())
+        {
+            <option value="@e.Id">@e.CourseCode — @e.Title</option>
+        }
+    </select>
+    <select style="width:auto;min-width:200px" @bind="_eventType" @bind:after="Reload">
+        <option value="">All events</option>
+        <option value="violations">Violations only</option>
+        <option value="focus_lost">Left fullscreen</option>
+        <option value="blocked_key">Blocked shortcut</option>
+        <option value="exam_started">Exam started</option>
+        <option value="exam_submitted">Exam submitted</option>
+    </select>
+</div>
+
+@if (_loading)
+{
+    <p class="muted">Loading…</p>
+}
+else if (_log is null || _log.Items.Count == 0)
+{
+    <div class="empty">
+        <div class="big">Nothing logged yet</div>
+        Integrity events appear here once students begin sitting exams.
+    </div>
+}
+else
+{
+    <div class="tablewrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>When</th>
+                    <th>Student</th>
+                    <th>Exam</th>
+                    @if (Auth.IsPlatformAdmin)
+                    {
+                        <th>Institution</th>
+                    }
+                    <th>Event</th>
+                    <th>Detail</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var a in _log.Items)
+                {
+                    <tr>
+                        <td class="mono">@a.OccurredAt.ToLocalTime().ToString("dd MMM, HH:mm:ss")</td>
+                        <td class="mono">@a.StudentMatric</td>
+                        <td>
+                            <div class="primary">@a.CourseCode</div>
+                            <div class="rmeta">@a.ExamTitle</div>
+                        </td>
+                        @if (Auth.IsPlatformAdmin)
+                        {
+                            <td>@(string.IsNullOrWhiteSpace(a.InstitutionName) ? "—" : a.InstitutionName)</td>
+                        }
+                        <td><span class="badge @BadgeClass(a.EventType)">@Label(a.EventType)</span></td>
+                        <td class="muted">@(string.IsNullOrWhiteSpace(a.Detail) ? "—" : a.Detail)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (TotalPages > 1)
+    {
+        <div class="pager">
+            <button class="btn btn-sm btn-outline" disabled="@(_page <= 1)" @onclick="Prev">Previous</button>
+            <span class="muted small">Page @_page of @TotalPages · @_log.Total event(s)</span>
+            <button class="btn btn-sm btn-outline" disabled="@(_page >= TotalPages)" @onclick="Next">Next</button>
+        </div>
+    }
+}
+
+@code {
+    private ActivityLogDto? _log;
+    private bool _loading = true;
+    private string _examId = "";
+    private string _eventType = "";
+    private int _page = 1;
+
+    private int Violations => _log?.ViolationCount ?? 0;
+    private int TotalPages =>
+        _log is null || _log.PageSize == 0 ? 1 : (int)Math.Ceiling(_log.Total / (double)_log.PageSize);
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Auth.IsPlatformAdmin && !Auth.IsInstitutionAdmin) { Nav.NavigateTo("/login"); return; }
+        await Load();
+    }
+
+    private async Task Load()
+    {
+        _loading = true;
+        Guid? exam = Guid.TryParse(_examId, out var g) ? g : null;
+
+        // "violations only" is a filter over several event types, not a type itself.
+        var violationsOnly = _eventType == "violations";
+        var type = violationsOnly ? null : _eventType;
+
+        _log = await Api.GetActivityAsync(exam, type, violationsOnly, _page);
+        _loading = false;
+    }
+
+    private async Task Reload()
+    {
+        _page = 1;               // a new filter invalidates the current page
+        await Load();
+    }
+
+    private async Task Prev() { if (_page > 1) { _page--; await Load(); } }
+    private async Task Next() { if (_page < TotalPages) { _page++; await Load(); } }
+
+    private static string Label(string eventType) => eventType switch
+    {
+        "focus_lost" => "Left fullscreen",
+        "blocked_key" => "Blocked shortcut",
+        "exam_started" => "Exam started",
+        "exam_submitted" => "Exam submitted",
+        _ => eventType
+    };
+
+    private static string BadgeClass(string eventType) => eventType switch
+    {
+        "focus_lost" or "blocked_key" => "rejected",   // red — needs attention
+        "exam_submitted" => "approved",
+        _ => "suspended"
+    };
+}

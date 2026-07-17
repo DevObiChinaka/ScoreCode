@@ -19,10 +19,12 @@ public partial class DashboardShell : Window
     private readonly DashboardViewModel _vm;
     private readonly ApiService _api;
     private string _activeNavKey = "Home";
+    private bool _mustChangePassword;
 
-    public DashboardShell(StoredSession session)
+    public DashboardShell(StoredSession session, bool mustChangePassword = false)
     {
         InitializeComponent();
+        _mustChangePassword = mustChangePassword;
 
         _vm = new DashboardViewModel(session);
         DataContext = _vm;
@@ -42,7 +44,9 @@ public partial class DashboardShell : Window
         TxtUserRole.Text = _vm.UserRole;
 
         BuildNavButtons();
-        NavigateTo("Home");
+
+        // Temporary credentials must be replaced before anything else is useful.
+        NavigateTo(_mustChangePassword ? "Settings" : "Home");
     }
 
     // ── Build sidebar nav buttons ──────────────────────────────────────────
@@ -139,11 +143,18 @@ public partial class DashboardShell : Window
             "ManageExams" => CreateExamManagementView(),
             "Submissions" => CreateSubmissionsView(),
             "Results" => new StudentResultsView(_api),
-            "Settings" => new Settings.SettingsView(_vm.UserRole, _vm.UserIdNumber, _api),
+            "Settings" => CreateSettingsView(),
             _ => CreateHomeView()
         };
 
         ContentHost.Content = view;
+    }
+
+    private Settings.SettingsView CreateSettingsView()
+    {
+        var view = new Settings.SettingsView(_vm.UserRole, _vm.UserIdNumber, _api, _mustChangePassword);
+        view.PasswordChanged += () => _mustChangePassword = false;
+        return view;
     }
 
     private HomeView CreateHomeView()

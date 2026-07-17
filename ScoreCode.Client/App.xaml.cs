@@ -28,7 +28,7 @@ public partial class App : Application
             // Check for pending exam submissions from a previous crash
             await TryRecoverPendingSubmissionAsync(api, session.Role);
 
-            var dashboard = new DashboardShell(session);
+            var dashboard = new DashboardShell(session, session.MustChangePassword);
             dashboard.WindowState = WindowStateHelper.Load();
             dashboard.Show();
             MainWindow = dashboard;
@@ -40,7 +40,7 @@ public partial class App : Application
         if (refreshed)
         {
             var session = SecureStorage.LoadSession()!;
-            var dashboard = new DashboardShell(session);
+            var dashboard = new DashboardShell(session, session.MustChangePassword);
             dashboard.WindowState = WindowStateHelper.Load();
             dashboard.Show();
             MainWindow = dashboard;

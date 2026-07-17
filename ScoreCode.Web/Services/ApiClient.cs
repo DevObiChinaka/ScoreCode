@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using ScoreCode.Shared.DTOs;
 using ScoreCode.Shared.DTOs.Auth;
 using ScoreCode.Shared.DTOs.Institutions;
+using ScoreCode.Shared.DTOs.Monitoring;
 using ScoreCode.Shared.DTOs.Users;
 
 namespace ScoreCode.Web.Services;
@@ -85,6 +86,18 @@ public class ApiClient
         var url = string.IsNullOrEmpty(status) ? "/api/v1/institutions" : $"/api/v1/institutions?status={status}";
         var body = await _http.GetFromJsonAsync<ApiResponse<List<InstitutionDto>>>(url);
         return body?.Data ?? [];
+    }
+
+    // ── Exam integrity log ──────────────────────────────────────────────────
+    public async Task<ActivityLogDto?> GetActivityAsync(
+        Guid? examId = null, string? eventType = null, bool violationsOnly = false, int page = 1)
+    {
+        Authorize();
+        var url = $"/api/v1/monitoring/activity?page={page}&violationsOnly={violationsOnly}";
+        if (examId is not null && examId != Guid.Empty) url += $"&examId={examId}";
+        if (!string.IsNullOrWhiteSpace(eventType)) url += $"&eventType={Uri.EscapeDataString(eventType)}";
+        var body = await _http.GetFromJsonAsync<ApiResponse<ActivityLogDto>>(url);
+        return body?.Data;
     }
 
     public async Task<PlatformDashboardDto?> GetPlatformDashboardAsync()

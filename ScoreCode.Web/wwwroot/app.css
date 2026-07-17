@@ -196,6 +196,9 @@ td .primary{font-weight:500}
 .badge.active{color:var(--ok)}
 .badge.inactive{color:var(--muted)}
 
+/* ── Pager ───────────────────────────────────────────────── */
+.pager{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:16px}
+
 /* ── Modal ───────────────────────────────────────────────── */
 .modal-backdrop{position:fixed;inset:0;background:rgba(6,8,12,.66);backdrop-filter:blur(4px);
   display:flex;align-items:center;justify-content:center;z-index:50;padding:20px}

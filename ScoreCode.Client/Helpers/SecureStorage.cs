@@ -31,7 +31,8 @@ public static class SecureStorage
             UserId = loginResp.User.Id,
             Name = loginResp.User.Name,
             IdNumber = loginResp.User.IdNumber,
-            Role = loginResp.User.Role
+            Role = loginResp.User.Role,
+            MustChangePassword = loginResp.User.MustChangePassword
         };
 
         var json = JsonSerializer.Serialize(data, JsonOpts);
@@ -83,4 +84,8 @@ public class StoredSession
     public string Name { get; set; } = string.Empty;
     public string IdNumber { get; set; } = string.Empty;
     public string Role { get; set; } = string.Empty;
+
+    /// <summary>Carries the temporary-password flag across restarts, so the
+    /// prompt survives an auto-login from a saved session.</summary>
+    public bool MustChangePassword { get; set; }
 }
