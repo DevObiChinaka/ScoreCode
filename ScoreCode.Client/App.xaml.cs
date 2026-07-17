@@ -10,7 +10,18 @@ public partial class App : Application
 {
     private async void Application_Startup(object sender, StartupEventArgs e)
     {
-        // ── 0. Initialize theme system ──────────────────────────────────
+        // ── 0. Surface UI errors instead of dying silently ──────────────
+        // The launcher runs this app in the foreground and tears the API and
+        // web portal down when it exits, so an unhandled UI exception took the
+        // whole stack with it and left nothing to diagnose.
+        DispatcherUnhandledException += (_, args) =>
+        {
+            MessageBox.Show(
+                $"Something went wrong and the action was cancelled.\n\n{args.Exception.Message}",
+                "ScoreCode", MessageBoxButton.OK, MessageBoxImage.Error);
+            args.Handled = true;
+        };
+
         ThemeManager.Initialize();
 
         // ── 1. Connect to the central API ───────────────────────────────

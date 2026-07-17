@@ -435,8 +435,8 @@
                             </StackPanel>
 
                             <!-- Error -->
-                            <Border Background="{StaticResource ErrorBg}"
-                                    BorderBrush="#3D1010" BorderThickness="1"
+                            <Border Background="{DynamicResource ThBrErrorSoft}"
+                                    BorderBrush="{DynamicResource ThBrError}" BorderThickness="1"
                                     CornerRadius="6" Padding="12,8" Margin="0,0,0,12"
                                     Visibility="{Binding HasError,
                                         Converter={StaticResource BoolToVisibilityConverter}}">
