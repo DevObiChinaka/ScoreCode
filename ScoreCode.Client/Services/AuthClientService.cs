@@ -43,7 +43,7 @@ public class AuthClientService
     }
 
     public async Task<(bool Success, string? Error)> RegisterStudentAsync(
-        Guid institutionId, string matricNumber, string programme, string level, string password, string confirmPassword)
+        Guid institutionId, string matricNumber, string programme, string level, string password, string confirmPassword, string? email)
     {
         var result = await _api.PostAsync<LoginResponse>("auth/register", new
         {
@@ -52,7 +52,8 @@ public class AuthClientService
             ProgrammeOfStudy = programme,
             Level          = level,
             Password       = password,
-            ConfirmPassword = confirmPassword
+            ConfirmPassword = confirmPassword,
+            Email          = email
         });
 
         if (result is null)
@@ -62,6 +63,25 @@ public class AuthClientService
             return (false, result.Message ?? "Registration failed.");
 
         return (true, null);
+    }
+
+    /// <summary>
+    /// Start a reset. The server emails a code if the account has an address,
+    /// otherwise queues an admin reset — the response is deliberately identical
+    /// either way, so nothing is returned.
+    /// </summary>
+    public async Task RequestPasswordResetAsync(string idNumber) =>
+        await _api.PostAsync<object>("auth/forgot-password", new { IdNumber = idNumber });
+
+    /// <summary>Finish a reset with the emailed code.</summary>
+    public async Task<(bool Success, string? Error)> ResetWithCodeAsync(
+        string idNumber, string code, string newPassword)
+    {
+        var result = await _api.PostAsync<object>("auth/reset-with-code",
+            new { IdNumber = idNumber, Code = code, NewPassword = newPassword });
+
+        if (result is null) return (false, "No response from server.");
+        return result.Success ? (true, null) : (false, result.Message ?? "Could not reset your password.");
     }
 
     public async Task<bool> TryRefreshAsync()

@@ -415,6 +415,12 @@
                             </StackPanel>
                         </Button>
 
+                        <Button Style="{StaticResource BtnGhost}" HorizontalAlignment="Center"
+                                Click="BtnForgot_Click" Margin="0,0,0,14">
+                            <TextBlock Text="Forgot your password?" FontSize="13"
+                                       Foreground="{DynamicResource ThBrTextSecondary}"/>
+                        </Button>
+
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                             <TextBlock Text="New student?  " FontSize="13"
                                        Foreground="{DynamicResource ThBrTextSecondary}"

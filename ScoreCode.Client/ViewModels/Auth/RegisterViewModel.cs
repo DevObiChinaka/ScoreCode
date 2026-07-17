@@ -36,6 +36,7 @@ public partial class RegisterViewModel : ObservableObject
     [ObservableProperty] private string _matricNumber      = string.Empty;
     [ObservableProperty] private string _programmeOfStudy = string.Empty;
     [ObservableProperty] private string _level             = string.Empty;
+    [ObservableProperty] private string _email             = string.Empty;
     [ObservableProperty] private string _errorMessage      = string.Empty;
     [ObservableProperty] private bool   _hasError          = false;
     [ObservableProperty] private string _successMessage    = string.Empty;
@@ -89,7 +90,8 @@ public partial class RegisterViewModel : ObservableObject
         try
         {
             var (success, error) = await _auth.RegisterStudentAsync(
-                InstitutionId, MatricNumber, ProgrammeOfStudy, Level, Password, ConfirmPassword);
+                InstitutionId, MatricNumber, ProgrammeOfStudy, Level, Password, ConfirmPassword,
+                string.IsNullOrWhiteSpace(Email) ? null : Email.Trim());
 
             if (!success)
             {

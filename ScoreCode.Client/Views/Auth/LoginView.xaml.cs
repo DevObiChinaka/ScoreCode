@@ -79,4 +79,19 @@ public partial class LoginView : UserControl
     // ── Navigate to register ───────────────────────────────────────────────
     private void BtnRegister_Click(object sender, RoutedEventArgs e)
         => RegisterRequested?.Invoke();
+
+    // ── Forgot password ────────────────────────────────────────────────────
+    private void BtnForgot_Click(object sender, RoutedEventArgs e)
+    {
+        // Reset endpoints are anonymous, so a fresh client is fine. Pre-fill the
+        // ID if the user already typed one.
+        var auth = new Services.AuthClientService(new Services.ApiService());
+        var idText = DataContext is ViewModels.Auth.LoginViewModel vm ? vm.IdNumber : null;
+
+        var dialog = new ForgotPasswordDialog(auth, idText)
+        {
+            Owner = Window.GetWindow(this)
+        };
+        dialog.ShowDialog();
+    }
 }

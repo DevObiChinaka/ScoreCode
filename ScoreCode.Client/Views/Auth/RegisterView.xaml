@@ -366,6 +366,15 @@
                             <TextBlock Text="This becomes your permanent login ID."
                                        Style="{StaticResource LockHint}"/>
 
+                            <!-- Recovery email (optional) -->
+                            <TextBlock Text="Recovery Email (optional)" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="TxtEmail" Style="{StaticResource Input}"
+                                     Tag="name@example.com"
+                                     Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}"
+                                     Margin="0,0,0,4"/>
+                            <TextBlock Text="Only used to reset your password. Never shown to lecturers — you stay anonymous."
+                                       Style="{StaticResource LockHint}" TextWrapping="Wrap"/>
+
                             <!-- Programme + Level -->
                             <Grid Margin="0,0,0,4">
                                 <Grid.ColumnDefinitions>

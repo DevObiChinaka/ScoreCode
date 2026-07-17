@@ -89,18 +89,22 @@ public class AuthService : IAuthService
         await RaiseAdminResetRequestAsync(user);
     }
 
-    /// <summary>Issue a fresh code, replacing any code already outstanding.</summary>
+    /// <summary>
+    /// Issue a fresh code, replacing any outstanding one. The email is sent
+    /// before the hash is persisted so a delivery failure leaves no dangling
+    /// code — the caller then routes to an administrator instead.
+    /// </summary>
     private async Task SendResetCodeAsync(User user)
     {
         var code = GenerateOtp();
+
+        await _email.SendPasswordResetCodeAsync(
+            user.Email!, user.IdNumber, code, Constants.PasswordReset.OtpExpiryMinutes);
 
         user.ResetOtpHash = BCrypt.Net.BCrypt.HashPassword(code);
         user.ResetOtpExpiresAt = DateTime.UtcNow.AddMinutes(Constants.PasswordReset.OtpExpiryMinutes);
         user.ResetOtpAttempts = 0;
         await _db.SaveChangesAsync();
-
-        await _email.SendPasswordResetCodeAsync(
-            user.Email!, user.IdNumber, code, Constants.PasswordReset.OtpExpiryMinutes);
     }
 
     private async Task RaiseAdminResetRequestAsync(User user)
