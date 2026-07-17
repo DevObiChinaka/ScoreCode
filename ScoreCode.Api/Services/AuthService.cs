@@ -18,15 +18,68 @@ public class AuthService : IAuthService
         _tokens = tokens;
     }
 
+    /// <summary>Consecutive failures before sign-in is temporarily refused.</summary>
+    private const int MaxFailedAttempts = 5;
+    private static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
+
     public async Task<LoginResponse?> LoginAsync(LoginRequest request)
     {
         var user = await _db.Users
             .FirstOrDefaultAsync(u => u.IdNumber == request.IdNumber && u.IsActive);
 
-        if (user is null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+        if (user is null)
+            return null; // unknown ID — say nothing more
+
+        // Refuse while locked out, without revealing whether the password was right.
+        if (user.LockoutUntil is not null && user.LockoutUntil > DateTime.UtcNow)
+            throw new InvalidOperationException(Constants.ErrorCodes.AccountLocked);
+
+        if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+        {
+            user.FailedLoginAttempts++;
+            if (user.FailedLoginAttempts >= MaxFailedAttempts)
+            {
+                user.LockoutUntil = DateTime.UtcNow.Add(LockoutDuration);
+                user.FailedLoginAttempts = 0;
+            }
+            await _db.SaveChangesAsync();
             return null;
+        }
+
+        // Success — clear any failure state.
+        if (user.FailedLoginAttempts != 0 || user.LockoutUntil is not null)
+        {
+            user.FailedLoginAttempts = 0;
+            user.LockoutUntil = null;
+            await _db.SaveChangesAsync();
+        }
 
         return await IssueTokensAsync(user);
+    }
+
+    /// <summary>
+    /// Raise a reset request for an admin to action. Always succeeds from the
+    /// caller's point of view so an unknown ID can't be probed.
+    /// </summary>
+    public async Task RequestPasswordResetAsync(string idNumber)
+    {
+        var user = await _db.Users.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(u => u.IdNumber == idNumber && u.IsActive);
+        if (user is null) return;
+
+        var alreadyPending = await _db.PasswordResetRequests.IgnoreQueryFilters()
+            .AnyAsync(r => r.UserId == user.Id && r.Status == Constants.ResetRequestStatuses.Pending);
+        if (alreadyPending) return;
+
+        _db.PasswordResetRequests.Add(new PasswordResetRequest
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            InstitutionId = user.InstitutionId,
+            RequestedAt = DateTime.UtcNow,
+            Status = Constants.ResetRequestStatuses.Pending
+        });
+        await _db.SaveChangesAsync();
     }
 
     public async Task<LoginResponse> RegisterStudentAsync(RegisterRequest request)
@@ -89,6 +142,7 @@ public class AuthService : IAuthService
             return false;
 
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+        user.MustChangePassword = false; // they've now set their own
         await _db.SaveChangesAsync();
         return true;
     }
@@ -130,7 +184,8 @@ public class AuthService : IAuthService
                 Id = user.Id,
                 Name = user.Name,
                 IdNumber = user.IdNumber,
-                Role = user.Role
+                Role = user.Role,
+                MustChangePassword = user.MustChangePassword
             }
         };
     }

@@ -25,8 +25,16 @@ public static class Constants
         public const string Suspended = "Suspended";
     }
 
+    /// <summary>States stored in <c>PasswordResetRequest.Status</c>.</summary>
+    public static class ResetRequestStatuses
+    {
+        public const string Pending = "Pending";
+        public const string Handled = "Handled";
+    }
+
     public static class ErrorCodes
     {
+        public const string AccountLocked = "account_locked";
         public const string InvalidCredentials = "invalid_credentials";
         public const string InvalidToken = "invalid_token";
         public const string TokenExpired = "token_expired";

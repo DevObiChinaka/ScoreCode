@@ -27,6 +27,7 @@ public class ScoreCodeDb : DbContext
     public DbSet<Grade> Grades => Set<Grade>();
     public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<PasswordResetRequest> PasswordResetRequests => Set<PasswordResetRequest>();
 
     protected override void OnModelCreating(ModelBuilder m)
     {
@@ -113,5 +114,6 @@ public class ScoreCodeDb : DbContext
         m.Entity<Grade>().HasQueryFilter(g => CurrentTenantId == null || g.Submission.InstitutionId == CurrentTenantId);
         m.Entity<ActivityLog>().HasQueryFilter(a => CurrentTenantId == null || a.Session.InstitutionId == CurrentTenantId);
         m.Entity<RefreshToken>().HasQueryFilter(rt => CurrentTenantId == null || rt.User.InstitutionId == CurrentTenantId);
+        m.Entity<PasswordResetRequest>().HasQueryFilter(r => CurrentTenantId == null || r.InstitutionId == CurrentTenantId);
     }
 }

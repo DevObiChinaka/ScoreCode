@@ -8,6 +8,9 @@ public interface IAuthService
 {
     Task<LoginResponse?> LoginAsync(LoginRequest request);
     Task<LoginResponse> RegisterStudentAsync(RegisterRequest request);
+
+    /// <summary>Raise a password-reset request for an admin to action.</summary>
+    Task RequestPasswordResetAsync(string idNumber);
     Task<LoginResponse?> RefreshAsync(string refreshToken);
     Task LogoutAsync(string refreshToken);
     Task<bool> ChangePasswordAsync(Guid userId, string currentPassword, string newPassword);

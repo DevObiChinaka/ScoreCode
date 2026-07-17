@@ -94,6 +94,29 @@ public class UsersController : ControllerBase
         }
     }
 
+    // GET /api/v1/users/reset-requests — pending "forgot password" requests
+    [HttpGet("reset-requests")]
+    public async Task<IActionResult> GetResetRequests()
+    {
+        var result = await _users.GetResetRequestsAsync();
+        return Ok(ApiResponse<List<ResetRequestDto>>.Ok(result));
+    }
+
+    // POST /api/v1/users/reset-requests/{id}/resolve — reset + close the request
+    [HttpPost("reset-requests/{id:guid}/resolve")]
+    public async Task<IActionResult> ResolveResetRequest(Guid id)
+    {
+        try
+        {
+            var temp = await _users.ResolveResetRequestAsync(id);
+            return Ok(ApiResponse<ResetPasswordResponse>.Ok(new ResetPasswordResponse { TemporaryPassword = temp }));
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound(ApiResponse<object>.Fail("not_found", "Request not found or already handled."));
+        }
+    }
+
     // POST /api/v1/users/{id}/reset-password  — admin resets a user's password
     [HttpPost("{id:guid}/reset-password")]
     public async Task<IActionResult> ResetPassword(Guid id)

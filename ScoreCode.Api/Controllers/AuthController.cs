@@ -57,13 +57,36 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        var result = await _auth.LoginAsync(request);
+        LoginResponse? result;
+        try
+        {
+            result = await _auth.LoginAsync(request);
+        }
+        catch (InvalidOperationException ex) when (ex.Message == Constants.ErrorCodes.AccountLocked)
+        {
+            return Unauthorized(ApiResponse<object>.Fail(
+                Constants.ErrorCodes.AccountLocked,
+                "Too many failed attempts. Try again in a few minutes, or ask an admin to reset your password."));
+        }
+
         if (result is null)
             return Unauthorized(ApiResponse<object>.Fail(
                 Constants.ErrorCodes.InvalidCredentials,
                 "Invalid ID number or password."));
 
         return Ok(ApiResponse<LoginResponse>.Ok(result));
+    }
+
+    // POST /api/v1/auth/forgot-password — raise a reset request for an admin
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    {
+        if (!string.IsNullOrWhiteSpace(request.IdNumber))
+            await _auth.RequestPasswordResetAsync(request.IdNumber.Trim());
+
+        // Always the same answer — never reveal whether an ID exists.
+        return Ok(ApiResponse<object>.Ok(new { }));
     }
 
     // POST /api/v1/auth/refresh

@@ -33,6 +33,7 @@ public class UserService : IUserService
             InstitutionId = institutionId,
             Department = request.Department,
             IsActive = true,
+            MustChangePassword = true,   // admin-issued password
             CreatedAt = DateTime.UtcNow
         };
 
@@ -90,6 +91,43 @@ public class UserService : IUserService
 
         var temp = GenerateTempPassword();
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(temp);
+        user.MustChangePassword = true;   // temporary — they must set their own
+        user.FailedLoginAttempts = 0;     // a reset also clears any lockout
+        user.LockoutUntil = null;
+        await _db.SaveChangesAsync();
+        return temp;
+    }
+
+    /// <summary>Pending reset requests an admin can action (tenant-scoped).</summary>
+    public async Task<List<ResetRequestDto>> GetResetRequestsAsync()
+    {
+        return await _db.PasswordResetRequests
+            .Where(r => r.Status == Constants.ResetRequestStatuses.Pending)
+            .OrderBy(r => r.RequestedAt)
+            .Select(r => new ResetRequestDto
+            {
+                Id = r.Id,
+                UserId = r.UserId,
+                IdNumber = r.User.IdNumber,
+                Name = r.User.Name,
+                Role = r.User.Role,
+                InstitutionName = r.Institution != null ? r.Institution.Name : string.Empty,
+                RequestedAt = r.RequestedAt
+            })
+            .ToListAsync();
+    }
+
+    /// <summary>Reset the requester's password and close the request.</summary>
+    public async Task<string> ResolveResetRequestAsync(Guid requestId)
+    {
+        var req = await _db.PasswordResetRequests
+            .FirstOrDefaultAsync(r => r.Id == requestId && r.Status == Constants.ResetRequestStatuses.Pending)
+            ?? throw new KeyNotFoundException(Constants.ErrorCodes.UserNotFound);
+
+        var temp = await ResetPasswordAsync(req.UserId);
+
+        req.Status = Constants.ResetRequestStatuses.Handled;
+        req.HandledAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
         return temp;
     }

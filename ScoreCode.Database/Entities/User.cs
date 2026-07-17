@@ -13,6 +13,14 @@ public class User
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    // Security
+    /// <summary>Set when an admin issues a temporary password; cleared on change.</summary>
+    public bool MustChangePassword { get; set; }
+    /// <summary>Consecutive failed sign-ins; reset on success.</summary>
+    public int FailedLoginAttempts { get; set; }
+    /// <summary>Sign-in is refused until this time after too many failures.</summary>
+    public DateTime? LockoutUntil { get; set; }
+
     // Tenant — null only for the platform admin (no institution)
     public Guid? InstitutionId { get; set; }
     public Institution? Institution { get; set; }

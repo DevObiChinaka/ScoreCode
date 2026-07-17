@@ -85,6 +85,7 @@ public class InstitutionService : IInstitutionService
             Role = Constants.Roles.InstitutionAdmin,
             InstitutionId = inst.Id,
             IsActive = true,
+            MustChangePassword = true,   // temporary credentials handed to the school
             CreatedAt = DateTime.UtcNow
         });
 
