@@ -17,32 +17,34 @@
         <nav>
             @if (Auth.IsPlatformAdmin)
             {
-                <NavLink class="navitem" href="/platform" Match="NavLinkMatch.All"><span class="dot"></span>Overview</NavLink>
-                <NavLink class="navitem" href="/platform/analytics"><span class="dot"></span>Analytics</NavLink>
-                <NavLink class="navitem" href="/platform/institutions"><span class="dot"></span>Institutions</NavLink>
-                <NavLink class="navitem" href="/platform/lecturers"><span class="dot"></span>Lecturers</NavLink>
-                <NavLink class="navitem" href="/platform/students"><span class="dot"></span>Students</NavLink>
+                <NavLink class="navitem" href="/platform" Match="NavLinkMatch.All">@Ico.Home Overview</NavLink>
+                <NavLink class="navitem" href="/platform/analytics">@Ico.Chart Analytics</NavLink>
+                <NavLink class="navitem" href="/platform/institutions">@Ico.Building Institutions</NavLink>
+                <NavLink class="navitem" href="/platform/lecturers">@Ico.Users Lecturers</NavLink>
+                <NavLink class="navitem" href="/platform/students">@Ico.Cap Students</NavLink>
             }
             @if (Auth.IsInstitutionAdmin)
             {
-                <NavLink class="navitem" href="/institution" Match="NavLinkMatch.All"><span class="dot"></span>Overview</NavLink>
-                <NavLink class="navitem" href="/institution/analytics"><span class="dot"></span>Analytics</NavLink>
-                <NavLink class="navitem" href="/institution/lecturers"><span class="dot"></span>Lecturers</NavLink>
-                <NavLink class="navitem" href="/institution/students"><span class="dot"></span>Students</NavLink>
-                <NavLink class="navitem" href="/institution/exams"><span class="dot"></span>Exams</NavLink>
+                <NavLink class="navitem" href="/institution" Match="NavLinkMatch.All">@Ico.Home Overview</NavLink>
+                <NavLink class="navitem" href="/institution/analytics">@Ico.Chart Analytics</NavLink>
+                <NavLink class="navitem" href="/institution/lecturers">@Ico.Users Lecturers</NavLink>
+                <NavLink class="navitem" href="/institution/students">@Ico.Cap Students</NavLink>
+                <NavLink class="navitem" href="/institution/exams">@Ico.File Exams</NavLink>
             }
         </nav>
         <div class="sidebar-user">
-            <div class="avatar">@Initials</div>
-            <div>
-                <div class="name">@Auth.Name</div>
-                <div class="role">@RoleLabel</div>
+            <div class="urow">
+                <div class="avatar">@Initials</div>
+                <div style="min-width:0">
+                    <div class="name">@Auth.Name</div>
+                    <div class="role">@RoleLabel</div>
+                </div>
             </div>
+            <button class="sidebar-signout" @onclick="Logout">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
+                Sign out
+            </button>
         </div>
-        <button class="sidebar-signout" @onclick="Logout">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
-            Sign out
-        </button>
     </aside>
     <div class="main">
         <header class="topbar">

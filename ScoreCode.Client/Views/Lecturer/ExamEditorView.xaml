@@ -56,10 +56,11 @@
 
         <!-- HEADER -->
         <DockPanel Grid.Row="0" Margin="0,0,0,20">
-            <Button DockPanel.Dock="Left" Content="← Back"
+            <Button DockPanel.Dock="Left" Content="Back"
                     Background="Transparent" Foreground="{DynamicResource ThBrTextSecondary}"
                     FontSize="13" FontFamily="/Assets/Fonts/#Geist"
                     BorderThickness="0" Cursor="Hand" Padding="0,4"
+                    VerticalAlignment="Center"
                     Click="BtnBack_Click"/>
             <TextBlock x:Name="TxtTitle" DockPanel.Dock="Left"
                        FontSize="20" FontWeight="Bold" Margin="16,0,0,0"
@@ -194,12 +195,15 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <DockPanel Grid.Row="0" Margin="16,14,16,14">
+                    <!-- LastChildFill=False so the Add button keeps its natural
+                         size on the right instead of stretching across. -->
+                    <DockPanel Grid.Row="0" Margin="16,14,16,14" LastChildFill="False">
                         <TextBlock Text="Questions" FontSize="15" FontWeight="SemiBold"
                                    Foreground="{DynamicResource ThBrTextPrimary}"
-                                   FontFamily="/Assets/Fonts/#Geist" DockPanel.Dock="Left"/>
+                                   FontFamily="/Assets/Fonts/#Geist" DockPanel.Dock="Left"
+                                   VerticalAlignment="Center"/>
                         <Button x:Name="BtnAddQuestion" DockPanel.Dock="Right" Content="+ Add"
-                                Style="{StaticResource ActionBtn}"
+                                Style="{StaticResource ActionBtn}" Padding="14,7"
                                 Click="BtnAddQuestion_Click"/>
                     </DockPanel>
 
