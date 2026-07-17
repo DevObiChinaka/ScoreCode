@@ -72,6 +72,7 @@
             <Setter Property="Padding"         Value="14,0"/>
             <Setter Property="Height"          Value="46"/>
             <Setter Property="FontSize"        Value="14"/>
+            <Setter Property="PasswordChar"    Value="•"/>
             <Setter Property="CaretBrush"      Value="{DynamicResource ThBrAccent}"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -84,7 +85,7 @@
                                 <ScrollViewer x:Name="PART_ContentHost"
                                               Margin="{TemplateBinding Padding}"
                                               VerticalAlignment="Center"/>
-                                <TextBlock x:Name="PasswordPlaceholder" Text="Password"
+                                <TextBlock x:Name="PasswordPlaceholder" Text="{TemplateBinding Tag}"
                                            Foreground="{DynamicResource ThBrTextMuted}"
                                            FontSize="{TemplateBinding FontSize}"
                                            Margin="{TemplateBinding Padding}"
@@ -389,11 +390,32 @@
                             <TextBlock Text="Locked after registration — admin can edit if incorrect."
                                        Style="{StaticResource LockHint}"/>
 
-                            <!-- Password -->
+                            <!-- Password field with visibility toggle -->
                             <TextBlock Text="Password" Style="{StaticResource FieldLabel}"/>
-                            <PasswordBox x:Name="PbPassword" Style="{StaticResource InputPw}"
-                                         PasswordChanged="PbPassword_PasswordChanged"
-                                         Margin="0,0,0,8"/>
+                            <Grid Margin="0,0,0,8">
+                                <PasswordBox x:Name="PbPassword" Style="{StaticResource InputPw}"
+                                             Tag="Create a password" Padding="14,0,44,0"
+                                             PasswordChanged="PbPassword_PasswordChanged"/>
+                                <TextBox x:Name="TxtPasswordVisible" Style="{StaticResource Input}"
+                                         Tag="Create a password" Padding="14,0,44,0" Visibility="Collapsed"
+                                         TextChanged="TxtPasswordVisible_TextChanged"/>
+                                <Button x:Name="BtnTogglePw" Style="{StaticResource BtnGhost}"
+                                        HorizontalAlignment="Right" VerticalAlignment="Center"
+                                        Width="34" Height="34" Margin="0,0,6,0" Cursor="Hand"
+                                        Click="BtnTogglePw_Click" ToolTip="Show password">
+                                    <Viewbox Width="18" Height="18">
+                                        <Grid Width="24" Height="24">
+                                            <Path Data="M2,12 C2,12 5,6 12,6 C19,6 22,12 22,12 C22,12 19,18 12,18 C5,18 2,12 2,12 Z"
+                                                  Stroke="{DynamicResource ThBrTextSecondary}" StrokeThickness="1.7" Fill="Transparent"/>
+                                            <Ellipse Width="6.4" Height="6.4" Stroke="{DynamicResource ThBrTextSecondary}"
+                                                     StrokeThickness="1.7" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            <Line x:Name="EyeSlash" X1="3" Y1="3" X2="21" Y2="21" Visibility="Collapsed"
+                                                  Stroke="{DynamicResource ThBrTextSecondary}" StrokeThickness="1.7"
+                                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                        </Grid>
+                                    </Viewbox>
+                                </Button>
+                            </Grid>
 
                             <!-- Password criteria -->
                             <Grid Margin="0,0,0,16">
@@ -422,11 +444,32 @@
                                 </StackPanel>
                             </Grid>
 
-                            <!-- Confirm Password -->
+                            <!-- Confirm password field with visibility toggle -->
                             <TextBlock Text="Confirm Password" Style="{StaticResource FieldLabel}"/>
-                            <PasswordBox x:Name="PbConfirmPassword" Style="{StaticResource InputPw}"
-                                         PasswordChanged="PbConfirmPassword_PasswordChanged"
-                                         Margin="0,0,0,6"/>
+                            <Grid Margin="0,0,0,6">
+                                <PasswordBox x:Name="PbConfirmPassword" Style="{StaticResource InputPw}"
+                                             Tag="Re-enter your password" Padding="14,0,44,0"
+                                             PasswordChanged="PbConfirmPassword_PasswordChanged"/>
+                                <TextBox x:Name="TxtConfirmVisible" Style="{StaticResource Input}"
+                                         Tag="Re-enter your password" Padding="14,0,44,0" Visibility="Collapsed"
+                                         TextChanged="TxtConfirmVisible_TextChanged"/>
+                                <Button x:Name="BtnToggleConfirm" Style="{StaticResource BtnGhost}"
+                                        HorizontalAlignment="Right" VerticalAlignment="Center"
+                                        Width="34" Height="34" Margin="0,0,6,0" Cursor="Hand"
+                                        Click="BtnToggleConfirm_Click" ToolTip="Show password">
+                                    <Viewbox Width="18" Height="18">
+                                        <Grid Width="24" Height="24">
+                                            <Path Data="M2,12 C2,12 5,6 12,6 C19,6 22,12 22,12 C22,12 19,18 12,18 C5,18 2,12 2,12 Z"
+                                                  Stroke="{DynamicResource ThBrTextSecondary}" StrokeThickness="1.7" Fill="Transparent"/>
+                                            <Ellipse Width="6.4" Height="6.4" Stroke="{DynamicResource ThBrTextSecondary}"
+                                                     StrokeThickness="1.7" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            <Line x:Name="EyeSlashConfirm" X1="3" Y1="3" X2="21" Y2="21" Visibility="Collapsed"
+                                                  Stroke="{DynamicResource ThBrTextSecondary}" StrokeThickness="1.7"
+                                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                        </Grid>
+                                    </Viewbox>
+                                </Button>
+                            </Grid>
 
                             <!-- Confirm match indicator -->
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,20">

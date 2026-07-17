@@ -38,19 +38,85 @@ public partial class RegisterView : UserControl
         KeyDown += (_, e) => { if (e.Key == Key.Enter) BtnRegister_Click(this, e); };
     }
 
-    // ── Password placeholders ──────────────────────────────────────────────
+    // ── Password visibility ────────────────────────────────────────────────
+    // Each field is a PasswordBox stacked with a plain TextBox; only one is
+    // visible at a time and the toggle copies the value across. Same pattern as
+    // the sign-in screen.
+    private bool _pwVisible;
+    private bool _confirmVisible;
+
+    /// <summary>The password as typed, from whichever control is showing.</summary>
+    private string CurrentPassword => _pwVisible ? TxtPasswordVisible.Text : PbPassword.Password;
+    private string CurrentConfirm => _confirmVisible ? TxtConfirmVisible.Text : PbConfirmPassword.Password;
+
     private void PbPassword_PasswordChanged(object sender, RoutedEventArgs e)
     {
-        var pb = (PasswordBox)sender;
-        TogglePlaceholder(pb);
-        UpdateCriteria(pb.Password);
+        TogglePlaceholder((PasswordBox)sender);
+        UpdateCriteria(PbPassword.Password);
+        UpdateConfirmIndicator(CurrentConfirm);
     }
 
     private void PbConfirmPassword_PasswordChanged(object sender, RoutedEventArgs e)
     {
-        var pb = (PasswordBox)sender;
-        TogglePlaceholder(pb);
-        UpdateConfirmIndicator(pb.Password);
+        TogglePlaceholder((PasswordBox)sender);
+        UpdateConfirmIndicator(PbConfirmPassword.Password);
+    }
+
+    private void TxtPasswordVisible_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        UpdateCriteria(TxtPasswordVisible.Text);
+        UpdateConfirmIndicator(CurrentConfirm);
+    }
+
+    private void TxtConfirmVisible_TextChanged(object sender, TextChangedEventArgs e)
+        => UpdateConfirmIndicator(TxtConfirmVisible.Text);
+
+    private void BtnTogglePw_Click(object sender, RoutedEventArgs e)
+    {
+        _pwVisible = !_pwVisible;
+        if (_pwVisible)
+        {
+            TxtPasswordVisible.Text = PbPassword.Password;
+            TxtPasswordVisible.Visibility = Visibility.Visible;
+            PbPassword.Visibility = Visibility.Collapsed;
+            EyeSlash.Visibility = Visibility.Visible;
+            BtnTogglePw.ToolTip = "Hide password";
+            TxtPasswordVisible.Focus();
+            TxtPasswordVisible.CaretIndex = TxtPasswordVisible.Text.Length;
+        }
+        else
+        {
+            PbPassword.Password = TxtPasswordVisible.Text;
+            PbPassword.Visibility = Visibility.Visible;
+            TxtPasswordVisible.Visibility = Visibility.Collapsed;
+            EyeSlash.Visibility = Visibility.Collapsed;
+            BtnTogglePw.ToolTip = "Show password";
+            PbPassword.Focus();
+        }
+    }
+
+    private void BtnToggleConfirm_Click(object sender, RoutedEventArgs e)
+    {
+        _confirmVisible = !_confirmVisible;
+        if (_confirmVisible)
+        {
+            TxtConfirmVisible.Text = PbConfirmPassword.Password;
+            TxtConfirmVisible.Visibility = Visibility.Visible;
+            PbConfirmPassword.Visibility = Visibility.Collapsed;
+            EyeSlashConfirm.Visibility = Visibility.Visible;
+            BtnToggleConfirm.ToolTip = "Hide password";
+            TxtConfirmVisible.Focus();
+            TxtConfirmVisible.CaretIndex = TxtConfirmVisible.Text.Length;
+        }
+        else
+        {
+            PbConfirmPassword.Password = TxtConfirmVisible.Text;
+            PbConfirmPassword.Visibility = Visibility.Visible;
+            TxtConfirmVisible.Visibility = Visibility.Collapsed;
+            EyeSlashConfirm.Visibility = Visibility.Collapsed;
+            BtnToggleConfirm.ToolTip = "Show password";
+            PbConfirmPassword.Focus();
+        }
     }
 
     private static void TogglePlaceholder(PasswordBox pb)
@@ -85,11 +151,10 @@ public partial class RegisterView : UserControl
 
     private void UpdateConfirmIndicator(string confirmPwd)
     {
-        var pw1 = FindName("PbPassword") as PasswordBox;
-        if (pw1 is null) return;
+        var password = CurrentPassword;
 
-        bool matches  = confirmPwd.Length > 0 && confirmPwd == pw1.Password;
-        bool mismatch = confirmPwd.Length > 0 && confirmPwd != pw1.Password;
+        bool matches  = confirmPwd.Length > 0 && confirmPwd == password;
+        bool mismatch = confirmPwd.Length > 0 && confirmPwd != password;
 
         var teal = ThemeManager.GetBrush("ThAccent");
         var red  = ThemeManager.GetBrush("ThError");
@@ -112,8 +177,8 @@ public partial class RegisterView : UserControl
     {
         if (DataContext is ViewModels.Auth.RegisterViewModel vm)
         {
-            vm.Password        = (FindName("PbPassword")        as PasswordBox)?.Password ?? string.Empty;
-            vm.ConfirmPassword = (FindName("PbConfirmPassword") as PasswordBox)?.Password ?? string.Empty;
+            vm.Password        = CurrentPassword;
+            vm.ConfirmPassword = CurrentConfirm;
             vm.ProgrammeOfStudy = CmbProgramme.SelectedItem?.ToString() ?? "";
             vm.Level            = CmbLevel.SelectedItem?.ToString() ?? "";
             vm.InstitutionId    = (CmbInstitution.SelectedItem as ScoreCode.Shared.DTOs.Institutions.InstitutionOption)?.Id ?? Guid.Empty;
