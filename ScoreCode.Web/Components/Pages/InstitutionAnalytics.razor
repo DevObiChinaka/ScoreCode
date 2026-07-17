@@ -1,0 +1,166 @@
+@page "/institution/analytics"
+@layout DashboardLayout
+@inject ApiClient Api
+@inject WebAuthState Auth
+@inject NavigationManager Nav
+
+<div class="pagehead">
+    <div><h1>Analytics</h1><div class="sub">Activity across your institution</div></div>
+</div>
+
+@if (_loading)
+{
+    <p class="muted">Loading…</p>
+}
+else
+{
+    <div class="stats">
+        <div class="stat"><div class="n teal">@_students.Count</div><div class="l">Students</div></div>
+        <div class="stat"><div class="n">@_lecturers.Count</div><div class="l">Lecturers</div></div>
+        <div class="stat"><div class="n">@_exams.Count</div><div class="l">Exams</div></div>
+        <div class="stat"><div class="n ok">@_exams.Count(e => e.Status == "Active")</div><div class="l">Active exams</div></div>
+        <div class="stat"><div class="n">@_exams.Sum(e => e.SubmissionCount)</div><div class="l">Submissions</div></div>
+    </div>
+
+    <div class="charts-grid">
+        <!-- People -->
+        <div class="chartcard">
+            <h3>People</h3>
+            <div class="csub">Students and lecturers in your institution</div>
+            <div class="donutwrap">
+                @{ var people = Donut(("var(--accent)", _students.Count), ("var(--ok)", _lecturers.Count)); }
+                <svg class="donut" viewBox="0 0 42 42">
+                    <circle cx="21" cy="21" r="15.915" fill="none" stroke="var(--surface-2)" stroke-width="5" />
+                    <g transform="rotate(-90 21 21)">
+                        @foreach (var s in people)
+                        {
+                            <circle cx="21" cy="21" r="15.915" fill="none" stroke="@s.Color" stroke-width="5"
+                                    stroke-dasharray="@F(s.Len) @F(100 - s.Len)" stroke-dashoffset="@F(s.Offset)" />
+                        }
+                    </g>
+                    <text x="21" y="20.5" text-anchor="middle" class="center" font-size="7" font-weight="600" fill="var(--text)">@(_students.Count + _lecturers.Count)</text>
+                    <text x="21" y="26" text-anchor="middle" font-size="3" fill="var(--muted)">people</text>
+                </svg>
+                <div class="legend">
+                    <div class="legenditem"><span class="legenddot" style="background:var(--accent)"></span>Students<span class="legendval">@_students.Count</span></div>
+                    <div class="legenditem"><span class="legenddot" style="background:var(--ok)"></span>Lecturers<span class="legendval">@_lecturers.Count</span></div>
+                    <div class="legenditem"><span class="legenddot" style="background:var(--muted)"></span>Deactivated<span class="legendval">@(_students.Count(u => !u.IsActive) + _lecturers.Count(u => !u.IsActive))</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Exam status -->
+        <div class="chartcard">
+            <h3>Exam status</h3>
+            <div class="csub">Where your lecturers' exams stand</div>
+            <div class="donutwrap">
+                @{
+                    var st = Donut(
+                        ("var(--ok)", ExamCount("Active")),
+                        ("var(--warn)", ExamCount("Draft")),
+                        ("var(--muted)", ExamCount("Closed")));
+                }
+                <svg class="donut" viewBox="0 0 42 42">
+                    <circle cx="21" cy="21" r="15.915" fill="none" stroke="var(--surface-2)" stroke-width="5" />
+                    <g transform="rotate(-90 21 21)">
+                        @foreach (var s in st)
+                        {
+                            <circle cx="21" cy="21" r="15.915" fill="none" stroke="@s.Color" stroke-width="5"
+                                    stroke-dasharray="@F(s.Len) @F(100 - s.Len)" stroke-dashoffset="@F(s.Offset)" />
+                        }
+                    </g>
+                    <text x="21" y="20.5" text-anchor="middle" class="center" font-size="7" font-weight="600" fill="var(--text)">@_exams.Count</text>
+                    <text x="21" y="26" text-anchor="middle" font-size="3" fill="var(--muted)">exams</text>
+                </svg>
+                <div class="legend">
+                    <div class="legenditem"><span class="legenddot" style="background:var(--ok)"></span>Active<span class="legendval">@ExamCount("Active")</span></div>
+                    <div class="legenditem"><span class="legenddot" style="background:var(--warn)"></span>Draft<span class="legendval">@ExamCount("Draft")</span></div>
+                    <div class="legenditem"><span class="legenddot" style="background:var(--muted)"></span>Closed<span class="legendval">@ExamCount("Closed")</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Students by programme -->
+        <div class="chartcard">
+            <h3>Students by programme</h3>
+            <div class="csub">Enrolment spread across programmes</div>
+            @{
+                var progs = _students
+                    .GroupBy(s => string.IsNullOrWhiteSpace(s.ProgrammeOfStudy) ? "Unspecified" : s.ProgrammeOfStudy)
+                    .Select(g => (g.Key, g.Count())).OrderByDescending(x => x.Item2).Take(6).ToList();
+                var pMax = progs.Count > 0 ? Math.Max(1, progs.Max(x => x.Item2)) : 1;
+            }
+            @if (progs.Count == 0)
+            {
+                <p class="muted small">No students yet.</p>
+            }
+            @foreach (var p in progs)
+            {
+                <div class="barrow">
+                    <div class="barlabel">@p.Key</div>
+                    <div class="bartrack"><div class="barfill" style="width:@(Pct(p.Item2, pMax))%;background:var(--accent)"></div></div>
+                    <div class="barval">@p.Item2</div>
+                </div>
+            }
+        </div>
+
+        <!-- Submissions per exam -->
+        <div class="chartcard">
+            <h3>Submissions per exam</h3>
+            <div class="csub">Students who submitted, by exam</div>
+            @{
+                var top = _exams.OrderByDescending(e => e.SubmissionCount).Take(6).ToList();
+                var eMax = top.Count > 0 ? Math.Max(1, top.Max(e => e.SubmissionCount)) : 1;
+            }
+            @if (top.Count == 0 || top.All(e => e.SubmissionCount == 0))
+            {
+                <p class="muted small">No submissions yet.</p>
+            }
+            @foreach (var e in top.Where(x => x.SubmissionCount > 0))
+            {
+                <div class="barrow">
+                    <div class="barlabel">@e.Title</div>
+                    <div class="bartrack"><div class="barfill" style="width:@(Pct(e.SubmissionCount, eMax))%;background:var(--accent-strong)"></div></div>
+                    <div class="barval">@e.SubmissionCount</div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private List<UserDto> _students = new();
+    private List<UserDto> _lecturers = new();
+    private List<InstitutionExamDto> _exams = new();
+    private bool _loading = true;
+
+    private int ExamCount(string s) => _exams.Count(e => e.Status == s);
+    private static double Pct(int v, int max) => max == 0 ? 0 : Math.Round((double)v / max * 100, 1);
+    private static string F(double d) => d.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Auth.IsInstitutionAdmin) { Nav.NavigateTo("/login"); return; }
+        _students = await Api.GetUsersAsync("Student");
+        _lecturers = await Api.GetUsersAsync("Lecturer");
+        _exams = await Api.GetInstitutionExamsAsync();
+        _loading = false;
+    }
+
+    private record Seg(string Color, double Len, double Offset);
+
+    private List<Seg> Donut(params (string Color, int Val)[] parts)
+    {
+        int total = parts.Sum(p => p.Val);
+        var list = new List<Seg>();
+        double cumulative = 0;
+        foreach (var p in parts)
+        {
+            if (p.Val <= 0) continue;
+            double len = total == 0 ? 0 : (double)p.Val / total * 100;
+            list.Add(new Seg(p.Color, len, -cumulative));
+            cumulative += len;
+        }
+        return list;
+    }
+}

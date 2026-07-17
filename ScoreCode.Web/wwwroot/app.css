@@ -113,9 +113,10 @@ select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,va
 .brand-name{font-size:18px;font-weight:600}
 .brand-name em{color:var(--muted);font-style:normal;font-weight:500}
 
-/* ── Dashboard shell ─────────────────────────────────────── */
-.shell{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
-.sidebar{background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:18px 14px}
+/* ── Dashboard shell (fixed sidebar + topbar, scrolling content) ── */
+.shell{display:grid;grid-template-columns:250px 1fr;height:100vh;overflow:hidden}
+.sidebar{background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;
+  padding:18px 14px;height:100vh;overflow-y:auto}
 .sidebar .brand{display:flex;align-items:center;gap:10px;padding:6px 8px 20px;font-weight:600;font-size:15px}
 .sidebar nav{display:flex;flex-direction:column;gap:2px;flex:1}
 .navitem{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:11px;
@@ -132,12 +133,17 @@ select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,va
   color:#fff;display:flex;align-items:center;justify-content:center;font-weight:500;font-size:13px;flex-shrink:0}
 .sidebar-user .name{font-size:12.5px;font-weight:600;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px}
 .sidebar-user .role{font-size:11px;color:var(--muted)}
+.sidebar-signout{display:flex;align-items:center;gap:10px;width:100%;margin-top:6px;padding:10px 12px;
+  background:none;border:0;border-radius:10px;color:var(--muted);font-family:inherit;font-size:13px;cursor:pointer}
+.sidebar-signout:hover{color:var(--text);background:var(--surface-2)}
+.sidebar-signout svg{width:15px;height:15px;flex-shrink:0}
 
-.main{display:flex;flex-direction:column;min-width:0}
-.topbar{height:58px;display:flex;align-items:center;justify-content:space-between;
+.main{display:flex;flex-direction:column;min-width:0;height:100vh;overflow:hidden}
+.topbar{height:58px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;
   padding:0 32px;border-bottom:1px solid var(--border);gap:16px}
 .topbar .crumb{font-size:13px;color:var(--muted)}
-.content{padding:36px 32px 48px;max-width:1120px;width:100%;margin:0 auto;flex:1}
+.scrollarea{flex:1;min-height:0;overflow-y:auto}
+.content{padding:36px 32px 48px;max-width:1120px;width:100%;margin:0 auto}
 
 /* ── Page header ─────────────────────────────────────────── */
 .pagehead{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:26px;gap:16px}
