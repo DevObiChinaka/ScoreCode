@@ -189,17 +189,22 @@
                 <StackPanel VerticalAlignment="Center" Margin="36,0,30,0">
                     <!-- Logo -->
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,24">
-                        <Border Width="32" Height="32" CornerRadius="7"
-                                Background="{DynamicResource ThBrAccent}" Margin="0,0,12,0">
-                            <Grid>
-                                <Grid.RowDefinitions><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
-                                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
-                                <Border Grid.Row="0" Grid.Column="0" Background="{DynamicResource ThBrBgBase}" Width="7" Height="7" CornerRadius="2" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                <Border Grid.Row="0" Grid.Column="1" Background="{DynamicResource ThBrBgBase}" Width="7" Height="7" CornerRadius="2" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                <Border Grid.Row="1" Grid.Column="0" Background="{DynamicResource ThBrBgBase}" Width="7" Height="7" CornerRadius="2" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                <Border Grid.Row="1" Grid.Column="1" Background="{DynamicResource ThBrBgBase}" Width="7" Height="7" CornerRadius="2" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Viewbox Width="32" Height="32" Margin="0,0,12,0">
+                            <Grid Width="48" Height="48">
+                                <Border CornerRadius="12" Background="{DynamicResource ThBrBgSurface}"
+                                        BorderBrush="{DynamicResource ThBrBorder}" BorderThickness="1"/>
+                                <Path Data="M33.64,12.51 A15,15 0 0 0 9,24"
+                                      Stroke="{DynamicResource ThBrTextPrimary}" StrokeThickness="5"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                <Path Data="M9,24 A15,15 0 0 0 33.64,35.49"
+                                      Stroke="{DynamicResource ThBrAccent}" StrokeThickness="5"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                <Path Data="M21,17 L30,24 L21,31"
+                                      Stroke="#14B88A" StrokeThickness="4.6"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                      StrokeLineJoin="Round"/>
                             </Grid>
-                        </Border>
+                        </Viewbox>
                         <StackPanel VerticalAlignment="Center">
                             <TextBlock Text="ScoreCode" FontSize="18" FontWeight="Bold"
                                        Foreground="{DynamicResource ThBrTextPrimary}"/>
