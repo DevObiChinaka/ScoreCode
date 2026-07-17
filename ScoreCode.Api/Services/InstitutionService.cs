@@ -254,6 +254,6 @@ public class InstitutionService : IInstitutionService
     {
         Id = u.Id, Name = u.Name, IdNumber = u.IdNumber, Role = u.Role,
         Department = u.Department, ProgrammeOfStudy = u.ProgrammeOfStudy,
-        Level = u.Level, IsActive = u.IsActive, CreatedAt = u.CreatedAt
+        Level = u.Level, IsActive = u.IsActive, CreatedAt = u.CreatedAt, Email = u.Email
     };
 }

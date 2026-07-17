@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using ScoreCode.Database;
 using ScoreCode.Database.Entities;
@@ -11,11 +12,13 @@ public class AuthService : IAuthService
 {
     private readonly ScoreCodeDb _db;
     private readonly ITokenService _tokens;
+    private readonly IEmailService _email;
 
-    public AuthService(ScoreCodeDb db, ITokenService tokens)
+    public AuthService(ScoreCodeDb db, ITokenService tokens, IEmailService email)
     {
         _db = db;
         _tokens = tokens;
+        _email = email;
     }
 
     /// <summary>Consecutive failures before sign-in is temporarily refused.</summary>
@@ -58,8 +61,10 @@ public class AuthService : IAuthService
     }
 
     /// <summary>
-    /// Raise a reset request for an admin to action. Always succeeds from the
-    /// caller's point of view so an unknown ID can't be probed.
+    /// Start a password reset. When the account has an email on file a one-time
+    /// code is sent there; otherwise (or if the send fails) an administrator is
+    /// asked to reset it instead. Always succeeds from the caller's point of
+    /// view so an unknown ID can't be probed.
     /// </summary>
     public async Task RequestPasswordResetAsync(string idNumber)
     {
@@ -67,6 +72,39 @@ public class AuthService : IAuthService
             .FirstOrDefaultAsync(u => u.IdNumber == idNumber && u.IsActive);
         if (user is null) return;
 
+        if (_email.IsEnabled && !string.IsNullOrWhiteSpace(user.Email))
+        {
+            try
+            {
+                await SendResetCodeAsync(user);
+                return;
+            }
+            catch
+            {
+                // Mail is down or the address is bad — fall through to an admin
+                // reset rather than leave the user waiting for a code.
+            }
+        }
+
+        await RaiseAdminResetRequestAsync(user);
+    }
+
+    /// <summary>Issue a fresh code, replacing any code already outstanding.</summary>
+    private async Task SendResetCodeAsync(User user)
+    {
+        var code = GenerateOtp();
+
+        user.ResetOtpHash = BCrypt.Net.BCrypt.HashPassword(code);
+        user.ResetOtpExpiresAt = DateTime.UtcNow.AddMinutes(Constants.PasswordReset.OtpExpiryMinutes);
+        user.ResetOtpAttempts = 0;
+        await _db.SaveChangesAsync();
+
+        await _email.SendPasswordResetCodeAsync(
+            user.Email!, user.IdNumber, code, Constants.PasswordReset.OtpExpiryMinutes);
+    }
+
+    private async Task RaiseAdminResetRequestAsync(User user)
+    {
         var alreadyPending = await _db.PasswordResetRequests.IgnoreQueryFilters()
             .AnyAsync(r => r.UserId == user.Id && r.Status == Constants.ResetRequestStatuses.Pending);
         if (alreadyPending) return;
@@ -80,6 +118,73 @@ public class AuthService : IAuthService
             Status = Constants.ResetRequestStatuses.Pending
         });
         await _db.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Complete a reset with the emailed code. Returns false for any failure —
+    /// wrong, expired, exhausted or absent — so nothing about the account leaks.
+    /// </summary>
+    public async Task<bool> ResetWithOtpAsync(string idNumber, string code, string newPassword)
+    {
+        var user = await _db.Users.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(u => u.IdNumber == idNumber && u.IsActive);
+
+        if (user?.ResetOtpHash is null || user.ResetOtpExpiresAt is null) return false;
+
+        if (user.ResetOtpExpiresAt < DateTime.UtcNow
+            || user.ResetOtpAttempts >= Constants.PasswordReset.MaxOtpAttempts)
+        {
+            ClearOtp(user);
+            await _db.SaveChangesAsync();
+            return false;
+        }
+
+        if (!BCrypt.Net.BCrypt.Verify(code, user.ResetOtpHash))
+        {
+            // Count the guess so a 6-digit code can't be brute forced.
+            user.ResetOtpAttempts++;
+            await _db.SaveChangesAsync();
+            return false;
+        }
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+        // They chose this password themselves, so nothing to force on next login.
+        user.MustChangePassword = false;
+        user.FailedLoginAttempts = 0;
+        user.LockoutUntil = null;   // a reset also lifts a lockout
+        ClearOtp(user);
+
+        // Any pending admin request is now moot.
+        var pending = await _db.PasswordResetRequests.IgnoreQueryFilters()
+            .Where(r => r.UserId == user.Id && r.Status == Constants.ResetRequestStatuses.Pending)
+            .ToListAsync();
+        foreach (var r in pending)
+        {
+            r.Status = Constants.ResetRequestStatuses.Handled;
+            r.HandledAt = DateTime.UtcNow;
+        }
+
+        await _db.SaveChangesAsync();
+        return true;
+    }
+
+    private static void ClearOtp(User user)
+    {
+        user.ResetOtpHash = null;
+        user.ResetOtpExpiresAt = null;
+        user.ResetOtpAttempts = 0;
+    }
+
+    /// <summary>Trim and lowercase an address; blank becomes null (no address on file).</summary>
+    internal static string? Normalize(string? email) =>
+        string.IsNullOrWhiteSpace(email) ? null : email.Trim().ToLowerInvariant();
+
+    private static string GenerateOtp()
+    {
+        var digits = new char[Constants.PasswordReset.OtpLength];
+        for (var i = 0; i < digits.Length; i++)
+            digits[i] = (char)('0' + RandomNumberGenerator.GetInt32(10));
+        return new string(digits);
     }
 
     public async Task<LoginResponse> RegisterStudentAsync(RegisterRequest request)
@@ -108,6 +213,7 @@ public class AuthService : IAuthService
             InstitutionId = institution.Id,
             ProgrammeOfStudy = request.ProgrammeOfStudy,
             Level = request.Level,
+            Email = Normalize(request.Email),
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };
@@ -162,7 +268,8 @@ public class AuthService : IAuthService
                 Level = u.Level,
                 InstitutionName = u.Institution != null ? u.Institution.Name : string.Empty,
                 IsActive = u.IsActive,
-                CreatedAt = u.CreatedAt
+                CreatedAt = u.CreatedAt,
+                Email = u.Email   // GetProfileAsync — the owner's own record
             })
             .FirstOrDefaultAsync();
     }

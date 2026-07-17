@@ -10,7 +10,14 @@ public interface IAuthService
     Task<LoginResponse> RegisterStudentAsync(RegisterRequest request);
 
     /// <summary>Raise a password-reset request for an admin to action.</summary>
+    /// <summary>
+    /// Start a reset: emails a one-time code when an address is on file,
+    /// otherwise queues the request for an administrator.
+    /// </summary>
     Task RequestPasswordResetAsync(string idNumber);
+
+    /// <summary>Complete a reset with the emailed code. False if it isn't valid.</summary>
+    Task<bool> ResetWithOtpAsync(string idNumber, string code, string newPassword);
     Task<LoginResponse?> RefreshAsync(string refreshToken);
     Task LogoutAsync(string refreshToken);
     Task<bool> ChangePasswordAsync(Guid userId, string currentPassword, string newPassword);

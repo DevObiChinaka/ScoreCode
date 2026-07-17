@@ -77,7 +77,7 @@ public class AuthController : ControllerBase
         return Ok(ApiResponse<LoginResponse>.Ok(result));
     }
 
-    // POST /api/v1/auth/forgot-password — raise a reset request for an admin
+    // POST /api/v1/auth/forgot-password — email a code, or queue an admin reset
     [HttpPost("forgot-password")]
     [AllowAnonymous]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
@@ -85,9 +85,35 @@ public class AuthController : ControllerBase
         if (!string.IsNullOrWhiteSpace(request.IdNumber))
             await _auth.RequestPasswordResetAsync(request.IdNumber.Trim());
 
-        // Always the same answer — never reveal whether an ID exists.
+        // Always the same answer — never reveal whether an ID exists, or
+        // whether it has an email on file.
         return Ok(ApiResponse<object>.Ok(new { }));
     }
+
+    // POST /api/v1/auth/reset-with-code — finish a reset using the emailed code
+    [HttpPost("reset-with-code")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ResetWithCode([FromBody] ResetWithOtpRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.IdNumber) || string.IsNullOrWhiteSpace(request.Code))
+            return BadRequest(ApiResponse<object>.Fail("validation_failed", "Enter your ID number and the code."));
+
+        if (!IsStrongPassword(request.NewPassword))
+            return BadRequest(ApiResponse<object>.Fail("validation_failed",
+                "Password must be at least 8 characters and include an uppercase letter, a number and a special character."));
+
+        var ok = await _auth.ResetWithOtpAsync(request.IdNumber.Trim(), request.Code.Trim(), request.NewPassword);
+
+        // One message for every failure — wrong, expired, or no such account.
+        return ok
+            ? Ok(ApiResponse<object>.Ok(new { }))
+            : BadRequest(ApiResponse<object>.Fail(Constants.ErrorCodes.InvalidOtp,
+                "That code is invalid or has expired. Request a new one."));
+    }
+
+    private static bool IsStrongPassword(string? p) =>
+        !string.IsNullOrWhiteSpace(p) && p.Length >= 8
+        && p.Any(char.IsUpper) && p.Any(char.IsDigit) && p.Any(c => !char.IsLetterOrDigit(c));
 
     // POST /api/v1/auth/refresh
     [HttpPost("refresh")]

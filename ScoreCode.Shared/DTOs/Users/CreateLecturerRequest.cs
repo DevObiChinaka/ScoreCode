@@ -6,4 +6,6 @@ public class CreateLecturerRequest
     public string StaffId { get; set; } = string.Empty;
     public string Department { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
+    /// <summary>Optional; used only to email a password-reset code.</summary>
+    public string? Email { get; set; }
 }

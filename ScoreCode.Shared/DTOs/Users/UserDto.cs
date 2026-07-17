@@ -10,6 +10,12 @@ public class UserDto
     public string ProgrammeOfStudy { get; set; } = string.Empty;
     public string Level { get; set; } = string.Empty;
     public string InstitutionName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Recovery address, or null. Only ever returned to admins and to the owner
+    /// — a student's email would identify them to a lecturer.
+    /// </summary>
+    public string? Email { get; set; }
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
 }

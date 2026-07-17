@@ -45,6 +45,23 @@ public class SmtpEmailService : IEmailService
         _logger = logger;
     }
 
+    public bool IsEnabled => true;
+
+    public async Task SendPasswordResetCodeAsync(string toEmail, string idNumber, string code, int expiryMinutes)
+    {
+        var body =
+            $"Hello,\n\n" +
+            $"Someone asked to reset the ScoreCode password for {idNumber}.\n\n" +
+            $"Your code is: {code}\n\n" +
+            $"It expires in {expiryMinutes} minutes and can be used once.\n" +
+            $"If this wasn't you, ignore this email — your password has not changed.\n\n" +
+            $"— ScoreCode";
+
+        // Throws on failure: the caller must know the code never arrived so it
+        // can route the request to an administrator instead.
+        await SendAsync(toEmail, "Your ScoreCode password reset code", body, throwOnFailure: true);
+    }
+
     public async Task SendInstitutionApprovedAsync(
         string toEmail, string institutionName, string adminIdNumber, string temporaryPassword)
     {
@@ -61,7 +78,7 @@ public class SmtpEmailService : IEmailService
         await SendAsync(toEmail, subject, body);
     }
 
-    private async Task SendAsync(string toEmail, string subject, string body)
+    private async Task SendAsync(string toEmail, string subject, string body, bool throwOnFailure = false)
     {
         var from = string.IsNullOrWhiteSpace(_options.From) ? _options.User : _options.From;
 
@@ -86,8 +103,9 @@ public class SmtpEmailService : IEmailService
         }
         catch (Exception ex)
         {
-            // Logged without the message body, which carries the temporary password.
+            // Logged without the message body, which carries the code or password.
             _logger.LogError(ex, "Could not email {Email} — '{Subject}' was not delivered.", toEmail, subject);
+            if (throwOnFailure) throw;
         }
     }
 }

@@ -32,9 +32,28 @@ public static class Constants
         public const string Handled = "Handled";
     }
 
+    /// <summary>Self-service password reset by emailed one-time code.</summary>
+    public static class PasswordReset
+    {
+        public const int OtpLength = 6;
+        public const int OtpExpiryMinutes = 10;
+        /// <summary>Wrong guesses allowed before the code is voided.</summary>
+        public const int MaxOtpAttempts = 5;
+    }
+
+    /// <summary>How a reset request was routed back to the user.</summary>
+    public static class ResetChannels
+    {
+        /// <summary>A code was emailed to the address on file.</summary>
+        public const string Email = "email";
+        /// <summary>No address on file — an administrator was asked to reset it.</summary>
+        public const string Administrator = "administrator";
+    }
+
     public static class ErrorCodes
     {
         public const string AccountLocked = "account_locked";
+        public const string InvalidOtp = "invalid_otp";
         public const string InvalidCredentials = "invalid_credentials";
         public const string InvalidToken = "invalid_token";
         public const string TokenExpired = "token_expired";

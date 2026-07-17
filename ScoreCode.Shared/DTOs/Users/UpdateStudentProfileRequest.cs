@@ -9,6 +9,9 @@ public class UpdateStudentProfileRequest
     public string? Name { get; set; }
 
     public string? MatricNumber { get; set; }
+
+    /// <summary>Recovery address. Blank clears it, sending the user back to admin resets.</summary>
+    public string? Email { get; set; }
     public string? ProgrammeOfStudy { get; set; }
     public string? Level { get; set; }
     public string? Department { get; set; }

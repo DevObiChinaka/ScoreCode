@@ -32,6 +32,7 @@ public class UserService : IUserService
             Role = Constants.Roles.Lecturer,
             InstitutionId = institutionId,
             Department = request.Department,
+            Email = AuthService.Normalize(request.Email),
             IsActive = true,
             MustChangePassword = true,   // admin-issued password
             CreatedAt = DateTime.UtcNow
@@ -153,6 +154,9 @@ public class UserService : IUserService
         if (request.Name is not null && user.Role != Constants.Roles.Student)
             user.Name = request.Name.Trim();
 
+        if (request.Email is not null)
+            user.Email = AuthService.Normalize(request.Email);   // blank clears it
+
         if (request.MatricNumber is not null)
         {
             var taken = await _db.Users.IgnoreQueryFilters()
@@ -185,6 +189,7 @@ public class UserService : IUserService
         Level = u.Level,
         IsActive = u.IsActive,
         CreatedAt = u.CreatedAt,
+        Email = u.Email,
         InstitutionName = u.Institution?.Name ?? string.Empty
     };
 }

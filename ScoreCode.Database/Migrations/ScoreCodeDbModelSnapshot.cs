@@ -434,6 +434,9 @@ namespace ScoreCode.Database.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("Email")
+                        .HasColumnType("text");
+
                     b.Property<int>("FailedLoginAttempts")
                         .HasColumnType("integer");
 
@@ -467,6 +470,15 @@ namespace ScoreCode.Database.Migrations
 
                     b.Property<string>("ProgrammeOfStudy")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("ResetOtpAttempts")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("ResetOtpExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ResetOtpHash")
                         .HasColumnType("text");
 
                     b.Property<string>("Role")
