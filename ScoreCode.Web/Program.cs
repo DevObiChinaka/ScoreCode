@@ -25,4 +25,21 @@ app.UseAntiforgery();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
+// Desktop build download. The publish script (publish-desktop.ps1) drops a
+// zipped Windows build here; until it does, the landing page shows the button
+// as unavailable and this returns 404.
+app.MapGet("/download/windows", (IWebHostEnvironment env) =>
+{
+    var path = Path.Combine(env.WebRootPath, "downloads", DesktopDownload.FileName);
+    return File.Exists(path)
+        ? Results.File(path, "application/zip", DesktopDownload.FileName)
+        : Results.NotFound("The desktop app hasn't been published yet.");
+});
+
 app.Run();
+
+/// <summary>Shared constants for the desktop build artifact.</summary>
+static class DesktopDownload
+{
+    public const string FileName = "ScoreCode-Windows.zip";
+}

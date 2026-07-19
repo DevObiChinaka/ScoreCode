@@ -1,0 +1,135 @@
+@page "/"
+@layout EmptyLayout
+@inject IWebHostEnvironment Env
+@inject IJSRuntime JS
+
+<div class="lp">
+    <header class="lp-nav">
+        <div class="lp-brand">
+            <svg class="logo sm" viewBox="0 0 48 48" fill="none">
+                <rect x="0.5" y="0.5" width="47" height="47" rx="12" fill="var(--logo-tile)" stroke="var(--logo-stroke)" />
+                <path d="M33.64 12.51 A15 15 0 0 0 9 24" stroke="var(--text)" stroke-width="5" stroke-linecap="round" />
+                <path d="M9 24 A15 15 0 0 0 33.64 35.49" stroke="#3b74f0" stroke-width="5" stroke-linecap="round" />
+                <polyline points="21 17 30 24 21 31" stroke="#14b88a" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span>ScoreCode</span>
+        </div>
+        <nav class="lp-navlinks">
+            <button class="iconbtn" @onclick="ToggleTheme" title="Toggle light / dark">
+                @if (_theme == "light")
+                {
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg>
+                }
+                else
+                {
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
+                }
+            </button>
+            <a class="btn btn-outline btn-sm" href="/login">Sign in</a>
+        </nav>
+    </header>
+
+    <section class="lp-hero">
+        <div class="lp-eyebrow">Secure coding-exam platform</div>
+        <h1 class="lp-title">Run locked-down coding exams,<br />graded the moment they end.</h1>
+        <p class="lp-sub">
+            Students sit exams in a focused desktop environment. Lecturers author questions and
+            release results. Administrators manage everyone from the web — all under your institution.
+        </p>
+        <div class="lp-cta">
+            @if (_downloadReady)
+            {
+                <a class="btn lp-btn-lg" href="/download/windows">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12" /><path d="M7 10l5 5 5-5" /><path d="M5 21h14" /></svg>
+                    Download for Windows
+                </a>
+            }
+            else
+            {
+                <span class="btn lp-btn-lg" style="opacity:.55;cursor:default" title="Publish the desktop build to enable this">
+                    Desktop app coming soon
+                </span>
+            }
+            <a class="btn btn-outline lp-btn-lg" href="/login">Administrator sign in</a>
+        </div>
+        <div class="lp-hint">
+            @if (_downloadReady)
+            {
+                <span>Windows 10/11 · @_sizeLabel · for students &amp; lecturers</span>
+            }
+            else
+            {
+                <span>For students &amp; lecturers · requires Windows 10/11</span>
+            }
+        </div>
+    </section>
+
+    <section class="lp-cards">
+        <div class="lp-card">
+            <div class="lp-ic">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5 10-5z" /><path d="M6 12v5c3 2.5 9 2.5 12 0v-5" /></svg>
+            </div>
+            <h3>Students &amp; lecturers</h3>
+            <p>Sit and author exams in the desktop app — a distraction-free editor with the exam locked to one screen.</p>
+            @if (_downloadReady)
+            {
+                <a class="lp-link" href="/download/windows">Download the app →</a>
+            }
+            else
+            {
+                <span class="lp-link muted">Available once published</span>
+            }
+        </div>
+        <div class="lp-card">
+            <div class="lp-ic">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" /></svg>
+            </div>
+            <h3>Administrators</h3>
+            <p>Manage lecturers, students, exam activity and password resets from the web portal — no install needed.</p>
+            <a class="lp-link" href="/login">Sign in to the portal →</a>
+        </div>
+        <div class="lp-card">
+            <div class="lp-ic">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18" /><path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16" /><path d="M9 7h.01M15 7h.01M9 11h.01M15 11h.01M9 15h.01M15 15h.01" /></svg>
+            </div>
+            <h3>Institutions</h3>
+            <p>Bring your school onto ScoreCode. Register once; a platform admin approves it and issues your first login.</p>
+            <a class="lp-link" href="/apply">Register your institution →</a>
+        </div>
+    </section>
+
+    <footer class="lp-footer">
+        <span>ScoreCode · Secure exam management</span>
+        <span class="muted small">Students &amp; lecturers use the desktop app · administrators use the web portal</span>
+    </footer>
+</div>
+
+@code {
+    private string _theme = "dark";
+    private bool _downloadReady;
+    private string _sizeLabel = "";
+
+    protected override void OnInitialized()
+    {
+        // Blazor Server renders on the server, so we can read the published
+        // artifact directly and light up the button only when it exists.
+        var path = Path.Combine(Env.WebRootPath, "downloads", "ScoreCode-Windows.zip");
+        var info = new FileInfo(path);
+        if (info.Exists)
+        {
+            _downloadReady = true;
+            _sizeLabel = $"{info.Length / 1024d / 1024d:0.#} MB";
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _theme = await JS.InvokeAsync<string>("scGetTheme");
+            StateHasChanged();
+        }
+    }
+
+    private async Task ToggleTheme() => _theme = await JS.InvokeAsync<string>("scToggleTheme");
+}
