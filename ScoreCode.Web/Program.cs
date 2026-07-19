@@ -22,6 +22,12 @@ if (!app.Environment.IsDevelopment())
 app.UseStaticFiles();
 app.UseAntiforgery();
 
+// Public marketing landing at the root. Served as a static page (no Blazor
+// circuit) for an instant first paint; the app's own routes (/login, /apply,
+// /platform, …) stay with Blazor.
+app.MapGet("/", (IWebHostEnvironment env) =>
+    Results.File(Path.Combine(env.WebRootPath, "landing.html"), "text/html"));
+
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
