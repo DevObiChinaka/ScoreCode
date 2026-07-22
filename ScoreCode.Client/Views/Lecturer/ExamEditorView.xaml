@@ -137,12 +137,9 @@
                     <StackPanel Grid.Column="4" Grid.Row="0">
                         <TextBlock Text="Scheduled Date &amp; Time" FontSize="11" Foreground="{DynamicResource ThBrTextSecondary}"
                                    FontFamily="/Assets/Fonts/#Geist" Margin="0,0,0,4"/>
-                        <TextBox x:Name="TxtExamDate" FontSize="13" Height="36"
-                                 FontFamily="/Assets/Fonts/#Geist"
-                                 Background="{DynamicResource ThBrBgInput}"
-                                 Foreground="{DynamicResource ThBrTextPrimary}"
-                                 BorderBrush="{StaticResource Border}"
-                                 Padding="10,0" VerticalContentAlignment="Center" Margin="0,0,0,10"/>
+                        <!-- Filled from code-behind with a themed DateTimeField so
+                             the date is always a real DateTime, never parsed text. -->
+                        <ContentControl x:Name="ExamDateHost"/>
                     </StackPanel>
 
                     <!-- Row 1 -->

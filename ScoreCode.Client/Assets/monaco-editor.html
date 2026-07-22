@@ -25,6 +25,21 @@
            the `fixedOverflowWidgets: true` editor option. Do NOT override
            .overflow-guard / .overflowingContentWidgets here — manual overrides
            fight Monaco's layout and mis-place the suggestion popup. */
+
+        /* Cosmetics only — nothing here affects size or position, so the popup
+           still lands exactly where Monaco puts it. Colours come from the theme's
+           editorSuggestWidget.* tokens, so this works in light and dark alike. */
+        .monaco-editor .suggest-widget,
+        .monaco-editor .parameter-hints-widget,
+        .monaco-editor .monaco-hover {
+            border-radius: 10px;
+            box-shadow: 0 14px 34px -12px rgba(0, 0, 0, 0.45);
+        }
+        /* The description column reads better proportional than monospaced. */
+        .monaco-editor .suggest-widget .monaco-list .monaco-list-row > .contents > .main > .right,
+        .monaco-editor .suggest-widget .details .monaco-scrollable-element {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
     </style>
 </head>
 <body>
@@ -394,6 +409,27 @@
                     quickSuggestions: true,
                     parameterHints: { enabled: true },
                     fixedOverflowWidgets: true,
+
+                    // ── Suggestion popup behaviour ────────────────────────
+                    // The list is proportional and slightly smaller than the code
+                    // so it reads as a menu rather than a second editor pane.
+                    suggestFontSize: 13,
+                    suggestLineHeight: 20,
+                    // 'smart' only steals Enter when a suggestion is actively
+                    // selected, so pressing Enter for a newline still works.
+                    acceptSuggestionOnEnter: 'smart',
+                    tabCompletion: 'on',
+                    suggestSelection: 'first',
+                    snippetSuggestions: 'inline',
+                    suggest: {
+                        showIcons: true,
+                        showStatusBar: true,
+                        preview: true,          // ghost-text preview of the insertion
+                        filterGraceful: true,   // tolerate small typos while filtering
+                        localityBonus: true,    // favour identifiers used nearby
+                        showWords: true,
+                        insertMode: 'insert',
+                    },
                 });
 
                 // ── Fix caret/glyph misalignment ──────────────────────────

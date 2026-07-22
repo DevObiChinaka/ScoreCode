@@ -409,9 +409,9 @@ public partial class ExamManagementView : UserControl
         form.Children.Add(MakeLabel("Course Code"));
         var txtCode = MakeInput(); form.Children.Add(txtCode);
 
-        form.Children.Add(MakeLabel("Scheduled Date & Time (yyyy-MM-dd HH:mm)"));
-        var txtDate = MakeInput(DateTime.Now.AddDays(7).ToString("yyyy-MM-dd HH:mm"));
-        form.Children.Add(txtDate);
+        form.Children.Add(MakeLabel("Scheduled Date & Time"));
+        var dateField = new Helpers.DateTimeField(DateTime.Now.AddDays(7));
+        form.Children.Add(dateField.Root);
 
         form.Children.Add(MakeLabel("Duration (minutes)"));
         var defaultDuration = Services.UserPreferences.GetInt("DefaultDurationMinutes", 60).ToString();
@@ -453,9 +453,14 @@ public partial class ExamManagementView : UserControl
                 errorTxt.Text = "Title and Course Code are required.";
                 return;
             }
-            if (!DateTime.TryParse(txtDate.Text, out var scheduledAt))
+            if (!dateField.TryGetValue(out var scheduledAt))
             {
-                errorTxt.Text = "Invalid date format.";
+                errorTxt.Text = "Pick a scheduled date.";
+                return;
+            }
+            if (scheduledAt <= DateTime.Now)
+            {
+                errorTxt.Text = "The scheduled time must be in the future.";
                 return;
             }
             if (!int.TryParse(txtDuration.Text, out var duration) || duration <= 0)

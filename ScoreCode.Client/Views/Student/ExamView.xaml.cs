@@ -182,6 +182,11 @@ public partial class ExamView : Window
     {
         try
         {
+            // Paint the WebView2 in the theme's code background so there's no
+            // dark flash before Monaco finishes loading in light mode.
+            var codeBg = ThemeManager.GetColor("ThCodeBg");
+            Editor.DefaultBackgroundColor = System.Drawing.Color.FromArgb(codeBg.R, codeBg.G, codeBg.B);
+
             // Set up user data folder for WebView2
             var userDataFolder = System.IO.Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),

@@ -14,6 +14,10 @@ public partial class ExamEditorView : UserControl
     private readonly Guid _examId;
     private LecturerExamDto? _exam;
 
+    /// <summary>Date + time input; created on load once the stored value is known.</summary>
+    private Helpers.DateTimeField? _dateField;
+    private DateTime _loadedScheduledAt;
+
     /// <summary>Raised when user clicks Back.</summary>
     public event Action? BackRequested;
 
@@ -36,7 +40,9 @@ public partial class ExamEditorView : UserControl
         // Populate metadata form
         TxtExamTitle.Text = _exam.Title;
         TxtExamCode.Text = _exam.CourseCode;
-        TxtExamDate.Text = _exam.ScheduledAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
+        _loadedScheduledAt = _exam.ScheduledAt.ToLocalTime();
+        _dateField = new Helpers.DateTimeField(_loadedScheduledAt);
+        ExamDateHost.Content = _dateField.Root;
         TxtExamDuration.Text = _exam.DurationMinutes.ToString();
         TxtExamLangs.Text = string.Join(", ", _exam.Languages);
         ChkIntelli.IsChecked = _exam.IntelliSenseEnabled;
@@ -60,7 +66,8 @@ public partial class ExamEditorView : UserControl
             LockBanner.Visibility = Visibility.Visible;
             TxtExamTitle.IsReadOnly = true;
             TxtExamCode.IsReadOnly = true;
-            TxtExamDate.IsReadOnly = true;
+            // The date field is a picker, not a text box — disable it outright.
+            if (_dateField is not null) _dateField.Root.IsEnabled = false;
             TxtExamDuration.IsReadOnly = true;
             TxtExamLangs.IsReadOnly = true;
             ChkIntelli.IsEnabled = false;
@@ -71,7 +78,6 @@ public partial class ExamEditorView : UserControl
             var muted = ThemeManager.GetBrush("ThTextMuted");
             TxtExamTitle.Foreground = muted;
             TxtExamCode.Foreground = muted;
-            TxtExamDate.Foreground = muted;
             TxtExamDuration.Foreground = muted;
             TxtExamLangs.Foreground = muted;
         }
@@ -93,9 +99,16 @@ public partial class ExamEditorView : UserControl
             MessageBox.Show("Title and Course Code are required.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
-        if (!DateTime.TryParse(TxtExamDate.Text, out var scheduledAt))
+        if (_dateField is null || !_dateField.TryGetValue(out var scheduledAt))
         {
-            MessageBox.Show("Invalid date format. Use yyyy-MM-dd HH:mm", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show("Pick a scheduled date.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+        // Only block past dates when the lecturer actually moved the schedule —
+        // an exam that has already run must stay editable.
+        if (scheduledAt != _loadedScheduledAt && scheduledAt <= DateTime.Now)
+        {
+            MessageBox.Show("The scheduled time must be in the future.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
         if (!int.TryParse(TxtExamDuration.Text, out var duration) || duration <= 0)

@@ -41,18 +41,19 @@
     <Color x:Key="ThWarningSoft">#24B9793A</Color>
     <Color x:Key="ThErrorSoft">#1ACF4436</Color>
 
-    <!-- Code / special -->
-    <Color x:Key="ThCodeBg">#0A0D12</Color>
+    <!-- Code / special. These match the Monaco 'scorecode-light' editor theme so
+         the run console and result code boxes sit flush with the editor above them. -->
+    <Color x:Key="ThCodeBg">#F6F7F9</Color>
     <Color x:Key="ThDeleteBg">#1ACF4436</Color>
     <Color x:Key="ThWarningBg">#24B9793A</Color>
 
-    <!-- Code syntax (editor stays dark for contrast, matching the mock) -->
-    <Color x:Key="ThSxKey">#EF8B83</Color>
-    <Color x:Key="ThSxStr">#86D18F</Color>
-    <Color x:Key="ThSxFn">#8AB4F8</Color>
-    <Color x:Key="ThSxNum">#E0A06A</Color>
-    <Color x:Key="ThSxCom">#566072</Color>
-    <Color x:Key="ThCodeText">#CDD3DE</Color>
+    <!-- Code syntax -->
+    <Color x:Key="ThSxKey">#CF222E</Color>
+    <Color x:Key="ThSxStr">#0A7F3F</Color>
+    <Color x:Key="ThSxFn">#1F6FEB</Color>
+    <Color x:Key="ThSxNum">#B35900</Color>
+    <Color x:Key="ThSxCom">#6A737D</Color>
+    <Color x:Key="ThCodeText">#24292E</Color>
 
     <!-- Brushes (for XAML binding) -->
     <SolidColorBrush x:Key="ThBrBgBase"       Color="{DynamicResource ThBgBase}"/>

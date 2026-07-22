@@ -352,8 +352,9 @@ public partial class StudentResultsView : UserControl
         row.Child = grid;
 
         // Detail
-        // The panel holds prose as well as code, so it follows the theme. Only the
-        // code and output boxes keep the dark ThCodeBg/ThCodeText pair.
+        // The panel holds prose as well as code, so it follows the theme. The code
+        // and output boxes use the ThCodeBg/ThCodeText pair, which tracks the theme
+        // too and matches the Monaco editor.
         var detailPanel = new Border
         {
             Background = ThemeManager.GetBrush("ThBgSurface"),
