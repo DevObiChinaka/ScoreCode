@@ -4,7 +4,7 @@
 
 ScoreCode explores how institutions could create and manage programming exams, let students write and submit code through a desktop application, and review results through a web-based administration portal.
 
-The project brings together a Windows desktop client, a central API, a PostgreSQL database, and a Blazor administration portal. It was developed as an undergraduate project, so it represents a practical implementation of the ideas and trade-offs described below—not a claim of production-grade examination security.
+The project brings together a Windows desktop client, a central API, a PostgreSQL database, and a Blazor administration portal. It was developed as an undergraduate project, so it represents a practical implementation of the ideas and trade-offs described below, not a claim of production-grade examination security.
 
 ## What it does
 
